@@ -22,6 +22,13 @@ Proof.
   induction bs; intros; simpl; auto.
 Qed.
 
+Fixpoint nat_of_bits {n} (b : BitV n) : nat :=
+  match b with
+  | bitNil => O
+  | bitCons b bs =>
+    let n' := nat_of_bits bs in
+    (n'*2) + (if b then 1 else 0)
+  end.
 
 Inductive CType := (*TFun (CType n) (CType n)  -- ^ @[8] -> [8]@
             | TSeq (CType n) (CType n)  -- ^ @[8] a@ *)
@@ -29,7 +36,7 @@ Inductive CType := (*TFun (CType n) (CType n)  -- ^ @[8] -> [8]@
 | TBitv (n : nat)                    (* ^ @Bit@*)
 | TNum (n : nat)            (* ^ @10@*)
 | TInf
-(*            | TChar Char              -- ^ @'a'@
+(*          | TChar Char              -- ^ @'a'@
             | TInf                    -- ^ @inf@
             | TUser n [CType n]        -- ^ A type variable or synonym
             | TApp TFun [CType n]      -- ^ @2 + x@
@@ -43,27 +50,36 @@ Inductive CType := (*TFun (CType n) (CType n)  -- ^ @[8] -> [8]@
 .
 
 (* TODO *)
-(* Add comprehensions *)
-(* Add tests for each Expr *)
+(* *)
 
 Inductive Expr :=
-| EBool (b : bool)
 (* boolean literal, e.g. True *)
-| EVar : ident -> Expr
+| EBool (b : bool)
 (* Variable, e.g. 'x' *)
-| ELit {n} : BitV n -> Expr
+| EVar : ident -> Expr
 (* Literal, e.g. 0x1200 *)
-| EList : list Expr -> Expr
+| ELit {n} : BitV n -> Expr
 (* Literal finite list, e.g. [1,2,3] *)
-| EApp (f v : Expr)
+| EList : list Expr -> Expr
 (* Function application, e.g. f v *)
-| EIf (cond t f : Expr)
+| EApp (f v : Expr)
 (* If/then/else, e.g. if cond then t else f *)
-| EWhere : Expr -> ident -> Expr -> Expr
+| EIf (cond t f : Expr)
 (* Where, e.g. 1 + x where { x = 2 } *)
-| EFun (id : ident) (e : Expr)
+| EWhere : Expr -> ident -> Expr -> Expr
 (* Anonymous function, e.g. \\x -> x *)
-
+| EFun (id : ident) (e : Expr)
+(* List Comprehension, e.g. [ p + q | p <- xs | q <- ys ] *)
+| EComp (e : Expr) (l : list (ident * Expr))
+(* infinite sequence, e.g. [1,2,...] *)
+| EInfFrom (f : nat -> Expr)
+(* Tuples, e.g. (1,2,3) *)
+| ETuple (l : list Expr)
+(* Tuple select: pull one datum out of a tuple *)
+| ETupSel (e : Expr) (n : nat)
+(* List Select: index into a list *)
+| EListSel (lst : Expr) (idx : Expr)
+         
 (*| ETuple [Expr n]                 (* ^ @ (1,2,3) @ *)
 | ERecord [Named (Expr n)]        (* ^ @ { x = 1, y = 2 } @ *) 
 | ESel (Expr n) Selector          (* ^ @ e.l @ *) *)
@@ -83,8 +99,10 @@ Inductive Expr :=
 Inductive val :=
 | bit (b : bool)
 | bits {n} (b : BitV n)
-| seq (l : list val)
+| seq (l : list val) (* homogenous finite list *)
 | close (x : ident) (e : Expr) (E : ident -> option val)
+| infseq (g : nat -> Expr) (E : ident -> option val) (* given an index, return the element *)
+| tuple (l : list val) (* heterogeneous tuples *)
 .
 
 Definition env := ident -> option val.
@@ -92,6 +110,19 @@ Definition empty : env := fun _ => None.
 
 Definition extend (E : env) (id : ident) (v : val) : env :=
   fun x => if Nat.eq_dec x id then Some v else E x.
+
+Definition extend_list (E : env) (id : ident) (vs : list val) : list env :=
+  map (fun x => extend E id x) vs.
+
+Fixpoint comp_envs (E : env) (l : list (ident * list val)) : list env :=
+  match l with
+  | nil => nil
+  | (id,vs) :: nil =>
+    extend_list E id vs
+  | (id,vs) :: r =>
+    let Es := comp_envs E r in
+    flat_map (fun x => extend_list x id vs) Es
+  end.
 
 Inductive eval_expr : env -> Expr -> val -> Prop :=
 | eval_var :
@@ -131,13 +162,55 @@ Inductive eval_expr : env -> Expr -> val -> Prop :=
       eval_expr E f (close id exp E') ->
       eval_expr E a v ->
       eval_expr (extend E' id v) exp v' ->
-      eval_expr E (EApp f a) v'.
-
+      eval_expr E (EApp f a) v'
+| eval_comp : (* Doesn't yet tie the knot, no self reference yet *)
+    forall l head vs E lvs' lvs,
+      Forall2 (eval_expr E) (map snd l) lvs' ->
+      lvs' = map seq lvs ->
+      Forall2 (fun e' v => eval_expr e' head v) (comp_envs E (combine (map fst l) lvs)) vs ->
+      eval_expr E (EComp head l) (seq vs)
+| eval_inf_from :
+    forall E g,
+      eval_expr E (EInfFrom g) (infseq g E)
+| eval_tuple :
+    forall E l vs,
+      Forall2 (eval_expr E) l vs ->
+      eval_expr E (ETuple l) (tuple vs)
+| eval_tuple_sel :
+    forall E e l n v,
+      eval_expr E e (tuple l) ->
+      nth_error l n = Some v ->
+      eval_expr E (ETupSel e n) v
+| eval_list_sel_fin :
+    forall {n} E lst lv idx (bs : BitV n) v,
+      eval_expr E lst (seq lv) ->
+      eval_expr E idx (bits bs) ->
+      nth_error lv (nat_of_bits bs) = Some v ->
+      eval_expr E (EListSel lst idx) v
+| eval_list_sel_inf :
+    forall {n} E lst g E' idx (bs : BitV n) v,
+      eval_expr E lst (infseq g E') ->
+      eval_expr E idx (bits bs) ->
+      eval_expr E' (g (nat_of_bits bs)) v ->
+      eval_expr E (EListSel lst idx) v
+.                
 
 (* Tests *)
 
 Definition one : BitV (S (S O)).
+  eapply bitCons. exact true.
   eapply bitCons. exact false.
+  eapply bitNil.
+Defined.
+
+Definition two : BitV (S (S O)).
+  eapply bitCons. exact false.
+  eapply bitCons. exact true.
+  eapply bitNil.
+Defined.
+
+Definition three : BitV (S (S O)).
+  eapply bitCons. exact true.
   eapply bitCons. exact true.
   eapply bitNil.
 Defined.
@@ -174,3 +247,47 @@ Lemma wtest_eval :
 Proof.
   repeat econstructor.
 Qed.
+
+Definition ctest := EComp (EVar O) ((O, EList ((ELit one) :: nil)):: nil).
+
+Lemma ctest_eval :
+  eval_expr empty ctest (seq ((bits one) :: nil)).
+Proof.
+  econstructor.
+  econstructor.
+  econstructor. econstructor.
+  econstructor.
+  econstructor.
+  econstructor.
+  
+  instantiate (1 := ((bits one :: nil) :: nil)).
+  reflexivity.
+
+  repeat econstructor.
+Qed.
+
+Definition tupsel_test := ETupSel (ETuple ((EBool true) :: (ELit one) :: nil)) (1).
+
+Lemma tupsel_eval :
+    eval_expr empty tupsel_test (bits one).
+Proof.
+  repeat econstructor.
+Qed.
+
+Definition listsel_fin_test := EListSel (EList ((EBool true) :: (ELit one) :: nil)) (ELit one).
+
+Lemma listsel_fin_eval :
+  eval_expr empty listsel_fin_test (bits one).
+Proof.
+  repeat econstructor.
+Qed.
+  
+Definition listsel_inf_test := EListSel (EInfFrom (fun x => EBool true)) (ELit three).
+
+Lemma listsel_inf_eval :
+  eval_expr empty listsel_inf_test (bit true).
+Proof.
+  eapply eval_list_sel_inf;
+    repeat econstructor.
+Qed.
+
