@@ -1,5 +1,7 @@
-Require Import List. 
+Require Import List.
+Import ListNotations.
 Require Import Coq.Arith.PeanoNat.
+
 
 Definition ident := nat.
 
@@ -30,6 +32,7 @@ Fixpoint nat_of_bits {n} (b : BitV n) : nat :=
     (n'*2) + (if b then 1 else 0)
   end.
 
+(*
 Inductive CType := (*TFun (CType n) (CType n)  -- ^ @[8] -> [8]@
             | TSeq (CType n) (CType n)  -- ^ @[8] a@ *)
 | TSeq (len : CType) (T : CType) (* Tnum for finite, Tinf for inf, T for type *)
@@ -48,17 +51,40 @@ Inductive CType := (*TFun (CType n) (CType n)  -- ^ @[8] -> [8]@
             | TInfix (CType n) (Located n) Fixity (CType n) -- ^ @ ty + ty @
               deriving (Eq, Show, Generic, NFData)*)
 .
+ *)
 
-(* TODO *)
-(* *)
+(* Do we need anything with this? *)
+Inductive NumInfo :=
+(*| BinLit (n : nat)
+| OctLit (n : nat) *)
+| DecLit
+(*| HexLit (n : nat)
+| CharLit
+| PolyLit (n : nat)*)
+.
+
+Inductive Literal :=
+| ECNum (n : nat) (inf : NumInfo)
+(* | ECString (s : string)*)
+.
+
+Inductive Pattern :=
+| PVar (id : ident)
+.
+
+Inductive Selector :=
+| TupleSel (n : nat) (o : option nat)
+| ListSel (n : nat) (o : option nat)
+.
 
 Inductive Expr :=
 (* boolean literal, e.g. True *)
 | EBool (b : bool)
 (* Variable, e.g. 'x' *)
-| EVar : ident -> Expr
+| EVar (id : ident)
 (* Literal, e.g. 0x1200 *)
-| ELit {n} : BitV n -> Expr
+(*| ELit {n} : BitV n -> Expr*)
+| ELit (l : Literal)
 (* Literal finite list, e.g. [1,2,3] *)
 | EList : list Expr -> Expr
 (* Function application, e.g. f v *)
@@ -68,29 +94,25 @@ Inductive Expr :=
 (* Where, e.g. 1 + x where { x = 2 } *)
 | EWhere : Expr -> ident -> Expr -> Expr
 (* Anonymous function, e.g. \\x -> x *)
-| EFun (id : ident) (e : Expr)
+| EFun (l : list Pattern) (e : Expr)
 (* List Comprehension, e.g. [ p + q | p <- xs | q <- ys ] *)
 | EComp (e : Expr) (l : list (ident * Expr))
 (* infinite sequence, e.g. [1,2,...] *)
 | EInfFrom (f : nat -> Expr)
 (* Tuples, e.g. (1,2,3) *)
 | ETuple (l : list Expr)
-(* Tuple select: pull one datum out of a tuple *)
-| ETupSel (e : Expr) (n : nat)
-(* List Select: index into a list *)
-| EListSel (lst : Expr) (idx : Expr)
-         
-(*| ETuple [Expr n]                 (* ^ @ (1,2,3) @ *)
+(* select: pull one datum out of a record/tuple/list *)
+| ESel (e : Expr) (s : Selector)
+(* Parentheses (does nothing) *)
+| EParens (e : Expr)                (* ^ @ (e)   @ (Removed by Fixity) *)
+(*
 | ERecord [Named (Expr n)]        (* ^ @ { x = 1, y = 2 } @ *) 
-| ESel (Expr n) Selector          (* ^ @ e.l @ *) *)
-(*| EFromTo (Type n) (Maybe (Type n)) (Maybe (Type n)) (* ^ @[1, 5 ..  117 ] @ *)
-| EInfFrom (Expr n) (Maybe (Expr n))(* ^ @ [1, 3 ...] @ *)
-| EComp (Expr n) [[Match n]]      (* ^ @ [ 1 | x <- xs ] @ *) *)
-(*| EAppT (Expr n) [(TypeInst n)]   (* ^ @ f `{x = 8}, f`{8} @ *)*)
-(*| ETyped (Expr n) (Type n)        (* ^ @ 1 : [8] @ *)
-| ETypeVal (Type n)               (* ^ @ `(x + 1)@, @x@ is a type *) *)
-(*| ELocated (Expr n) Range         (* ^ position annotation *) 
-| EParens (Expr n)                (* ^ @ (e)   @ (Removed by Fixity) *)
+| EFromTo (Type n) (Maybe (Type n)) (Maybe (Type n)) (* ^ @[1, 5 ..  117 ] @ *)
+| EComp (Expr n) [[Match n]]      (* ^ @ [ 1 | x <- xs ] @ *) 
+| EAppT (Expr n) [(TypeInst n)]   (* ^ @ f `{x = 8}, f`{8} @ *)
+| ETyped (Expr n) (Type n)        (* ^ @ 1 : [8] @ *)
+| ETypeVal (Type n)               (* ^ @ `(x + 1)@, @x@ is a type *) 
+| ELocated (Expr n) Range         (* ^ position annotation *) 
 | EInfix (Expr n) (Located n) Fixity (Expr n) (* ^ @ a + b @ (Removed by Fixity) *) *)
 .
 
@@ -100,7 +122,7 @@ Inductive val :=
 | bit (b : bool)
 | bits {n} (b : BitV n)
 | seq (l : list val) (* homogenous finite list *)
-| close (x : ident) (e : Expr) (E : ident -> option val)
+| close (l : list Pattern) (e : Expr) (E : ident -> option val)
 | infseq (g : nat -> Expr) (E : ident -> option val) (* given an index, return the element *)
 | tuple (l : list val) (* heterogeneous tuples *)
 .
@@ -124,14 +146,25 @@ Fixpoint comp_envs (E : env) (l : list (ident * list val)) : list env :=
     flat_map (fun x => extend_list x id vs) Es
   end.
 
+Definition bind_pat (p : Pattern) (v : val) (E : env) : env :=
+  match p with
+  | PVar id => extend E id v
+  end.
+
+
 Inductive eval_expr : env -> Expr -> val -> Prop :=
+| eval_parens :
+    forall E exp v,
+      eval_expr E exp v ->
+      eval_expr E (EParens exp) v
 | eval_var :
     forall E id v,
       E id = Some v ->
       eval_expr E (EVar id) v
 | eval_lit :
-    forall E n b,
-      eval_expr E (ELit b) (@bits n b)
+    forall {w} E n (b : BitV w) t,
+      nat_of_bits b = n ->
+      eval_expr E (ELit (ECNum n t)) (bits b)
 | eval_bool :
     forall E b,
       eval_expr E (EBool b) (bit b)
@@ -155,13 +188,19 @@ Inductive eval_expr : env -> Expr -> val -> Prop :=
       eval_expr E f v ->
       eval_expr E (EIf c t f) v
 | eval_lambda :
-    forall E id exp,
-      eval_expr E (EFun id exp) (close id exp E)
+    forall E l exp,
+      eval_expr E (EFun l exp) (close l exp E)
 | eval_app :
-    forall E f id exp E' a v v',
-      eval_expr E f (close id exp E') ->
+    forall E f a v pf pr exp E',
+      eval_expr E f (close (pf :: pr) exp E') ->
       eval_expr E a v ->
-      eval_expr (extend E' id v) exp v' ->
+      pr <> nil ->
+      eval_expr E (EApp f a) (close pr exp (bind_pat pf v E'))
+| eval_app_final :
+    forall E f exp E' a p v v',
+      eval_expr E f (close (p :: nil) exp E') ->
+      eval_expr E a v ->
+      eval_expr (bind_pat p v E') exp v' ->
       eval_expr E (EApp f a) v'
 | eval_comp : (* Doesn't yet tie the knot, no self reference yet *)
     forall l head vs E lvs' lvs,
@@ -177,11 +216,11 @@ Inductive eval_expr : env -> Expr -> val -> Prop :=
       Forall2 (eval_expr E) l vs ->
       eval_expr E (ETuple l) (tuple vs)
 | eval_tuple_sel :
-    forall E e l n v,
+    forall E e l n v o,
       eval_expr E e (tuple l) ->
       nth_error l n = Some v ->
-      eval_expr E (ETupSel e n) v
-| eval_list_sel_fin :
+      eval_expr E (ESel e (TupleSel n o)) v
+(*| eval_list_sel_fin :
     forall {n} E lst lv idx (bs : BitV n) v,
       eval_expr E lst (seq lv) ->
       eval_expr E idx (bits bs) ->
@@ -192,10 +231,22 @@ Inductive eval_expr : env -> Expr -> val -> Prop :=
       eval_expr E lst (infseq g E') ->
       eval_expr E idx (bits bs) ->
       eval_expr E' (g (nat_of_bits bs)) v ->
-      eval_expr E (EListSel lst idx) v
+      eval_expr E (EListSel lst idx) v*)
 .                
 
-(* Tests *)
+(* Haskell Tests *)
+
+(* Verbatim ASTs from cryptol: *)
+(* First we need some list notation to match Haskell *)
+Open Scope list_scope.
+Module HaskellListNotations.
+Notation "[ ]" := nil (format "[ ]") : list_scope.
+Notation "[ x ]" := (cons x nil) : list_scope.
+Notation "[ x , y , .. , z ]" := (cons x (cons y .. (cons z nil) ..)) : list_scope.
+Definition  Nothing {A : Type} : option A := None.
+End HaskellListNotations.
+
+Import HaskellListNotations.
 
 Definition one : BitV (S (S O)).
   eapply bitCons. exact true.
@@ -215,18 +266,71 @@ Definition three : BitV (S (S O)).
   eapply bitNil.
 Defined.
 
-Definition l := EList ((ELit one) :: (ELit one) :: nil).
+(* right side of this generated from cryptol implementation *)
+Definition one_ast := ELit (ECNum 1 DecLit).
+Definition l_ast := EList [ELit (ECNum 1 DecLit),ELit (ECNum 2 DecLit)].
 
-Lemma eval_list_test :
-  eval_expr empty l (seq ((bits one) :: (bits one) :: nil)).
+Lemma eval_one_ast :
+  exists n v,
+    eval_expr empty one_ast (bits v) /\ @nat_of_bits n v = 1.
 Proof.
-  repeat econstructor.
+  exists 1.
+  exists (bitCons true (bitNil)). split. econstructor.
+  simpl. reflexivity.
+  simpl. reflexivity.
 Qed.
+
+Lemma eval_l_ast :
+  eval_expr empty l_ast (seq ((bits one) :: (bits two) :: nil)).
+Proof.
+  repeat econstructor; eauto.
+Qed.
+
+Definition id_app := EApp (EParens (EFun [PVar 454] (EVar 454))) (ELit (ECNum 1 DecLit)).
+
+Lemma id_app_eval :
+  eval_expr empty id_app (bits one).
+Proof.
+  repeat econstructor; eauto.
+Qed.
+
+Definition two_arg_app := EApp (EApp (EParens (EFun [PVar 456,PVar 457] (EVar 456))) (ELit (ECNum 1 DecLit))) (ELit (ECNum 2 DecLit)).
+
+Lemma two_arg_app_eval :
+  eval_expr empty two_arg_app (bits one).
+Proof.
+  repeat econstructor; eauto; try congruence.
+  instantiate (1 := two). reflexivity.
+Qed.
+
+Definition tupsel_test := ESel (ETuple [ELit (ECNum 1 DecLit),ELit (ECNum 2 DecLit)]) (TupleSel 1 Nothing).
+
+Lemma tupsel_test_eval :
+  eval_expr empty tupsel_test (bits two).
+Proof.
+  repeat (econstructor; eauto).
+  instantiate (1 := one). reflexivity. reflexivity.
+Qed.
+
+
+
+(*
 
 Definition simple_app := EApp (EFun (O) (EVar O)) (EBool true).
 
 Lemma eval_app_test :
   eval_expr empty simple_app (bit true).
+Proof.
+  repeat econstructor.
+Qed.
+
+(* Tests *)
+
+
+Definition l := EList ((ELit one) :: (ELit one) :: nil).
+
+Lemma eval_list_test :
+  eval_expr empty l (seq ((bits one) :: (bits one) :: nil)).
 Proof.
   repeat econstructor.
 Qed.
@@ -253,16 +357,9 @@ Definition ctest := EComp (EVar O) ((O, EList ((ELit one) :: nil)):: nil).
 Lemma ctest_eval :
   eval_expr empty ctest (seq ((bits one) :: nil)).
 Proof.
-  econstructor.
-  econstructor.
-  econstructor. econstructor.
-  econstructor.
-  econstructor.
-  econstructor.
-  
+  repeat econstructor.
   instantiate (1 := ((bits one :: nil) :: nil)).
   reflexivity.
-
   repeat econstructor.
 Qed.
 
@@ -291,3 +388,5 @@ Proof.
     repeat econstructor.
 Qed.
 
+
+*)
