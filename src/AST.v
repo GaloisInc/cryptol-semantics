@@ -32,26 +32,6 @@ Fixpoint nat_of_bits {n} (b : BitV n) : nat :=
     (n'*2) + (if b then 1 else 0)
   end.
 
-(*
-Inductive CType := (*TFun (CType n) (CType n)  -- ^ @[8] -> [8]@
-            | TSeq (CType n) (CType n)  -- ^ @[8] a@ *)
-| TSeq (len : CType) (T : CType) (* Tnum for finite, Tinf for inf, T for type *)
-| TBitv (n : nat)                    (* ^ @Bit@*)
-| TNum (n : nat)            (* ^ @10@*)
-| TInf
-(*          | TChar Char              -- ^ @'a'@
-            | TInf                    -- ^ @inf@
-            | TUser n [CType n]        -- ^ A type variable or synonym
-            | TApp TFun [CType n]      -- ^ @2 + x@
-            | TRecord [Named (CType n)]-- ^ @{ x : [8], y : [32] }@
-            | TTuple [CType n]         -- ^ @([8], [32])@
-            | TWild                   -- ^ @_@, just some type.
-            | TLocated (CType n) Range -- ^ Location information
-            | TParens (CType n)        -- ^ @ (ty) @
-            | TInfix (CType n) (Located n) Fixity (CType n) -- ^ @ ty + ty @
-              deriving (Eq, Show, Generic, NFData)*)
-.
- *)
 
 (* Do we need anything with this? *)
 Inductive NumInfo :=
@@ -68,62 +48,80 @@ Inductive Literal :=
 (* | ECString (s : string)*)
 .
 
-Inductive Pattern :=
-| PVar (id : ident)
-.
 
 Inductive Selector :=
 | TupleSel (n : nat) (o : option nat)
 | ListSel (n : nat) (o : option nat)
 .
 
+
 Inductive Expr :=
-(* boolean literal, e.g. True *)
-| EBool (b : bool)
-(* Variable, e.g. 'x' *)
-| EVar (id : ident)
-(* Literal, e.g. 0x1200 *)
-(*| ELit {n} : BitV n -> Expr*)
-| ELit (l : Literal)
 (* Literal finite list, e.g. [1,2,3] *)
 | EList : list Expr -> Expr
-(* Function application, e.g. f v *)
-| EApp (f v : Expr)
-(* If/then/else, e.g. if cond then t else f *)
-| EIf (cond t f : Expr)
-(* Where, e.g. 1 + x where { x = 2 } *)
-| EWhere : Expr -> ident -> Expr -> Expr
-(* Anonymous function, e.g. \\x -> x *)
-| EFun (l : list Pattern) (e : Expr)
-(* List Comprehension, e.g. [ p + q | p <- xs | q <- ys ] *)
-| EComp (e : Expr) (l : list (ident * Expr))
-(* infinite sequence, e.g. [1,2,...] *)
-| EInfFrom (f : nat -> Expr)
 (* Tuples, e.g. (1,2,3) *)
 | ETuple (l : list Expr)
+(* MISSING: ERec *)
 (* select: pull one datum out of a record/tuple/list *)
 | ESel (e : Expr) (s : Selector)
-(* Parentheses (does nothing) *)
-| EParens (e : Expr)                (* ^ @ (e)   @ (Removed by Fixity) *)
-(*
-| ERecord [Named (Expr n)]        (* ^ @ { x = 1, y = 2 } @ *) 
-| EFromTo (Type n) (Maybe (Type n)) (Maybe (Type n)) (* ^ @[1, 5 ..  117 ] @ *)
-| EComp (Expr n) [[Match n]]      (* ^ @ [ 1 | x <- xs ] @ *) 
-| EAppT (Expr n) [(TypeInst n)]   (* ^ @ f `{x = 8}, f`{8} @ *)
-| ETyped (Expr n) (Type n)        (* ^ @ 1 : [8] @ *)
-| ETypeVal (Type n)               (* ^ @ `(x + 1)@, @x@ is a type *) 
-| ELocated (Expr n) Range         (* ^ position annotation *) 
-| EInfix (Expr n) (Located n) Fixity (Expr n) (* ^ @ a + b @ (Removed by Fixity) *) *)
+(* If/then/else, e.g. if cond then t else f *)
+| EIf (cond t f : Expr)
+(* List Comprehension, e.g. [ p + q | p <- xs | q <- ys ] *)
+| EComp (e : Expr) (l : list (list Match))
+(* Variable, e.g. 'x' *)
+| EVar (id : ident)
+(* MISSING: ETAbs *)
+(* MISSING: ETApp *)       
+(* Function application, e.g. f v *)
+| EApp (f v : Expr)
+(* Anonymous function, e.g. \\x -> x *)
+| EAbs (id : ident) (e : Expr)
+(* MISSING: EProofAbs *)
+(* MISSING: EProofApp *)
+(* Where, e.g. 1 + x where { x = 2 } *)
+| EWhere (e : Expr) (l : list DeclGroup)
+with Match :=
+     | From (id : ident) (e : Expr)
+with DeclDef :=
+     | DExpr (e : Expr)
+with Declaration := 
+     | Decl (id : ident) (d : DeclDef)
+with DeclGroup :=
+     | Recursive (l : list Declaration)
+     | NonRecursive (d : Declaration)
 .
 
 (* Operational Semantics *)
 
+Definition genv := ident -> option Expr.
+Definition gempty : genv := fun _ => None.
+
+Fixpoint declare (l : list Declaration) (ge : genv) :=
+  match l with
+  | nil => ge
+  | (Decl id (DExpr e)) :: r =>
+    let ge' := fun x => if Nat.eq_dec x id then Some e else ge x in
+    declare r ge'
+  end.
+
+Definition bind_decl_group (g : DeclGroup) (ge : genv) : genv :=
+  match g with
+  | Recursive l => declare l ge
+  | NonRecursive d => declare (d :: nil) ge
+  end.
+
+Fixpoint bind_decl_groups (lg : list DeclGroup) (ge : genv) : genv :=
+  match lg with
+  | nil => ge
+  | g :: gs =>
+    bind_decl_groups gs (bind_decl_group g ge)
+  end.
+
 Inductive val :=
-| bit (b : bool)
-| bits {n} (b : BitV n)
-| seq (l : list val) (* homogenous finite list *)
-| close (l : list Pattern) (e : Expr) (E : ident -> option val)
-| infseq (g : nat -> Expr) (E : ident -> option val) (* given an index, return the element *)
+| bit (b : bool) (* Can we ever get this now? *)
+| bits {n} (b : BitV n) (* bitvector *)
+| close (id : ident) (e : Expr) (E : ident -> option val)  (* closure *)
+| vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
+| vnil (* empty list *)
 | tuple (l : list val) (* heterogeneous tuples *)
 .
 
@@ -136,90 +134,98 @@ Definition extend (E : env) (id : ident) (v : val) : env :=
 Definition extend_list (E : env) (id : ident) (vs : list val) : list env :=
   map (fun x => extend E id x) vs.
 
-Fixpoint comp_envs (E : env) (l : list (ident * list val)) : list env :=
+
+(* All of our list values are lazy, but here we have a fully computed
+list, so we remember that by very simply thunking the result *)
+Fixpoint thunk_list (l : list val) : val :=
+  match l with
+  | nil => vnil
+  | f :: r =>
+    vcons f (EVar O) (extend empty O (thunk_list r))
+  end.
+
+
+Fixpoint fold_extend (E : env) (l : list (ident * val)) : env :=
+  match l with
+  | nil => E
+  | (id,v) :: r => extend (fold_extend E r) id v
+  end.
+
+
+Fixpoint decl_exprs (l : list Declaration) : list Expr :=
   match l with
   | nil => nil
-  | (id,vs) :: nil =>
-    extend_list E id vs
-  | (id,vs) :: r =>
-    let Es := comp_envs E r in
-    flat_map (fun x => extend_list x id vs) Es
+  | (Decl id (DExpr e)) :: r => e :: decl_exprs r
   end.
 
-Definition bind_pat (p : Pattern) (v : val) (E : env) : env :=
-  match p with
-  | PVar id => extend E id v
+Fixpoint decl_ids (l : list Declaration) : list ident :=
+  match l with
+  | nil => nil
+  | (Decl id _) :: r => id :: decl_ids r
   end.
 
 
-Inductive eval_expr : env -> Expr -> val -> Prop :=
-| eval_parens :
-    forall E exp v,
-      eval_expr E exp v ->
-      eval_expr E (EParens exp) v
-| eval_var :
-    forall E id v,
-      E id = Some v ->
-      eval_expr E (EVar id) v
-| eval_lit :
-    forall {w} E n (b : BitV w) t,
-      nat_of_bits b = n ->
-      eval_expr E (ELit (ECNum n t)) (bits b)
-| eval_bool :
-    forall E b,
-      eval_expr E (EBool b) (bit b)
+Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_list :
     forall E l vs,
-      Forall2 (eval_expr E) l vs ->
-      eval_expr E (EList l) (seq vs)
-| eval_where :
-    forall E exp id bexp bv v,
-      eval_expr E bexp bv ->
-      eval_expr (extend E id bv) exp v ->
-      eval_expr E (EWhere exp id bexp) v
-| eval_if_t :
-    forall E c t f v,
-      eval_expr E c (bit true) ->
-      eval_expr E t v ->
-      eval_expr E (EIf c t f) v
-| eval_if_f :
-    forall E c t f v,
-      eval_expr E c (bit false) ->
-      eval_expr E f v ->
-      eval_expr E (EIf c t f) v
-| eval_lambda :
-    forall E l exp,
-      eval_expr E (EFun l exp) (close l exp E)
-| eval_app :
-    forall E f a v pf pr exp E',
-      eval_expr E f (close (pf :: pr) exp E') ->
-      eval_expr E a v ->
-      pr <> nil ->
-      eval_expr E (EApp f a) (close pr exp (bind_pat pf v E'))
-| eval_app_final :
-    forall E f exp E' a p v v',
-      eval_expr E f (close (p :: nil) exp E') ->
-      eval_expr E a v ->
-      eval_expr (bind_pat p v E') exp v' ->
-      eval_expr E (EApp f a) v'
-| eval_comp : (* Doesn't yet tie the knot, no self reference yet *)
-    forall l head vs E lvs' lvs,
-      Forall2 (eval_expr E) (map snd l) lvs' ->
-      lvs' = map seq lvs ->
-      Forall2 (fun e' v => eval_expr e' head v) (comp_envs E (combine (map fst l) lvs)) vs ->
-      eval_expr E (EComp head l) (seq vs)
-| eval_inf_from :
-    forall E g,
-      eval_expr E (EInfFrom g) (infseq g E)
+      Forall2 (eval_expr ge E) l vs ->
+      eval_expr ge E (EList l) (thunk_list vs)
 | eval_tuple :
     forall E l vs,
-      Forall2 (eval_expr E) l vs ->
-      eval_expr E (ETuple l) (tuple vs)
+      Forall2 (eval_expr ge E) l vs ->
+      eval_expr ge E (ETuple l) (tuple vs)
 | eval_tuple_sel :
     forall E e l n v o,
-      eval_expr E e (tuple l) ->
+      eval_expr ge E e (tuple l) ->
       nth_error l n = Some v ->
-      eval_expr E (ESel e (TupleSel n o)) v
+      eval_expr ge E (ESel e (TupleSel n o)) v
+(* TODO: eval_list_sel *)                
+| eval_if_t : (* TODO: currently we have no expressions to produce a single bit...operators might fix *)
+    forall E c t f v,
+      eval_expr ge E c (bit true) ->
+      eval_expr ge E t v ->
+      eval_expr ge E (EIf c t f) v
+| eval_if_f :
+    forall E c t f v,
+      eval_expr ge E c (bit false) ->
+      eval_expr ge E f v ->
+      eval_expr ge E (EIf c t f) v
+(* TODO: eval_comp *)
+| eval_local_var :
+    forall E id v,
+      E id = Some v ->
+      eval_expr ge E (EVar id) v
+| eval_global_var :
+    forall E id v exp,
+      E id = None ->
+      ge id = Some exp ->
+      eval_expr ge E exp v ->
+      eval_expr ge E (EVar id) v
+| eval_abs :
+    forall E id exp,
+      eval_expr ge E (EAbs id exp) (close id exp E)
+| eval_app :
+    forall E f id exp E' a av v,
+      eval_expr ge E f (close id exp E') ->
+      eval_expr ge E a av ->
+      eval_expr ge (extend E' id av) exp v ->
+      eval_expr ge E (EApp f a) v
+| eval_where :
+    forall E exp decls v,
+      eval_expr (bind_decl_groups decls ge) E exp v ->
+      eval_expr ge E (EWhere exp decls) v
+.
+
+
+(* List comprehension is weird *)
+(* [ head | x <- e1, y <- e2 | z <- e3, w <- e4 ] *)
+(* | eval_comp : (* Doesn't yet tie the knot, no self reference yet *) *)
+(*     forall l head vs E lvs' lvs, *)
+(*       Forall2 (eval_expr ge E) (map snd l) lvs' -> *)
+(*       lvs' = map seq lvs -> *)
+(*       Forall2 (fun e' v => eval_expr ge e' head v) (comp_envs E (combine (map fst l) lvs)) vs -> *)
+(*       eval_expr ge E (EComp head l) (seq vs) *)
+
 (*| eval_list_sel_fin :
     forall {n} E lst lv idx (bs : BitV n) v,
       eval_expr E lst (seq lv) ->
@@ -232,7 +238,7 @@ Inductive eval_expr : env -> Expr -> val -> Prop :=
       eval_expr E idx (bits bs) ->
       eval_expr E' (g (nat_of_bits bs)) v ->
       eval_expr E (EListSel lst idx) v*)
-.                
+
 
 (* Haskell Tests *)
 
@@ -267,126 +273,25 @@ Definition three : BitV (S (S O)).
 Defined.
 
 (* right side of this generated from cryptol implementation *)
-Definition one_ast := ELit (ECNum 1 DecLit).
-Definition l_ast := EList [ELit (ECNum 1 DecLit),ELit (ECNum 2 DecLit)].
 
-Lemma eval_one_ast :
-  exists n v,
-    eval_expr empty one_ast (bits v) /\ @nat_of_bits n v = 1.
+Definition id_cry : DeclGroup := (NonRecursive (Decl 242 (DExpr (EAbs 243 (EWhere (EApp (EVar 244) (EVar 243)) [(Recursive [(Decl 244 (DExpr (EAbs 245 (EIf (EApp (EApp (EVar 17) (EVar 245)) (EVar 0)) (EVar 0) (EApp (EApp (EVar 1) (EVar 0)) (EApp (EVar 244) (EApp (EApp (EVar 2) (EVar 245)) (EVar 0))))))))])]))))).
+
+Definition id_ge := bind_decl_group id_cry gempty.
+Definition E := extend empty 12 (bits three).
+
+Lemma eval_id :
+  eval_expr id_ge E (EApp (EVar 242) (EVar 12)) (bits three).
 Proof.
-  exists 1.
-  exists (bitCons true (bitNil)). split. econstructor.
+  econstructor. unfold id_ge.
+  simpl. eapply eval_global_var. unfold E. unfold extend. simpl. unfold empty. auto.
   simpl. reflexivity.
+  econstructor. econstructor. unfold E. unfold extend. simpl. reflexivity.
+  econstructor.
+  simpl. econstructor.
+  eapply eval_global_var. unfold E. unfold extend. simpl. unfold empty. auto.
   simpl. reflexivity.
-Qed.
+  econstructor. econstructor. unfold extend. simpl. reflexivity.
 
-Lemma eval_l_ast :
-  eval_expr empty l_ast (seq ((bits one) :: (bits two) :: nil)).
-Proof.
-  repeat econstructor; eauto.
-Qed.
-
-Definition id_app := EApp (EParens (EFun [PVar 454] (EVar 454))) (ELit (ECNum 1 DecLit)).
-
-Lemma id_app_eval :
-  eval_expr empty id_app (bits one).
-Proof.
-  repeat econstructor; eauto.
-Qed.
-
-Definition two_arg_app := EApp (EApp (EParens (EFun [PVar 456,PVar 457] (EVar 456))) (ELit (ECNum 1 DecLit))) (ELit (ECNum 2 DecLit)).
-
-Lemma two_arg_app_eval :
-  eval_expr empty two_arg_app (bits one).
-Proof.
-  repeat econstructor; eauto; try congruence.
-  instantiate (1 := two). reflexivity.
-Qed.
-
-Definition tupsel_test := ESel (ETuple [ELit (ECNum 1 DecLit),ELit (ECNum 2 DecLit)]) (TupleSel 1 Nothing).
-
-Lemma tupsel_test_eval :
-  eval_expr empty tupsel_test (bits two).
-Proof.
-  repeat (econstructor; eauto).
-  instantiate (1 := one). reflexivity. reflexivity.
-Qed.
-
-
-
-(*
-
-Definition simple_app := EApp (EFun (O) (EVar O)) (EBool true).
-
-Lemma eval_app_test :
-  eval_expr empty simple_app (bit true).
-Proof.
-  repeat econstructor.
-Qed.
-
-(* Tests *)
-
-
-Definition l := EList ((ELit one) :: (ELit one) :: nil).
-
-Lemma eval_list_test :
-  eval_expr empty l (seq ((bits one) :: (bits one) :: nil)).
-Proof.
-  repeat econstructor.
-Qed.
-
-
-Definition btest := EIf (EBool true) (EBool false) (EVar O).
-
-Lemma btest_eval :
-  eval_expr empty btest (bit false).
-Proof.
-  repeat econstructor.
-Qed.
-
-Definition wtest := EWhere (EVar O) O (ELit one).
-
-Lemma wtest_eval :
-  eval_expr empty wtest (bits one).
-Proof.
-  repeat econstructor.
-Qed.
-
-Definition ctest := EComp (EVar O) ((O, EList ((ELit one) :: nil)):: nil).
-
-Lemma ctest_eval :
-  eval_expr empty ctest (seq ((bits one) :: nil)).
-Proof.
-  repeat econstructor.
-  instantiate (1 := ((bits one :: nil) :: nil)).
-  reflexivity.
-  repeat econstructor.
-Qed.
-
-Definition tupsel_test := ETupSel (ETuple ((EBool true) :: (ELit one) :: nil)) (1).
-
-Lemma tupsel_eval :
-    eval_expr empty tupsel_test (bits one).
-Proof.
-  repeat econstructor.
-Qed.
-
-Definition listsel_fin_test := EListSel (EList ((EBool true) :: (ELit one) :: nil)) (ELit one).
-
-Lemma listsel_fin_eval :
-  eval_expr empty listsel_fin_test (bits one).
-Proof.
-  repeat econstructor.
-Qed.
+Admitted.
   
-Definition listsel_inf_test := EListSel (EInfFrom (fun x => EBool true)) (ELit three).
 
-Lemma listsel_inf_eval :
-  eval_expr empty listsel_inf_test (bit true).
-Proof.
-  eapply eval_list_sel_inf;
-    repeat econstructor.
-Qed.
-
-
-*)
