@@ -2,51 +2,30 @@ Require Import List.
 Import ListNotations.
 Require Import Coq.Arith.PeanoNat.
 
+(* Borrow from CompCert *)
+Require Import Coqlib.
+Require Import Integers.
 
-Definition ident := nat.
-
-Inductive BitV : nat -> Set :=
-| bitNil : BitV O
-| bitCons (b : bool) :
-    forall {n} (bs : BitV n),
-      BitV (S n).
-
-Fixpoint bitlist {n} (b : BitV n) : list bool :=
-  match b with
-  | bitNil => nil
-  | bitCons b bs => b :: bitlist bs
-  end.
-
-Lemma length_correct :
-  forall n (bs : BitV n),
-    length (bitlist bs) = n.
-Proof.
-  induction bs; intros; simpl; auto.
-Qed.
-
-Fixpoint nat_of_bits {n} (b : BitV n) : nat :=
-  match b with
-  | bitNil => O
-  | bitCons b bs =>
-    let n' := nat_of_bits bs in
-    (n'*2) + (if b then 1 else 0)
-  end.
+Definition ident := Z.
 
 
-(* Do we need anything with this? *)
-Inductive NumInfo :=
-(*| BinLit (n : nat)
-| OctLit (n : nat) *)
-| DecLit
-(*| HexLit (n : nat)
-| CharLit
-| PolyLit (n : nat)*)
-.
+Definition BitV (n : nat) : Type := (@Integers.Int n).
 
-Inductive Literal :=
-| ECNum (n : nat) (inf : NumInfo)
-(* | ECString (s : string)*)
-.
+
+(* (* Do we need anything with this? *) *)
+(* Inductive NumInfo := *)
+(* (*| BinLit (n : nat) *)
+(* | OctLit (n : nat) *) *)
+(* | DecLit *)
+(* (*| HexLit (n : nat) *)
+(* | CharLit *)
+(* | PolyLit (n : nat)*) *)
+(* . *)
+
+(* Inductive Literal := *)
+(* | ECNum (n : nat) (inf : NumInfo) *)
+(* (* | ECString (s : string)*) *)
+(* . *)
 
 
 Inductive Selector :=
@@ -54,10 +33,19 @@ Inductive Selector :=
 | ListSel (n : nat) (o : option nat)
 .
 
+(* Internally defined somehow *)
+Inductive binop :=
+| Plus
+| Eq
+.
 
 Inductive Expr :=
+(* literal bits *)
+| ELit {w : nat} (bv : BitV w)
+(* binary operation *)
+| EBinop (op : binop) (l r : Expr) 
 (* Literal finite list, e.g. [1,2,3] *)
-| EList : list Expr -> Expr
+| EList (l : list Expr)
 (* Tuples, e.g. (1,2,3) *)
 | ETuple (l : list Expr)
 (* MISSING: ERec *)
@@ -90,6 +78,10 @@ with DeclGroup :=
      | NonRecursive (d : Declaration)
 .
 
+(* TODO: make sure we can shadow variables 5 and 6 here, or change up *)
+Definition builtin_binop (id : ident) (op : binop) : DeclGroup :=
+  NonRecursive (Decl id (DExpr (EAbs 5 (EAbs 6 (EBinop op (EVar 5) (EVar 6)))))).
+
 (* Operational Semantics *)
 
 Definition genv := ident -> option Expr.
@@ -99,7 +91,7 @@ Fixpoint declare (l : list Declaration) (ge : genv) :=
   match l with
   | nil => ge
   | (Decl id (DExpr e)) :: r =>
-    let ge' := fun x => if Nat.eq_dec x id then Some e else ge x in
+    let ge' := fun x => if Z.eq_dec x id then Some e else ge x in
     declare r ge'
   end.
 
@@ -129,7 +121,7 @@ Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
 
 Definition extend (E : env) (id : ident) (v : val) : env :=
-  fun x => if Nat.eq_dec x id then Some v else E x.
+  fun x => if Z.eq_dec x id then Some v else E x.
 
 Definition extend_list (E : env) (id : ident) (vs : list val) : list env :=
   map (fun x => extend E id x) vs.
@@ -141,7 +133,7 @@ Fixpoint thunk_list (l : list val) : val :=
   match l with
   | nil => vnil
   | f :: r =>
-    vcons f (EVar O) (extend empty O (thunk_list r))
+    vcons f (EVar 0) (extend empty 0 (thunk_list r))
   end.
 
 
@@ -165,7 +157,25 @@ Fixpoint decl_ids (l : list Declaration) : list ident :=
   end.
 
 
+Inductive eval_binop : binop -> val -> val -> val -> Prop :=
+| eval_plus :
+    forall {w : nat} {nz : w <> O} (n m : BitV w) {p : w <> O},
+      eval_binop Plus (bits n) (bits m) (bits (@add w nz n m))
+| eval_eq :
+    forall {w : nat} {nz : w <> O} (n m : BitV w) {p : w <> O},
+      eval_binop Eq (bits n) (bits m) (bit (@eq w n m)).
+
+
 Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
+| eval_lit :
+    forall {w} E (bv : BitV w),
+      eval_expr ge E (ELit bv) (bits bv)
+| eval_bin_op :
+    forall E le lv re rv op v,
+      eval_expr ge E le lv ->
+      eval_expr ge E re rv ->
+      eval_binop op lv rv v ->
+      eval_expr ge E (EBinop op le re) v
 | eval_list :
     forall E l vs,
       Forall2 (eval_expr ge E) l vs ->
@@ -254,33 +264,35 @@ End HaskellListNotations.
 
 Import HaskellListNotations.
 
-Definition one : BitV (S (S O)).
-  eapply bitCons. exact true.
-  eapply bitCons. exact false.
-  eapply bitNil.
-Defined.
-
-Definition two : BitV (S (S O)).
-  eapply bitCons. exact false.
-  eapply bitCons. exact true.
-  eapply bitNil.
-Defined.
-
-Definition three : BitV (S (S O)).
-  eapply bitCons. exact true.
-  eapply bitCons. exact true.
-  eapply bitNil.
-Defined.
-
 (* right side of this generated from cryptol implementation *)
 
-Definition id_cry : DeclGroup := (NonRecursive (Decl 242 (DExpr (EAbs 243 (EWhere (EApp (EVar 244) (EVar 243)) [(Recursive [(Decl 244 (DExpr (EAbs 245 (EIf (EApp (EApp (EVar 17) (EVar 245)) (EVar 0)) (EVar 0) (EApp (EApp (EVar 1) (EVar 0)) (EApp (EVar 244) (EApp (EApp (EVar 2) (EVar 245)) (EVar 0))))))))])]))))).
+Definition id_cry : DeclGroup := (NonRecursive (Decl 242 (DExpr (EAbs 243 (EWhere (EApp (EVar 244) (EVar 243)) [(Recursive [(Decl 244 (DExpr (EAbs 245 (EIf (EApp (EApp (EVar 17) (EVar 245)) (EVar 0)) (EVar 0) (EApp (EApp (EVar 1) (EVar 0)) (EApp (EVar 244) (EApp (EApp (EVar 1) (EVar 245)) (EApp (EVar 11) (EVar 0)))))))))])]))))).
 
-Definition id_ge := bind_decl_group id_cry gempty.
-Definition E := extend empty 12 (bits three).
+Definition width : nat := 32.
+
+Lemma nz :
+  width <> O.
+Proof.
+  unfold width. congruence.
+Qed.
+
+Definition lit (z : Z) : Expr :=
+  ELit (@repr width nz z).
+
+(* 17 -> eq *)
+(* 1 -> plus *)
+Definition id_cry_hand_mod : DeclGroup := (NonRecursive (Decl 242 (DExpr (EAbs 243 (EWhere (EApp (EVar 244) (EVar 243)) [(Recursive [(Decl 244 (DExpr (EAbs 245 (EIf (EApp (EApp (EVar 17) (EVar 245)) (lit 0)) (lit 0) (EApp (EApp (EVar 1) (lit 1)) (EApp (EVar 244) (EApp (EApp (EVar 1) (EVar 245)) (lit (-1)))))))))])]))))).
+
+Definition eq_decl := builtin_binop 17 Eq.
+Definition plus_decl := builtin_binop 1 Plus.
+
+Definition id_ge := bind_decl_group id_cry_hand_mod
+                                    (bind_decl_group eq_decl
+                                                     (bind_decl_group plus_decl gempty)).
+Definition E := extend empty 12 (bits (@repr width nz 2)).
 
 Lemma eval_id :
-  eval_expr id_ge E (EApp (EVar 242) (EVar 12)) (bits three).
+  eval_expr id_ge E (EApp (EVar 242) (EVar 12)) (bits (@repr width nz 2)).
 Proof.
   econstructor. unfold id_ge.
   simpl. eapply eval_global_var. unfold E. unfold extend. simpl. unfold empty. auto.
@@ -291,7 +303,74 @@ Proof.
   eapply eval_global_var. unfold E. unfold extend. simpl. unfold empty. auto.
   simpl. reflexivity.
   econstructor. econstructor. unfold extend. simpl. reflexivity.
+  eapply eval_if_f.
+  econstructor. econstructor.
+  eapply eval_global_var. unfold E. unfold extend. simpl. unfold empty. auto.
+  simpl. unfold id_ge. unfold bind_decl_group. simpl. reflexivity.
+  econstructor; eauto.
+  econstructor; eauto. unfold extend. simpl. reflexivity.
+  econstructor; eauto.
+  econstructor; eauto.
+  econstructor; eauto.
+  econstructor; eauto. unfold extend. simpl. reflexivity.
+  econstructor; eauto. unfold extend. simpl. reflexivity.
+  econstructor; eauto; exact nz.
 
-Admitted.
+  econstructor. econstructor. eapply eval_global_var. unfold E. unfold extend. simpl. unfold empty. reflexivity.
+  simpl. unfold id_ge. simpl. reflexivity.
+
+  econstructor. econstructor; eauto.
+  econstructor; eauto.
+  econstructor; eauto.
+  eapply eval_global_var; eauto. simpl. reflexivity.
+  econstructor; eauto.
+  econstructor. econstructor.
+  eapply eval_global_var; eauto. simpl. unfold id_ge. simpl. reflexivity.
+  econstructor. econstructor.
+  unfold extend.simpl. reflexivity.
+  econstructor. econstructor. econstructor. econstructor.
+  unfold extend. simpl. reflexivity.
+  econstructor. unfold extend. simpl. reflexivity.
+  econstructor. exact nz.
+
+  eapply eval_if_f. econstructor.
+  econstructor. eapply eval_global_var; eauto. simpl. unfold id_ge. simpl. reflexivity.
+  econstructor. econstructor. unfold E. unfold extend. simpl. reflexivity.
+
+  econstructor. econstructor.
+  econstructor;
+    try econstructor; try unfold extend; simpl; eauto.
+  econstructor; exact nz.
   
+  econstructor.
+  econstructor. eapply eval_global_var; eauto. simpl. unfold id_ge. simpl. reflexivity.
+  econstructor. econstructor.
+  econstructor. econstructor.
+  eapply eval_global_var. simpl. unfold id_ge. simpl. reflexivity. simpl. reflexivity.
+  econstructor. econstructor. econstructor. eapply eval_global_var.
+  simpl. unfold id_ge. simpl. reflexivity. simpl. reflexivity.
+  econstructor. econstructor. unfold extend. simpl. reflexivity.
+  econstructor. econstructor.
+  econstructor. econstructor. unfold extend. simpl. reflexivity.
+  econstructor. unfold extend. simpl. reflexivity.
+  econstructor. exact nz.
+  eapply eval_if_t. econstructor. econstructor.
+  eapply eval_global_var. unfold extend. simpl. unfold E. unfold extend. simpl. unfold empty.
+  reflexivity.
+  simpl. unfold id_ge. simpl. reflexivity.
+  econstructor. econstructor. unfold extend. simpl. reflexivity.
+  econstructor. econstructor. econstructor; try unfold extend; try econstructor; simpl; eauto.
+  econstructor; eauto; exact nz.
+  econstructor.
+  econstructor. econstructor. unfold extend. simpl. reflexivity.
+  econstructor. unfold extend. simpl. reflexivity.
+  econstructor. exact nz.
+  econstructor. econstructor. unfold extend. simpl. reflexivity.
+  econstructor. unfold extend. simpl. reflexivity.
+  econstructor. exact nz.
+  Unshelve.
+  all: exact nz.
+Qed.
+  
+
 
