@@ -49,9 +49,23 @@ Inductive TypeConstr :=
 | TCNewtype (u : userType)
 .
 
-Inductive TC_t :=
+Inductive TFun :=
+| TCWidth
+| TCAdd
+| TCSub
+| TCMul
+| TCDiv
+| TCMod
+| TCExp
+| TCMin
+| TCMax
+| TCLenFromThen
+| TCLenFromThenTo
+.
+
+Inductive TConstr :=
 | TC (t : TypeConstr)
-(*| TF (tf : TFun_t)*)
+| TF (tf : TFun)
 .     
 
 Inductive TV_t :=
@@ -60,8 +74,10 @@ Inductive TV_t :=
 .
 
 Inductive Typ :=
-| TCon (tc : TC_t) (l : list Typ)
+| TCon (tc : TConstr) (l : list Typ)
 | TVar (tv : TV_t)
+| TUser (id : ident) (l : list Typ) (t : Typ)
+| TRec (l : list (ident * Typ))
 .
 
 Inductive Expr :=
@@ -85,7 +101,7 @@ Inductive Expr :=
 (* Variable, e.g. 'x' *)
 | EVar (id : ident)
 (* Type abstraction *)
-| ETAbs (t : Typ) (e : Expr)
+| ETAbs (id : ident) (e : Expr)
 (* Type application *)
 | ETApp (e : Expr) (t : Typ)
 (* Function application, e.g. f v *)
@@ -242,7 +258,7 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       nth_error l n = Some v ->
       eval_expr ge E (ESel e (TupleSel n o)) v
 (* TODO: eval_list_sel *)                
-| eval_if_t : (* TODO: currently we have no expressions to produce a single bit...operators might fix *)
+| eval_if_t : 
     forall E c t f v,
       eval_expr ge E c (bit true) ->
       eval_expr ge E t v ->
