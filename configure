@@ -1,0 +1,3 @@
+DIRS=(src)
+CANARIES=()
+source script/coqproject.sh

@@ -327,7 +327,7 @@ Proof.
   econstructor. econstructor.
   eapply eval_global_var; eauto. simpl. unfold id_ge. simpl. reflexivity.
   econstructor. econstructor.
-  unfold extend.simpl. reflexivity.
+  unfold extend. simpl. reflexivity.
   econstructor. econstructor. econstructor. econstructor.
   unfold extend. simpl. reflexivity.
   econstructor. unfold extend. simpl. reflexivity.
