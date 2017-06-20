@@ -405,489 +405,503 @@ Section Bits.
   
 
 
-(*
+
+  Lemma Z_mod_modulus_eq:
+    forall {ws : nat} {nz : ws <> O} x, @Z_mod_modulus ws x = x mod (@modulus ws).
+  Proof.
+    intros. unfold Z_mod_modulus. destruct x.
+    - rewrite Zmod_0_l. auto.
+    - apply P_mod_two_p_eq.
+    - generalize (P_mod_two_p_range ws p) (P_mod_two_p_eq ws p).
+      fold (@modulus ws). intros A B.
+      exploit (Z_div_mod_eq (Zpos p) (@modulus ws)). apply modulus_pos. assumption. intros C.
+      set (q := Zpos p / (@modulus ws)) in *.
+      set (r := P_mod_two_p p ws) in *.
+      
+      rewrite <- B in C.
+      change (Z.neg p) with (- (Z.pos p)). destruct (zeq r 0).
+      + symmetry. apply Zmod_unique with (-q). rewrite C; rewrite e. ring.
+        generalize (@modulus_pos ws); omega.
+      + symmetry. apply Zmod_unique with (-q - 1). rewrite C. ring.
+        omega.
+  Qed.
 
 
-Lemma Z_mod_modulus_eq:
-  forall x, Z_mod_modulus x = x mod modulus.
-Proof.
-  intros. unfold Z_mod_modulus. destruct x.
-  - rewrite Zmod_0_l. auto.
-  - apply P_mod_two_p_eq.
-  - generalize (P_mod_two_p_range wordsize p) (P_mod_two_p_eq wordsize p).
-    fold modulus. intros A B.
-    exploit (Z_div_mod_eq (Zpos p) modulus). apply modulus_pos. intros C.
-    set (q := Zpos p / modulus) in *.
-    set (r := P_mod_two_p p wordsize) in *.
-    rewrite <- B in C.
-    change (Z.neg p) with (- (Z.pos p)). destruct (zeq r 0).
-    + symmetry. apply Zmod_unique with (-q). rewrite C; rewrite e. ring.
-      generalize modulus_pos; omega.
-    + symmetry. apply Zmod_unique with (-q - 1). rewrite C. ring.
-      omega.
-Qed.
-
-
-(** Conversely, [repr] takes a Coq integer and returns the corresponding
+  (** Conversely, [repr] takes a Coq integer and returns the corresponding
   machine integer.  The argument is treated modulo [modulus]. *)
 
 
 
 
-(** * Arithmetic and logical operations over machine integers *)
+  (** * Arithmetic and logical operations over machine integers *)
 
 
 
-(** * Properties of integers and integer arithmetic *)
+  (** * Properties of integers and integer arithmetic *)
 
-(** ** Properties of [modulus], [max_unsigned], etc. *)
+  (** ** Properties of [modulus], [max_unsigned], etc. *)
 
-Remark half_modulus_power:
-  half_modulus = two_p (zwordsize - 1).
-Proof.
-  unfold half_modulus. rewrite modulus_power.
-  set (ws1 := zwordsize - 1).
-  replace (zwordsize) with (Zsucc ws1).
-  rewrite two_p_S. rewrite Zmult_comm. apply Z_div_mult. omega.
-  unfold ws1. generalize wordsize_pos; omega.
-  unfold ws1. omega.
-Qed.
+  Remark half_modulus_power:
+    forall {ws : nat} {nz : ws <> O},
+      @half_modulus ws = two_p (@zwordsize ws - 1).
+  Proof.
+    intros.
+    unfold half_modulus. rewrite modulus_power.
+    set (ws1 := zwordsize - 1).
+    replace (zwordsize) with (Zsucc ws1).
+    rewrite two_p_S. rewrite Zmult_comm. apply Z_div_mult. omega.
+    unfold ws1. generalize (@wordsize_pos ws). omega.
+    unfold ws1. omega.
+  Qed.
 
-Remark half_modulus_modulus: modulus = 2 * half_modulus.
-Proof.
-  rewrite half_modulus_power. rewrite modulus_power.
-  rewrite <- two_p_S. apply f_equal. omega.
-  generalize wordsize_pos; omega.
-Qed.
+  Remark half_modulus_modulus:
+    forall {ws : nat} {nz : ws <> O},
+    (@modulus ws) = 2 * (@half_modulus ws).
+  Proof.
+    intros.
+    rewrite (@half_modulus_power ws nz). rewrite modulus_power.
+    rewrite <- two_p_S. apply f_equal. omega.
+    generalize (@wordsize_pos ws); omega.
+  Qed.
 
-(** Relative positions, from greatest to smallest:
-<<
+  (** Relative positions, from greatest to smallest:
+  <<
       max_unsigned
       max_signed
       2*wordsize-1
       wordsize
       0
       min_signed
->>
-*)
+   >>
+   *)
 
-Remark half_modulus_pos: half_modulus > 0.
-Proof.
-  rewrite half_modulus_power. apply two_p_gt_ZERO. generalize wordsize_pos; omega.
-Qed.
+  Remark half_modulus_pos:
+    forall {ws : nat} {nz : ws <> O},
+    @half_modulus ws > 0.
+  Proof.
+    intros.
+    rewrite (@half_modulus_power ws). apply two_p_gt_ZERO. generalize (@wordsize_pos ws); omega.
+    assumption.
+  Qed.
 
-Remark min_signed_neg: min_signed < 0.
-Proof.
-  unfold min_signed. generalize half_modulus_pos. omega.
-Qed.
+  Remark min_signed_neg:
+    forall {ws : nat} {nz : ws <> O},
+      @min_signed ws < 0.
+  Proof.
+    intros.
+    unfold min_signed. generalize (@half_modulus_pos ws nz). omega.
+  Qed.
 
-Remark max_signed_pos: max_signed >= 0.
-Proof.
-  unfold max_signed. generalize half_modulus_pos. omega.
-Qed.
-
-Remark wordsize_max_unsigned: zwordsize <= max_unsigned.
-Proof.
-  assert (zwordsize < modulus).
+  Remark max_signed_pos:
+    forall {ws : nat} {nz : ws <> O},
+      @max_signed ws >= 0.
+  Proof.
+    intros.
+    unfold max_signed. generalize (@half_modulus_pos ws nz). omega.
+  Qed.
+(*
+  Remark wordsize_max_unsigned: zwordsize <= max_unsigned.
+  Proof.
+    assert (zwordsize < modulus).
     rewrite modulus_power. apply two_p_strict.
     generalize wordsize_pos. omega.
-  unfold max_unsigned. omega.
-Qed.
+    unfold max_unsigned. omega.
+  Qed.
 
-Remark two_wordsize_max_unsigned: 2 * zwordsize - 1 <= max_unsigned.
-Proof.
-  assert (2 * zwordsize - 1 < modulus).
+  Remark two_wordsize_max_unsigned: 2 * zwordsize - 1 <= max_unsigned.
+  Proof.
+    assert (2 * zwordsize - 1 < modulus).
     rewrite modulus_power. apply two_p_strict_2. generalize wordsize_pos; omega.
-  unfold max_unsigned; omega.
-Qed.
+    unfold max_unsigned; omega.
+  Qed.
 
-Remark max_signed_unsigned: max_signed < max_unsigned.
-Proof.
-  unfold max_signed, max_unsigned. rewrite half_modulus_modulus.
-  generalize half_modulus_pos. omega.
-Qed.
+  Remark max_signed_unsigned: max_signed < max_unsigned.
+  Proof.
+    unfold max_signed, max_unsigned. rewrite half_modulus_modulus.
+    generalize half_modulus_pos. omega.
+  Qed.
 
-Lemma unsigned_repr_eq:
-  forall x, unsigned (repr x) = Zmod x modulus.
-Proof.
-  intros. simpl. apply Z_mod_modulus_eq.
-Qed.
+  Lemma unsigned_repr_eq:
+    forall x, unsigned (repr x) = Zmod x modulus.
+  Proof.
+    intros. simpl. apply Z_mod_modulus_eq.
+  Qed.
 
-Lemma signed_repr_eq:
-  forall x, signed (repr x) = if zlt (Zmod x modulus) half_modulus then Zmod x modulus else Zmod x modulus - modulus.
-Proof.
-  intros. unfold signed. rewrite unsigned_repr_eq. auto.
-Qed.
+  Lemma signed_repr_eq:
+    forall x, signed (repr x) = if zlt (Zmod x modulus) half_modulus then Zmod x modulus else Zmod x modulus - modulus.
+  Proof.
+    intros. unfold signed. rewrite unsigned_repr_eq. auto.
+  Qed.
 
-(** ** Modulo arithmetic *)
+  (** ** Modulo arithmetic *)
 
-(** We define and state properties of equality and arithmetic modulo a
+  (** We define and state properties of equality and arithmetic modulo a
   positive integer. *)
 
-Section EQ_MODULO.
+  Section EQ_MODULO.
 
-Variable modul: Z.
-Hypothesis modul_pos: modul > 0.
+    Variable modul: Z.
+    Hypothesis modul_pos: modul > 0.
 
-Definition eqmod (x y: Z) : Prop := exists k, x = k * modul + y.
+    Definition eqmod (x y: Z) : Prop := exists k, x = k * modul + y.
 
-Lemma eqmod_refl: forall x, eqmod x x.
-Proof.
-  intros; red. exists 0. omega.
-Qed.
+    Lemma eqmod_refl: forall x, eqmod x x.
+    Proof.
+      intros; red. exists 0. omega.
+    Qed.
 
-Lemma eqmod_refl2: forall x y, x = y -> eqmod x y.
-Proof.
-  intros. subst y. apply eqmod_refl.
-Qed.
+    Lemma eqmod_refl2: forall x y, x = y -> eqmod x y.
+    Proof.
+      intros. subst y. apply eqmod_refl.
+    Qed.
 
-Lemma eqmod_sym: forall x y, eqmod x y -> eqmod y x.
-Proof.
-  intros x y [k EQ]; red. exists (-k). subst x. ring.
-Qed.
+    Lemma eqmod_sym: forall x y, eqmod x y -> eqmod y x.
+    Proof.
+      intros x y [k EQ]; red. exists (-k). subst x. ring.
+    Qed.
 
-Lemma eqmod_trans: forall x y z, eqmod x y -> eqmod y z -> eqmod x z.
-Proof.
-  intros x y z [k1 EQ1] [k2 EQ2]; red.
-  exists (k1 + k2). subst x; subst y. ring.
-Qed.
+    Lemma eqmod_trans: forall x y z, eqmod x y -> eqmod y z -> eqmod x z.
+    Proof.
+      intros x y z [k1 EQ1] [k2 EQ2]; red.
+      exists (k1 + k2). subst x; subst y. ring.
+    Qed.
 
-Lemma eqmod_small_eq:
-  forall x y, eqmod x y -> 0 <= x < modul -> 0 <= y < modul -> x = y.
-Proof.
-  intros x y [k EQ] I1 I2.
-  generalize (Zdiv_unique _ _ _ _ EQ I2). intro.
-  rewrite (Zdiv_small x modul I1) in H. subst k. omega.
-Qed.
+    Lemma eqmod_small_eq:
+      forall x y, eqmod x y -> 0 <= x < modul -> 0 <= y < modul -> x = y.
+    Proof.
+      intros x y [k EQ] I1 I2.
+      generalize (Zdiv_unique _ _ _ _ EQ I2). intro.
+      rewrite (Zdiv_small x modul I1) in H. subst k. omega.
+    Qed.
 
-Lemma eqmod_mod_eq:
-  forall x y, eqmod x y -> x mod modul = y mod modul.
-Proof.
-  intros x y [k EQ]. subst x.
-  rewrite Zplus_comm. apply Z_mod_plus. auto.
-Qed.
+    Lemma eqmod_mod_eq:
+      forall x y, eqmod x y -> x mod modul = y mod modul.
+    Proof.
+      intros x y [k EQ]. subst x.
+      rewrite Zplus_comm. apply Z_mod_plus. auto.
+    Qed.
 
-Lemma eqmod_mod:
-  forall x, eqmod x (x mod modul).
-Proof.
-  intros; red. exists (x / modul).
-  rewrite Zmult_comm. apply Z_div_mod_eq. auto.
-Qed.
+    Lemma eqmod_mod:
+      forall x, eqmod x (x mod modul).
+    Proof.
+      intros; red. exists (x / modul).
+      rewrite Zmult_comm. apply Z_div_mod_eq. auto.
+    Qed.
 
-Lemma eqmod_add:
-  forall a b c d, eqmod a b -> eqmod c d -> eqmod (a + c) (b + d).
-Proof.
-  intros a b c d [k1 EQ1] [k2 EQ2]; red.
-  subst a; subst c. exists (k1 + k2). ring.
-Qed.
+    Lemma eqmod_add:
+      forall a b c d, eqmod a b -> eqmod c d -> eqmod (a + c) (b + d).
+    Proof.
+      intros a b c d [k1 EQ1] [k2 EQ2]; red.
+      subst a; subst c. exists (k1 + k2). ring.
+    Qed.
 
-Lemma eqmod_neg:
-  forall x y, eqmod x y -> eqmod (-x) (-y).
-Proof.
-  intros x y [k EQ]; red. exists (-k). rewrite EQ. ring.
-Qed.
+    Lemma eqmod_neg:
+      forall x y, eqmod x y -> eqmod (-x) (-y).
+    Proof.
+      intros x y [k EQ]; red. exists (-k). rewrite EQ. ring.
+    Qed.
 
-Lemma eqmod_sub:
-  forall a b c d, eqmod a b -> eqmod c d -> eqmod (a - c) (b - d).
-Proof.
-  intros a b c d [k1 EQ1] [k2 EQ2]; red.
-  subst a; subst c. exists (k1 - k2). ring.
-Qed.
+    Lemma eqmod_sub:
+      forall a b c d, eqmod a b -> eqmod c d -> eqmod (a - c) (b - d).
+    Proof.
+      intros a b c d [k1 EQ1] [k2 EQ2]; red.
+      subst a; subst c. exists (k1 - k2). ring.
+    Qed.
 
-Lemma eqmod_mult:
-  forall a b c d, eqmod a c -> eqmod b d -> eqmod (a * b) (c * d).
-Proof.
-  intros a b c d [k1 EQ1] [k2 EQ2]; red.
-  subst a; subst b.
-  exists (k1 * k2 * modul + c * k2 + k1 * d).
-  ring.
-Qed.
+    Lemma eqmod_mult:
+      forall a b c d, eqmod a c -> eqmod b d -> eqmod (a * b) (c * d).
+    Proof.
+      intros a b c d [k1 EQ1] [k2 EQ2]; red.
+      subst a; subst b.
+      exists (k1 * k2 * modul + c * k2 + k1 * d).
+      ring.
+    Qed.
 
-End EQ_MODULO.
+  End EQ_MODULO.
 
-Lemma eqmod_divides:
-  forall n m x y, eqmod n x y -> Zdivide m n -> eqmod m x y.
-Proof.
-  intros. destruct H as [k1 EQ1]. destruct H0 as [k2 EQ2].
-  exists (k1*k2). rewrite <- Zmult_assoc. rewrite <- EQ2. auto.
-Qed.
+  Lemma eqmod_divides:
+    forall n m x y, eqmod n x y -> Zdivide m n -> eqmod m x y.
+  Proof.
+    intros. destruct H as [k1 EQ1]. destruct H0 as [k2 EQ2].
+    exists (k1*k2). rewrite <- Zmult_assoc. rewrite <- EQ2. auto.
+  Qed.
 
-(** We then specialize these definitions to equality modulo
-  $2^{wordsize}$ #2<sup>wordsize</sup>#. *)
+  (** We then specialize these definitions to equality modulo
+    $2^{wordsize}$ #2<sup>wordsize</sup>#. *)
 
-Hint Resolve modulus_pos: ints.
+  Hint Resolve modulus_pos: ints.
 
-Definition eqm := eqmod modulus.
+  Definition eqm := eqmod modulus.
 
-Lemma eqm_refl: forall x, eqm x x.
-Proof (eqmod_refl modulus).
-Hint Resolve eqm_refl: ints.
+  Lemma eqm_refl: forall x, eqm x x.
+  Proof (eqmod_refl modulus).
+  Hint Resolve eqm_refl: ints.
 
-Lemma eqm_refl2:
-  forall x y, x = y -> eqm x y.
-Proof (eqmod_refl2 modulus).
-Hint Resolve eqm_refl2: ints.
+  Lemma eqm_refl2:
+    forall x y, x = y -> eqm x y.
+  Proof (eqmod_refl2 modulus).
+  Hint Resolve eqm_refl2: ints.
 
-Lemma eqm_sym: forall x y, eqm x y -> eqm y x.
-Proof (eqmod_sym modulus).
-Hint Resolve eqm_sym: ints.
+  Lemma eqm_sym: forall x y, eqm x y -> eqm y x.
+  Proof (eqmod_sym modulus).
+  Hint Resolve eqm_sym: ints.
 
-Lemma eqm_trans: forall x y z, eqm x y -> eqm y z -> eqm x z.
-Proof (eqmod_trans modulus).
-Hint Resolve eqm_trans: ints.
+  Lemma eqm_trans: forall x y z, eqm x y -> eqm y z -> eqm x z.
+  Proof (eqmod_trans modulus).
+  Hint Resolve eqm_trans: ints.
 
-Lemma eqm_small_eq:
-  forall x y, eqm x y -> 0 <= x < modulus -> 0 <= y < modulus -> x = y.
-Proof (eqmod_small_eq modulus).
-Hint Resolve eqm_small_eq: ints.
+  Lemma eqm_small_eq:
+    forall x y, eqm x y -> 0 <= x < modulus -> 0 <= y < modulus -> x = y.
+  Proof (eqmod_small_eq modulus).
+  Hint Resolve eqm_small_eq: ints.
 
-Lemma eqm_add:
-  forall a b c d, eqm a b -> eqm c d -> eqm (a + c) (b + d).
-Proof (eqmod_add modulus).
-Hint Resolve eqm_add: ints.
+  Lemma eqm_add:
+    forall a b c d, eqm a b -> eqm c d -> eqm (a + c) (b + d).
+  Proof (eqmod_add modulus).
+  Hint Resolve eqm_add: ints.
 
-Lemma eqm_neg:
-  forall x y, eqm x y -> eqm (-x) (-y).
-Proof (eqmod_neg modulus).
-Hint Resolve eqm_neg: ints.
+  Lemma eqm_neg:
+    forall x y, eqm x y -> eqm (-x) (-y).
+  Proof (eqmod_neg modulus).
+  Hint Resolve eqm_neg: ints.
 
-Lemma eqm_sub:
-  forall a b c d, eqm a b -> eqm c d -> eqm (a - c) (b - d).
-Proof (eqmod_sub modulus).
-Hint Resolve eqm_sub: ints.
+  Lemma eqm_sub:
+    forall a b c d, eqm a b -> eqm c d -> eqm (a - c) (b - d).
+  Proof (eqmod_sub modulus).
+  Hint Resolve eqm_sub: ints.
 
-Lemma eqm_mult:
-  forall a b c d, eqm a c -> eqm b d -> eqm (a * b) (c * d).
-Proof (eqmod_mult modulus).
-Hint Resolve eqm_mult: ints.
+  Lemma eqm_mult:
+    forall a b c d, eqm a c -> eqm b d -> eqm (a * b) (c * d).
+  Proof (eqmod_mult modulus).
+  Hint Resolve eqm_mult: ints.
 
-(** ** Properties of the coercions between [Z] and [int] *)
+  (** ** Properties of the coercions between [Z] and [int] *)
 
-Lemma eqm_samerepr: forall x y, eqm x y -> repr x = repr y.
-Proof.
-  intros. unfold repr. apply mkint_eq.
-  rewrite !Z_mod_modulus_eq. apply eqmod_mod_eq. auto with ints. exact H.
-Qed.
+  Lemma eqm_samerepr: forall x y, eqm x y -> repr x = repr y.
+  Proof.
+    intros. unfold repr. apply mkint_eq.
+    rewrite !Z_mod_modulus_eq. apply eqmod_mod_eq. auto with ints. exact H.
+  Qed.
 
-Lemma eqm_unsigned_repr:
-  forall z, eqm z (unsigned (repr z)).
-Proof.
-  unfold eqm; intros. rewrite unsigned_repr_eq. apply eqmod_mod. auto with ints.
-Qed.
-Hint Resolve eqm_unsigned_repr: ints.
+  Lemma eqm_unsigned_repr:
+    forall z, eqm z (unsigned (repr z)).
+  Proof.
+    unfold eqm; intros. rewrite unsigned_repr_eq. apply eqmod_mod. auto with ints.
+  Qed.
+  Hint Resolve eqm_unsigned_repr: ints.
 
-Lemma eqm_unsigned_repr_l:
-  forall a b, eqm a b -> eqm (unsigned (repr a)) b.
-Proof.
-  intros. apply eqm_trans with a.
-  apply eqm_sym. apply eqm_unsigned_repr. auto.
-Qed.
-Hint Resolve eqm_unsigned_repr_l: ints.
+  Lemma eqm_unsigned_repr_l:
+    forall a b, eqm a b -> eqm (unsigned (repr a)) b.
+  Proof.
+    intros. apply eqm_trans with a.
+    apply eqm_sym. apply eqm_unsigned_repr. auto.
+  Qed.
+  Hint Resolve eqm_unsigned_repr_l: ints.
 
-Lemma eqm_unsigned_repr_r:
-  forall a b, eqm a b -> eqm a (unsigned (repr b)).
-Proof.
-  intros. apply eqm_trans with b. auto.
-  apply eqm_unsigned_repr.
-Qed.
-Hint Resolve eqm_unsigned_repr_r: ints.
+  Lemma eqm_unsigned_repr_r:
+    forall a b, eqm a b -> eqm a (unsigned (repr b)).
+  Proof.
+    intros. apply eqm_trans with b. auto.
+    apply eqm_unsigned_repr.
+  Qed.
+  Hint Resolve eqm_unsigned_repr_r: ints.
 
-Lemma eqm_signed_unsigned:
-  forall x, eqm (signed x) (unsigned x).
-Proof.
-  intros; red. unfold signed. set (y := unsigned x).
-  case (zlt y half_modulus); intro.
-  apply eqmod_refl. red; exists (-1); ring.
-Qed.
+  Lemma eqm_signed_unsigned:
+    forall x, eqm (signed x) (unsigned x).
+  Proof.
+    intros; red. unfold signed. set (y := unsigned x).
+    case (zlt y half_modulus); intro.
+    apply eqmod_refl. red; exists (-1); ring.
+  Qed.
 
-Theorem unsigned_range:
-  forall i, 0 <= unsigned i < modulus.
-Proof.
-  destruct i. simpl.
-  unfold modulus. unfold wordsize.
-  omega.
-Qed.
-Hint Resolve unsigned_range: ints.
+  Theorem unsigned_range:
+    forall i, 0 <= unsigned i < modulus.
+  Proof.
+    destruct i. simpl.
+    unfold modulus. unfold wordsize.
+    omega.
+  Qed.
+  Hint Resolve unsigned_range: ints.
 
-Theorem unsigned_range_2:
-  forall i, 0 <= unsigned i <= max_unsigned.
-Proof.
-  intro; unfold max_unsigned.
-  generalize (unsigned_range i). omega.
-Qed.
-Hint Resolve unsigned_range_2: ints.
+  Theorem unsigned_range_2:
+    forall i, 0 <= unsigned i <= max_unsigned.
+  Proof.
+    intro; unfold max_unsigned.
+    generalize (unsigned_range i). omega.
+  Qed.
+  Hint Resolve unsigned_range_2: ints.
 
-Theorem signed_range:
-  forall i, min_signed <= signed i <= max_signed.
-Proof.
-  intros. unfold signed.
-  generalize (unsigned_range i). set (n := unsigned i). intros.
-  case (zlt n half_modulus); intro.
-  unfold max_signed. generalize min_signed_neg. omega.
-  unfold min_signed, max_signed.
-  rewrite half_modulus_modulus in *. omega.
-Qed.
+  Theorem signed_range:
+    forall i, min_signed <= signed i <= max_signed.
+  Proof.
+    intros. unfold signed.
+    generalize (unsigned_range i). set (n := unsigned i). intros.
+    case (zlt n half_modulus); intro.
+    unfold max_signed. generalize min_signed_neg. omega.
+    unfold min_signed, max_signed.
+    rewrite half_modulus_modulus in *. omega.
+  Qed.
 
-Theorem repr_unsigned:
-  forall i, repr (unsigned i) = i.
-Proof.
-  destruct i; simpl. unfold repr. apply mkint_eq.
-  rewrite Z_mod_modulus_eq. apply Zmod_small.
-  unfold modulus. unfold wordsize.
-  omega.
-Qed.
-Hint Resolve repr_unsigned: ints.
+  Theorem repr_unsigned:
+    forall i, repr (unsigned i) = i.
+  Proof.
+    destruct i; simpl. unfold repr. apply mkint_eq.
+    rewrite Z_mod_modulus_eq. apply Zmod_small.
+    unfold modulus. unfold wordsize.
+    omega.
+  Qed.
+  Hint Resolve repr_unsigned: ints.
 
-Lemma repr_signed:
-  forall i, repr (signed i) = i.
-Proof.
-  intros. transitivity (repr (unsigned i)).
-  apply eqm_samerepr. apply eqm_signed_unsigned. auto with ints.
-Qed.
-Hint Resolve repr_signed: ints.
+  Lemma repr_signed:
+    forall i, repr (signed i) = i.
+  Proof.
+    intros. transitivity (repr (unsigned i)).
+    apply eqm_samerepr. apply eqm_signed_unsigned. auto with ints.
+  Qed.
+  Hint Resolve repr_signed: ints.
 
-Opaque repr.
+  Opaque repr.
 
-Lemma eqm_repr_eq: forall x y, eqm x (unsigned y) -> repr x = y.
-Proof.
-  intros. rewrite <- (repr_unsigned y). apply eqm_samerepr; auto.
-Qed.
+  Lemma eqm_repr_eq: forall x y, eqm x (unsigned y) -> repr x = y.
+  Proof.
+    intros. rewrite <- (repr_unsigned y). apply eqm_samerepr; auto.
+  Qed.
 
-Theorem unsigned_repr:
-  forall z, 0 <= z <= max_unsigned -> unsigned (repr z) = z.
-Proof.
-  intros. rewrite unsigned_repr_eq.
-  apply Zmod_small. unfold max_unsigned in H. omega.
-Qed.
-Hint Resolve unsigned_repr: ints.
+  Theorem unsigned_repr:
+    forall z, 0 <= z <= max_unsigned -> unsigned (repr z) = z.
+  Proof.
+    intros. rewrite unsigned_repr_eq.
+    apply Zmod_small. unfold max_unsigned in H. omega.
+  Qed.
+  Hint Resolve unsigned_repr: ints.
 
-Theorem signed_repr:
-  forall z, min_signed <= z <= max_signed -> signed (repr z) = z.
-Proof.
-  intros. unfold signed. destruct (zle 0 z).
-  replace (unsigned (repr z)) with z.
-  rewrite zlt_true. auto. unfold max_signed in H. omega.
-  symmetry. apply unsigned_repr. generalize max_signed_unsigned. omega.
-  pose (z' := z + modulus).
-  replace (repr z) with (repr z').
-  replace (unsigned (repr z')) with z'.
-  rewrite zlt_false. unfold z'. omega.
-  unfold z'. unfold min_signed in H.
-  rewrite half_modulus_modulus. omega.
-  symmetry. apply unsigned_repr.
-  unfold z', max_unsigned. unfold min_signed, max_signed in H.
-  rewrite half_modulus_modulus. omega.
-  apply eqm_samerepr. unfold z'; red. exists 1. omega.
-Qed.
+  Theorem signed_repr:
+    forall z, min_signed <= z <= max_signed -> signed (repr z) = z.
+  Proof.
+    intros. unfold signed. destruct (zle 0 z).
+    replace (unsigned (repr z)) with z.
+    rewrite zlt_true. auto. unfold max_signed in H. omega.
+    symmetry. apply unsigned_repr. generalize max_signed_unsigned. omega.
+    pose (z' := z + modulus).
+    replace (repr z) with (repr z').
+    replace (unsigned (repr z')) with z'.
+    rewrite zlt_false. unfold z'. omega.
+    unfold z'. unfold min_signed in H.
+    rewrite half_modulus_modulus. omega.
+    symmetry. apply unsigned_repr.
+    unfold z', max_unsigned. unfold min_signed, max_signed in H.
+    rewrite half_modulus_modulus. omega.
+    apply eqm_samerepr. unfold z'; red. exists 1. omega.
+  Qed.
 
-Theorem signed_eq_unsigned:
-  forall x, unsigned x <= max_signed -> signed x = unsigned x.
-Proof.
-  intros. unfold signed. destruct (zlt (unsigned x) half_modulus).
-  auto. unfold max_signed in H. omegaContradiction.
-Qed.
+  Theorem signed_eq_unsigned:
+    forall x, unsigned x <= max_signed -> signed x = unsigned x.
+  Proof.
+    intros. unfold signed. destruct (zlt (unsigned x) half_modulus).
+    auto. unfold max_signed in H. omegaContradiction.
+  Qed.
 
-Theorem signed_positive:
-  forall x, signed x >= 0 <-> unsigned x <= max_signed.
-Proof.
-  intros. unfold signed, max_signed.
-  generalize (unsigned_range x) half_modulus_modulus half_modulus_pos; intros.
-  destruct (zlt (unsigned x) half_modulus); omega.
-Qed.
+  Theorem signed_positive:
+    forall x, signed x >= 0 <-> unsigned x <= max_signed.
+  Proof.
+    intros. unfold signed, max_signed.
+    generalize (unsigned_range x) half_modulus_modulus half_modulus_pos; intros.
+    destruct (zlt (unsigned x) half_modulus); omega.
+  Qed.
 
-(** ** Properties of zero, one, minus one *)
+  (** ** Properties of zero, one, minus one *)
 
-Theorem unsigned_zero: unsigned zero = 0.
-Proof.
-  unfold zero; rewrite unsigned_repr_eq. apply Zmod_0_l.
-Qed.
+  Theorem unsigned_zero: unsigned zero = 0.
+  Proof.
+    unfold zero; rewrite unsigned_repr_eq. apply Zmod_0_l.
+  Qed.
 
-Theorem unsigned_one: unsigned one = 1.
-Proof.
-  unfold one; rewrite unsigned_repr_eq. apply Zmod_small. split. omega.
-  unfold modulus. replace wordsize with (S(pred wordsize)).
-  rewrite two_power_nat_S. generalize (two_power_nat_pos (pred wordsize)).
-  omega.
-  generalize wordsize_pos. unfold zwordsize. omega.
-Qed.
+  Theorem unsigned_one: unsigned one = 1.
+  Proof.
+    unfold one; rewrite unsigned_repr_eq. apply Zmod_small. split. omega.
+    unfold modulus. replace wordsize with (S(pred wordsize)).
+    rewrite two_power_nat_S. generalize (two_power_nat_pos (pred wordsize)).
+    omega.
+    generalize wordsize_pos. unfold zwordsize. omega.
+  Qed.
 
-Theorem unsigned_mone: unsigned mone = modulus - 1.
-Proof.
-  unfold mone; rewrite unsigned_repr_eq.
-  replace (-1) with ((modulus - 1) + (-1) * modulus).
-  rewrite Z_mod_plus_full. apply Zmod_small.
-  generalize modulus_pos. omega. omega.
-Qed.
+  Theorem unsigned_mone: unsigned mone = modulus - 1.
+  Proof.
+    unfold mone; rewrite unsigned_repr_eq.
+    replace (-1) with ((modulus - 1) + (-1) * modulus).
+    rewrite Z_mod_plus_full. apply Zmod_small.
+    generalize modulus_pos. omega. omega.
+  Qed.
 
-Theorem signed_zero: signed zero = 0.
-Proof.
-  unfold signed. rewrite unsigned_zero. apply zlt_true. generalize half_modulus_pos; omega.
-Qed.
+  Theorem signed_zero: signed zero = 0.
+  Proof.
+    unfold signed. rewrite unsigned_zero. apply zlt_true. generalize half_modulus_pos; omega.
+  Qed.
 
-Theorem signed_one: zwordsize > 1 -> signed one = 1.
-Proof.
-  intros. unfold signed. rewrite unsigned_one. apply zlt_true. 
-  change 1 with (two_p 0). rewrite half_modulus_power. apply two_p_monotone_strict. omega. 
-Qed.
+  Theorem signed_one: zwordsize > 1 -> signed one = 1.
+  Proof.
+    intros. unfold signed. rewrite unsigned_one. apply zlt_true. 
+    change 1 with (two_p 0). rewrite half_modulus_power. apply two_p_monotone_strict. omega. 
+  Qed.
 
-Theorem signed_mone: signed mone = -1.
-Proof.
-  unfold signed. rewrite unsigned_mone.
-  rewrite zlt_false. omega.
-  rewrite half_modulus_modulus. generalize half_modulus_pos. omega.
-Qed.
+  Theorem signed_mone: signed mone = -1.
+  Proof.
+    unfold signed. rewrite unsigned_mone.
+    rewrite zlt_false. omega.
+    rewrite half_modulus_modulus. generalize half_modulus_pos. omega.
+  Qed.
 
-Theorem one_not_zero: one <> zero.
-Proof.
-  assert (unsigned one <> unsigned zero).
-  rewrite unsigned_one; rewrite unsigned_zero; congruence.
-  congruence.
-Qed.
+  Theorem one_not_zero: one <> zero.
+  Proof.
+    assert (unsigned one <> unsigned zero).
+    rewrite unsigned_one; rewrite unsigned_zero; congruence.
+    congruence.
+  Qed.
 
-Theorem unsigned_repr_wordsize:
-  unsigned iwordsize = zwordsize.
-Proof.
-  unfold iwordsize; rewrite unsigned_repr_eq. apply Zmod_small.
-  generalize wordsize_pos wordsize_max_unsigned; unfold max_unsigned; omega.
-Qed.
+  Theorem unsigned_repr_wordsize:
+    unsigned iwordsize = zwordsize.
+  Proof.
+    unfold iwordsize; rewrite unsigned_repr_eq. apply Zmod_small.
+    generalize wordsize_pos wordsize_max_unsigned; unfold max_unsigned; omega.
+  Qed.
 
-(** ** Properties of equality *)
+  (** ** Properties of equality *)
 
-Theorem eq_sym:
-  forall x y, eq x y = eq y x.
-Proof.
-  intros; unfold eq. case (zeq (unsigned x) (unsigned y)); intro.
-  rewrite e. rewrite zeq_true. auto.
-  rewrite zeq_false. auto. auto.
-Qed.
+  Theorem eq_sym:
+    forall x y, eq x y = eq y x.
+  Proof.
+    intros; unfold eq. case (zeq (unsigned x) (unsigned y)); intro.
+    rewrite e. rewrite zeq_true. auto.
+    rewrite zeq_false. auto. auto.
+  Qed.
+*)
+  Theorem eq_spec: forall {ws : nat} {nz : ws <> O} (x y: (@Int ws)), if eq x y then x = y else x <> y.
+  Proof.
+    intros; unfold eq. case (eq_dec x y); intro.
+    subst y. rewrite zeq_true. auto.
+    rewrite zeq_false. auto.
+    destruct x; destruct y.
+    simpl. red; intro. elim n. apply mkint_eq. auto.
+  Qed.
+(*
+  Theorem eq_true: forall x, eq x x = true.
+  Proof.
+    intros. generalize (eq_spec x x); case (eq x x); intros; congruence.
+  Qed.
 
-Theorem eq_spec: forall (x y: int), if eq x y then x = y else x <> y.
-Proof.
-  intros; unfold eq. case (eq_dec x y); intro.
-  subst y. rewrite zeq_true. auto.
-  rewrite zeq_false. auto.
-  destruct x; destruct y.
-  simpl. red; intro. elim n. apply mkint_eq. auto.
-Qed.
+  Theorem eq_false: forall x y, x <> y -> eq x y = false.
+  Proof.
+    intros. generalize (eq_spec x y); case (eq x y); intros; congruence.
+  Qed.
 
-Theorem eq_true: forall x, eq x x = true.
-Proof.
-  intros. generalize (eq_spec x x); case (eq x x); intros; congruence.
-Qed.
-
-Theorem eq_false: forall x y, x <> y -> eq x y = false.
-Proof.
-  intros. generalize (eq_spec x y); case (eq x y); intros; congruence.
-Qed.
-
-Theorem eq_signed:
-  forall x y, eq x y = if zeq (signed x) (signed y) then true else false.
-Proof.
-  intros. predSpec eq eq_spec x y.
-  subst x. rewrite zeq_true; auto.
-  destruct (zeq (signed x) (signed y)); auto.
-  elim H. rewrite <- (repr_signed x). rewrite <- (repr_signed y). congruence.
-Qed.
+  Theorem eq_signed:
+    forall x y, eq x y = if zeq (signed x) (signed y) then true else false.
+  Proof.
+    intros. predSpec eq eq_spec x y.
+    subst x. rewrite zeq_true; auto.
+    destruct (zeq (signed x) (signed y)); auto.
+    elim H. rewrite <- (repr_signed x). rewrite <- (repr_signed y). congruence.
+  Qed.
 
 (** ** Properties of addition *)
 
@@ -5276,4 +5290,5 @@ Hint Resolve Ptrofs.modulus_pos Ptrofs.eqm_refl Ptrofs.eqm_refl2 Ptrofs.eqm_sym 
   Ptrofs.eqm_unsigned_repr Ptrofs.eqm_unsigned_repr_l Ptrofs.eqm_unsigned_repr_r
   Ptrofs.unsigned_range Ptrofs.unsigned_range_2
   Ptrofs.repr_unsigned Ptrofs.repr_signed Ptrofs.unsigned_repr : ints.
-*)
+ *)
+
