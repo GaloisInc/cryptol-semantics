@@ -24,11 +24,53 @@ Inductive binop :=
 | Eq
 .
 
+Inductive unop :=
+| Neg
+.
+
+Inductive Kind :=
+| KType
+| KNum
+| KProp
+(* | Kind :-> Kind *)
+.
+
+Inductive userType :=
+| UserTC (id : ident) (k : Kind)
+.
+
+Inductive TypeConstr :=
+| TCNum (n : Z)
+| TCInf
+| TCBit
+| TCSeq
+| TCFun
+| TCTuple (n : Z)
+| TCNewtype (u : userType)
+.
+
+Inductive TC_t :=
+| TC (t : TypeConstr)
+(*| TF (tf : TFun_t)*)
+.     
+
+Inductive TV_t :=
+| TVFree (id : ident) (k : Kind) (l : list TV_t)
+| TVBound (id : ident) (k : Kind)
+.
+
+Inductive Typ :=
+| TCon (tc : TC_t) (l : list Typ)
+| TVar (tv : TV_t)
+.
+
 Inductive Expr :=
-(* literal bits *)
-| ELit {w : nat} (bv : BitV w)
+(* (* literal bits *) *)
+(* | ELit {w : nat} (bv : BitV w) *)
 (* binary operation *)
-| EBinop (op : binop) (l r : Expr) 
+| EBinop (op : binop) (l r : Expr)
+(* unary operation *)
+| EUnop (op : unop) (a : Expr)
 (* Literal finite list, e.g. [1,2,3] *)
 | EList (l : list Expr)
 (* Tuples, e.g. (1,2,3) *)
@@ -42,8 +84,10 @@ Inductive Expr :=
 | EComp (e : Expr) (l : list (list Match))
 (* Variable, e.g. 'x' *)
 | EVar (id : ident)
-(* MISSING: ETAbs *)
-(* MISSING: ETApp *)       
+(* Type abstraction *)
+| ETAbs (t : Typ) (e : Expr)
+(* Type application *)
+| ETApp (e : Expr) (t : Typ)
 (* Function application, e.g. f v *)
 | EApp (f v : Expr)
 (* Anonymous function, e.g. \\x -> x *)
@@ -67,6 +111,9 @@ with DeclGroup :=
 (* Pretty sure this just works, due to eager evaluation order *)
 Definition builtin_binop (id : ident) (op : binop) : DeclGroup :=
   NonRecursive (Decl id (DExpr (EAbs 5 (EAbs 6 (EBinop op (EVar 5) (EVar 6)))))).
+
+Definition builtin_unop (id : ident) (op : unop) : DeclGroup :=
+  NonRecursive (Decl id (DExpr (EAbs 5 (EUnop op (EVar 5))))).
 
 (* Operational Semantics *)
 
@@ -150,13 +197,31 @@ Inductive eval_binop : binop -> val -> val -> val -> Prop :=
       eval_binop Plus (bits n) (bits m) (bits (@add w nz n m))
 | eval_eq :
     forall {w : nat} {nz : w <> O} (n m : BitV w) {p : w <> O},
-      eval_binop Eq (bits n) (bits m) (bit (@eq w n m)).
+      eval_binop Eq (bits n) (bits m) (bit (@eq w n m))
+.
 
+Inductive eval_unop : unop -> val -> val -> Prop :=
+| eval_neg :
+    forall {w : nat} {nz : w <> O} (n : BitV w) {p : w <> O},
+      eval_unop Neg (bits n) (bits (@neg w nz n))
+.
+
+Definition zrepr {w : Z} {nz : w > 0} (n : Z) : BitV (Z.to_nat w).
+  refine (@repr (Z.to_nat w) _ n).
+  unfold Z.gt in *. unfold Z.compare in *.
+  destruct w; simpl in nz; try congruence.
+  unfold Z.to_nat.
+  remember (Pos2Nat.is_pos p). omega.
+Defined.
+  
+  
 
 Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
-| eval_lit :
-    forall {w} E (bv : BitV w),
-      eval_expr ge E (ELit bv) (bits bv)
+| eval_un_op :
+    forall E ae av op v,
+      eval_expr ge E ae av ->
+      eval_unop op av v ->
+      eval_expr ge E (EUnop op ae) v
 | eval_bin_op :
     forall E le lv re rv op v,
       eval_expr ge E le lv ->
@@ -211,6 +276,13 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E exp decls v,
       eval_expr (bind_decl_groups decls ge) E exp v ->
       eval_expr ge E (EWhere exp decls) v
+| eval_tapp_const :
+    forall E e n (w : Z) (nz : w > 0),
+      eval_expr ge E (ETApp (ETApp e (TCon (TC (TCNum n)) nil)) (TCon (TC (TCNum w)) nil)) (bits (@zrepr w nz n))
+| eval_tapp :
+    forall E e t v,
+      eval_expr ge E e v ->
+      eval_expr ge E (ETApp e t) v
 .
 
 
