@@ -34,6 +34,8 @@ Proof.
   congruence.
 Qed.
 
+Definition three := bits (@repr 8 nz 3).
+
 Lemma rec_eval :
   eval_expr rec_ge empty (EVar 247) (bits (@repr 8 nz 3)).
 Proof.
@@ -45,6 +47,29 @@ Proof.
   repeat econstructor.
   simpl. unfold zrepr.
   f_equal. f_equal.
+  match goal with
+  | [ |- ?X = ?Y ] => destruct (@eq_spec _ nz X Y); try congruence
+  end.
+  Unshelve.
+  all: omega.
+Qed.
+
+Definition tup := (NonRecursive (Decl 248 (DExpr (ETuple [(ETApp (ETApp (EVar 0) (TCon (TC (TCNum 1)) [])) (TCon (TC (TCNum 8)) [])),(ETApp (ETApp (EVar 0) (TCon (TC (TCNum 2)) [])) (TCon (TC (TCNum 8)) [])),(ETApp (ETApp (EVar 0) (TCon (TC (TCNum 3)) [])) (TCon (TC (TCNum 8)) [])),(ETApp (ETApp (EVar 0) (TCon (TC (TCNum 4)) [])) (TCon (TC (TCNum 8)) []))])))).
+
+Definition tupsel := (NonRecursive (Decl 249 (DExpr (ESel (EVar 248) (TupleSel 2))))).
+
+Definition tupsel_ge := bind_decl_group tup (bind_decl_group tupsel gempty).
+
+Lemma tupsel_eval :
+  eval_expr tupsel_ge empty (EVar 249) three.
+Proof.
+  eapply eval_global_var; try reflexivity.
+  econstructor.
+  eapply eval_global_var; try reflexivity.
+  econstructor; eauto.
+  repeat (econstructor; eauto).
+  simpl. f_equal. unfold three. f_equal.
+  unfold zrepr.
   match goal with
   | [ |- ?X = ?Y ] => destruct (@eq_spec _ nz X Y); try congruence
   end.

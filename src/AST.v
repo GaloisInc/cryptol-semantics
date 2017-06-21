@@ -253,11 +253,11 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E l vs,
       Forall2 (eval_expr ge E) l vs ->
       eval_expr ge E (ETuple l) (tuple vs)
-(* | eval_tuple_sel : *)
-(*     forall E e l n v o, *)
-(*       eval_expr ge E e (tuple l) -> *)
-(*       nth_error l n = Some v -> *)
-(*       eval_expr ge E (ESel e (TupleSel n o)) v *)
+| eval_tuple_sel :
+    forall E e l n v,
+      eval_expr ge E e (tuple l) ->
+      nth_error l n = Some v ->
+      eval_expr ge E (ESel e (TupleSel n)) v
 | eval_record :
     forall E l vs,
       Forall2 (eval_expr ge E) (map snd l) vs ->
