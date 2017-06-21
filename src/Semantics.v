@@ -165,8 +165,11 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E exp decls v,
       eval_expr (bind_decl_groups decls ge) E exp v ->
       eval_expr ge E (EWhere exp decls) v
-
-
+| eval_list_sel :
+    forall E idx {w : nat} (i : BitV w) v e,
+      eval_expr ge E idx (bits i) ->
+      select_list ge E (Z.to_nat (unsigned i)) e v ->
+      eval_expr ge E (ESel e (ListSel idx)) v
 (* Special case of a numeric program literal, e is always EVar 0 so that might be some builtin we could define *)
 | eval_tapp_const :
     forall E e n (w : Z) (nz : w > 0) wn (nz' : wn <> O),
@@ -181,7 +184,18 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E e a v,
       eval_expr ge E e v ->
       eval_expr ge E (ETAbs a e) v
-
+with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
+     | select_zero :
+         forall E e v re rE,
+           eval_expr ge E e (vcons v re rE) ->
+           select_list ge E O e v
+     | select_succ :
+         forall E e v re rE n v',
+           eval_expr ge E e (vcons v' re rE) ->
+           select_list ge rE n re v ->
+           select_list ge E (S n) e v
+(* TODO: *)
+(* | select_comp : *)
 .
 
 
