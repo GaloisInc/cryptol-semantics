@@ -45,13 +45,9 @@ Proof.
   unfold rec_ge. simpl. reflexivity.
   econstructor. simpl.
   repeat econstructor.
-  simpl. unfold zrepr.
-  f_equal. f_equal.
-  match goal with
-  | [ |- ?X = ?Y ] => destruct (@eq_spec _ nz X Y); try congruence
-  end.
+  simpl. reflexivity.
   Unshelve.
-  all: omega.
+  all: unfold Z.to_nat; unfold Pos.to_nat; simpl; try congruence.
 Qed.
 
 Definition tup := (NonRecursive (Decl 248 (DExpr (ETuple [(ETApp (ETApp (EVar 0) (TCon (TC (TCNum 1)) [])) (TCon (TC (TCNum 8)) [])),(ETApp (ETApp (EVar 0) (TCon (TC (TCNum 2)) [])) (TCon (TC (TCNum 8)) [])),(ETApp (ETApp (EVar 0) (TCon (TC (TCNum 3)) [])) (TCon (TC (TCNum 8)) [])),(ETApp (ETApp (EVar 0) (TCon (TC (TCNum 4)) [])) (TCon (TC (TCNum 8)) []))])))).
@@ -69,10 +65,6 @@ Proof.
   econstructor; eauto.
   repeat (econstructor; eauto).
   simpl. f_equal. unfold three. f_equal.
-  unfold zrepr.
-  match goal with
-  | [ |- ?X = ?Y ] => destruct (@eq_spec _ nz X Y); try congruence
-  end.
   Unshelve.
-  all: omega.
+  all: unfold Z.to_nat; unfold Pos.to_nat; simpl; try congruence.
 Qed.

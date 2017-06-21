@@ -97,13 +97,24 @@ Inductive eval_unop : unop -> val -> val -> Prop :=
       eval_unop Neg (bits n) (bits (@neg w nz n))
 .
 
-Definition zrepr {w : Z} {nz : w > 0} (n : Z) : BitV (Z.to_nat w).
-  refine (@repr (Z.to_nat w) _ n).
-  unfold Z.gt in *. unfold Z.compare in *.
-  destruct w; simpl in nz; try congruence.
+Lemma nat_nz :
+  forall z (nz : z > 0),
+    Z.to_nat z <> O.
+Proof.
+  intros.
+  unfold Z.gt in *. unfold Z.compare in *. 
+  destruct z; simpl in nz; try congruence.
   unfold Z.to_nat.
   remember (Pos2Nat.is_pos p). omega.
-Defined.
+Qed.  
+
+(* Definition zrepr {w : Z} {nz : w > 0} (n : Z) : BitV (Z.to_nat w). *)
+(*   refine (@repr (Z.to_nat w) _ n). *)
+(*   unfold Z.gt in *. unfold Z.compare in *. *)
+(*   destruct w; simpl in nz; try congruence. *)
+(*   unfold Z.to_nat. *)
+(*   remember (Pos2Nat.is_pos p). omega. *)
+(* Defined. *)
 
 Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
   match l with
@@ -182,8 +193,9 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr (bind_decl_groups decls ge) E exp v ->
       eval_expr ge E (EWhere exp decls) v
 | eval_tapp_const :
-    forall E e n (w : Z) (nz : w > 0),
-      eval_expr ge E (ETApp (ETApp e (TCon (TC (TCNum n)) nil)) (TCon (TC (TCNum w)) nil)) (bits (@zrepr w nz n))
+    forall E e n (w : Z) (nz : w > 0) wn (nz' : wn <> O),
+      wn = Z.to_nat w ->
+      eval_expr ge E (ETApp (ETApp e (TCon (TC (TCNum n)) nil)) (TCon (TC (TCNum w)) nil)) (bits (@repr wn nz' n))
 | eval_tapp :
     forall E e t v,
       eval_expr ge E e v ->

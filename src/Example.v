@@ -57,6 +57,7 @@ Proof.
   econstructor; eauto. unfold extend. simpl. reflexivity.
   econstructor; eauto.
   econstructor; eauto.
+  omega.
   econstructor; eauto.
   econstructor; eauto. unfold extend. simpl. reflexivity.
   econstructor; eauto. unfold extend. simpl. reflexivity.
@@ -68,6 +69,7 @@ Proof.
   simpl. unfold id_ge. simpl. reflexivity.
 
   econstructor. econstructor; eauto.
+  omega.
   econstructor; eauto.
   econstructor; eauto.
   eapply eval_global_var; eauto. simpl. reflexivity.
@@ -81,7 +83,8 @@ Proof.
   econstructor. eapply eval_global_var. unfold extend. simpl.
   unfold E. reflexivity. simpl. unfold id_ge. simpl. reflexivity.
 
-  econstructor. econstructor. econstructor. econstructor. unfold extend. simpl. reflexivity.
+  econstructor. econstructor. omega. reflexivity.
+  econstructor. econstructor. unfold extend. simpl. reflexivity.
   econstructor. exact nz.
   econstructor. econstructor. reflexivity. econstructor. reflexivity.
   econstructor. exact nz.
@@ -91,18 +94,21 @@ Proof.
   eapply eval_global_var; eauto. simpl. unfold id_ge. simpl. reflexivity.
   econstructor. econstructor. unfold E. unfold extend. simpl. reflexivity.
 
-  econstructor. econstructor. econstructor.
+  econstructor. econstructor. omega.
+  econstructor.
   econstructor;
     try econstructor; try unfold extend; simpl; eauto.
-  econstructor. reflexivity.
+
   econstructor; exact nz.
   
   econstructor.
   econstructor. econstructor.
   eapply eval_global_var; eauto. simpl. unfold id_ge. simpl. reflexivity.
   econstructor. econstructor.
+  omega. reflexivity.
   econstructor. econstructor.
-  eapply eval_global_var. simpl. unfold id_ge. simpl. reflexivity. simpl. reflexivity.
+  eapply eval_global_var.
+  simpl. reflexivity. simpl. reflexivity.
   econstructor. econstructor. econstructor.
   econstructor.
   eapply eval_global_var. unfold extend. simpl. unfold E. reflexivity.
@@ -113,6 +119,7 @@ Proof.
   eapply eval_global_var. unfold extend. simpl. reflexivity.
   simpl. reflexivity.
   econstructor. econstructor.
+  omega. reflexivity.
   econstructor. econstructor.
   reflexivity. econstructor. exact nz.
   econstructor.
@@ -126,11 +133,14 @@ Proof.
   reflexivity.
   simpl. unfold id_ge. simpl. reflexivity.
   econstructor. econstructor. unfold extend. simpl. reflexivity.
-  econstructor. econstructor. econstructor.
+  econstructor. econstructor.
+  omega. reflexivity.
+  econstructor.
   econstructor; try unfold extend; try econstructor; simpl; eauto.
   econstructor; try unfold extend; try econstructor; simpl; eauto.
   econstructor; eauto; exact nz.
   econstructor.
+  omega. reflexivity.
   econstructor. econstructor. unfold extend. simpl. reflexivity.
   econstructor. unfold extend. simpl. reflexivity.
   econstructor. exact nz.
