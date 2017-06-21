@@ -36,10 +36,11 @@ Inductive val :=
 | bit (b : bool) (* Can we ever get this now? *)
 | bits {n} (b : BitV n) (* bitvector *)
 | close (id : ident) (e : Expr) (E : ident -> option val)  (* closure *)
-| vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
-| vnil (* empty list *)
 | tuple (l : list val) (* heterogeneous tuples *)
 | rec (l : list (string * val))
+| vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
+| vnil (* empty list *)
+| vcomp (e : Expr) (E : ident -> option val) (l : list (list Match)) (* lazy list comprehension *)
 .
 
 Definition env := ident -> option val.
@@ -48,12 +49,8 @@ Definition empty : env := fun _ => None.
 Definition extend (E : env) (id : ident) (v : val) : env :=
   fun x => if Z.eq_dec x id then Some v else E x.
 
-Definition extend_list (E : env) (id : ident) (vs : list val) : list env :=
-  map (fun x => extend E id x) vs.
 
-
-(* All of our list values are lazy, but here we have a fully computed
-list, so we remember that by very simply thunking the result *)
+(* Conversion from fully computed finite list to lazy list via trivial thunking *)
 Fixpoint thunk_list (l : list val) : val :=
   match l with
   | nil => vnil
@@ -61,27 +58,7 @@ Fixpoint thunk_list (l : list val) : val :=
     vcons f (EVar 0) (extend empty 0 (thunk_list r))
   end.
 
-
-Fixpoint fold_extend (E : env) (l : list (ident * val)) : env :=
-  match l with
-  | nil => E
-  | (id,v) :: r => extend (fold_extend E r) id v
-  end.
-
-
-Fixpoint decl_exprs (l : list Declaration) : list Expr :=
-  match l with
-  | nil => nil
-  | (Decl id (DExpr e)) :: r => e :: decl_exprs r
-  end.
-
-Fixpoint decl_ids (l : list Declaration) : list ident :=
-  match l with
-  | nil => nil
-  | (Decl id _) :: r => id :: decl_ids r
-  end.
-
-
+(* TODO: move this to Op.v *)
 Inductive eval_binop : binop -> val -> val -> val -> Prop :=
 | eval_plus :
     forall {w : nat} {nz : w <> O} (n m : BitV w) {p : w <> O},
@@ -91,12 +68,14 @@ Inductive eval_binop : binop -> val -> val -> val -> Prop :=
       eval_binop Eq (bits n) (bits m) (bit (@eq w n m))
 .
 
+(* TODO: move this to Op.v *)
 Inductive eval_unop : unop -> val -> val -> Prop :=
 | eval_neg :
     forall {w : nat} {nz : w <> O} (n : BitV w) {p : w <> O},
       eval_unop Neg (bits n) (bits (@neg w nz n))
 .
 
+(* TODO: is this used? *)
 Lemma nat_nz :
   forall z (nz : z > 0),
     Z.to_nat z <> O.
@@ -107,14 +86,6 @@ Proof.
   unfold Z.to_nat.
   remember (Pos2Nat.is_pos p). omega.
 Qed.  
-
-(* Definition zrepr {w : Z} {nz : w > 0} (n : Z) : BitV (Z.to_nat w). *)
-(*   refine (@repr (Z.to_nat w) _ n). *)
-(*   unfold Z.gt in *. unfold Z.compare in *. *)
-(*   destruct w; simpl in nz; try congruence. *)
-(*   unfold Z.to_nat. *)
-(*   remember (Pos2Nat.is_pos p). omega. *)
-(* Defined. *)
 
 Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
   match l with
@@ -192,19 +163,30 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E exp decls v,
       eval_expr (bind_decl_groups decls ge) E exp v ->
       eval_expr ge E (EWhere exp decls) v
+
+
+(* Special case of a numeric program literal, e is always EVar 0 so that might be some builtin we could define *)
 | eval_tapp_const :
     forall E e n (w : Z) (nz : w > 0) wn (nz' : wn <> O),
       wn = Z.to_nat w ->
       eval_expr ge E (ETApp (ETApp e (TCon (TC (TCNum n)) nil)) (TCon (TC (TCNum w)) nil)) (bits (@repr wn nz' n))
+(* TODO: we should probably make rules for TAbs and TApp that do something *)
 | eval_tapp :
     forall E e t v,
       eval_expr ge E e v ->
       eval_expr ge E (ETApp e t) v
+| eval_tabs :
+    forall E e a v,
+      eval_expr ge E e v ->
+      eval_expr ge E (ETAbs a e) v
+
 .
 
 
+
+
 (* List comprehension is weird *)
-(* [ head | x <- e1, y <- e2 | z <- e3, w <- e4 ] *)
+
 (* | eval_comp : (* Doesn't yet tie the knot, no self reference yet *) *)
 (*     forall l head vs E lvs' lvs, *)
 (*       Forall2 (eval_expr ge E) (map snd l) lvs' -> *)
@@ -224,4 +206,34 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr E idx (bits bs) ->
       eval_expr E' (g (nat_of_bits bs)) v ->
       eval_expr E (EListSel lst idx) v*)
+
+(* Definition extend_list (E : env) (id : ident) (vs : list val) : list env := *)
+(*   map (fun x => extend E id x) vs. *)
+
+(* Fixpoint decl_exprs (l : list Declaration) : list Expr := *)
+(*   match l with *)
+(*   | nil => nil *)
+(*   | (Decl id (DExpr e)) :: r => e :: decl_exprs r *)
+(*   end. *)
+
+(* Fixpoint decl_ids (l : list Declaration) : list ident := *)
+(*   match l with *)
+(*   | nil => nil *)
+(*   | (Decl id _) :: r => id :: decl_ids r *)
+(*   end. *)
+(* Definition zrepr {w : Z} {nz : w > 0} (n : Z) : BitV (Z.to_nat w). *)
+(*   refine (@repr (Z.to_nat w) _ n). *)
+(*   unfold Z.gt in *. unfold Z.compare in *. *)
+(*   destruct w; simpl in nz; try congruence. *)
+(*   unfold Z.to_nat. *)
+(*   remember (Pos2Nat.is_pos p). omega. *)
+(* Defined. *)
+
+(* Fixpoint fold_extend (E : env) (l : list (ident * val)) : env := *)
+(*   match l with *)
+(*   | nil => E *)
+(*   | (id,v) :: r => extend (fold_extend E r) id v *)
+(*   end. *)
+
+
 
