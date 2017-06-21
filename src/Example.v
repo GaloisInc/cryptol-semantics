@@ -24,13 +24,6 @@ Proof.
 Qed.
 
 
-(* 17 -> eq *)
-(* 1 -> plus *)
-(* 11 -> neg *)
-
-Definition plus_decl := builtin_binop 1 Plus.
-Definition eq_decl := builtin_binop 17 Eq.
-Definition neg_decl := builtin_unop 11 Neg.
 
 Definition id_ge := bind_decl_group id_cry
                                     (bind_decl_group neg_decl

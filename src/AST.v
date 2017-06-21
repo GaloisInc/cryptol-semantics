@@ -1,6 +1,7 @@
 Require Import List.
 Import ListNotations.
 Require Import Coq.Arith.PeanoNat.
+Require Import String.
 
 (* Borrow from CompCert *)
 Require Import Coqlib.
@@ -14,8 +15,9 @@ Definition BitV (n : nat) : Type := (@Integers.Int n).
 
 
 Inductive Selector :=
-| TupleSel (n : nat) (o : option nat)
-| ListSel (n : nat) (o : option nat)
+| TupleSel (n : nat)
+| ListSel (n : nat)
+| RecordSel (s : string)
 .
 
 (* Internally defined somehow *)
@@ -91,7 +93,8 @@ Inductive Expr :=
 | EList (l : list Expr)
 (* Tuples, e.g. (1,2,3) *)
 | ETuple (l : list Expr)
-(* MISSING: ERec *)
+(* Records *)
+| ERec (l : list (string * Expr))
 (* select: pull one datum out of a record/tuple/list *)
 | ESel (e : Expr) (s : Selector)
 (* If/then/else, e.g. if cond then t else f *)
@@ -123,13 +126,6 @@ with DeclGroup :=
      | NonRecursive (d : Declaration)
 .
 
-(* TODO: make sure we can shadow variables 5 and 6 here, or change up *)
-(* Pretty sure this just works, due to eager evaluation order *)
-Definition builtin_binop (id : ident) (op : binop) : DeclGroup :=
-  NonRecursive (Decl id (DExpr (EAbs 5 (EAbs 6 (EBinop op (EVar 5) (EVar 6)))))).
-
-Definition builtin_unop (id : ident) (op : unop) : DeclGroup :=
-  NonRecursive (Decl id (DExpr (EAbs 5 (EUnop op (EVar 5))))).
 
 (* Operational Semantics *)
 
@@ -164,7 +160,7 @@ Inductive val :=
 | vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
 | vnil (* empty list *)
 | tuple (l : list val) (* heterogeneous tuples *)
-
+| rec (l : list (string * val))
 .
 
 Definition env := ident -> option val.
@@ -229,8 +225,13 @@ Definition zrepr {w : Z} {nz : w > 0} (n : Z) : BitV (Z.to_nat w).
   unfold Z.to_nat.
   remember (Pos2Nat.is_pos p). omega.
 Defined.
-  
-  
+
+Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
+  match l with
+  | nil => None
+  | (s,v) :: r =>
+    if string_dec str s then Some v else lookup str r
+  end.
 
 Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_un_op :
@@ -252,11 +253,20 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E l vs,
       Forall2 (eval_expr ge E) l vs ->
       eval_expr ge E (ETuple l) (tuple vs)
-| eval_tuple_sel :
-    forall E e l n v o,
-      eval_expr ge E e (tuple l) ->
-      nth_error l n = Some v ->
-      eval_expr ge E (ESel e (TupleSel n o)) v
+(* | eval_tuple_sel : *)
+(*     forall E e l n v o, *)
+(*       eval_expr ge E e (tuple l) -> *)
+(*       nth_error l n = Some v -> *)
+(*       eval_expr ge E (ESel e (TupleSel n o)) v *)
+| eval_record :
+    forall E l vs,
+      Forall2 (eval_expr ge E) (map snd l) vs ->
+      eval_expr ge E (ERec l) (rec (combine (map fst l) vs))
+| eval_record_sel :
+    forall E l str v e,
+      eval_expr ge E e (rec l) ->
+      lookup str l = Some v ->
+      eval_expr ge E (ESel e (RecordSel str)) v
 (* TODO: eval_list_sel *)                
 | eval_if_t : 
     forall E c t f v,
@@ -338,3 +348,19 @@ End HaskellListNotations.
 
 Import HaskellListNotations.
 
+(* TODO: make sure we can shadow variables 5 and 6 here, or change up *)
+(* Pretty sure this just works, due to eager evaluation order *)
+Definition builtin_binop (id : ident) (op : binop) : DeclGroup :=
+  NonRecursive (Decl id (DExpr (EAbs 5 (EAbs 6 (EBinop op (EVar 5) (EVar 6)))))).
+
+Definition builtin_unop (id : ident) (op : unop) : DeclGroup :=
+  NonRecursive (Decl id (DExpr (EAbs 5 (EUnop op (EVar 5))))).
+
+(* 17 -> eq *)
+(* 1 -> plus *)
+(* 11 -> neg *)
+(* 40 -> @ *)
+Definition plus_decl := builtin_binop 1 Plus.
+Definition eq_decl := builtin_binop 17 Eq.
+Definition neg_decl := builtin_unop 11 Neg.
+(*Definition list_sel_decl := NonRecursive (Decl 40 (DExpr (EAbs 5 (EAbs 6 (EListSel*)
