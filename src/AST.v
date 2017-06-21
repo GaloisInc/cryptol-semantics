@@ -10,11 +10,6 @@ Definition ident := Z.
 
 Definition BitV (n : nat) : Type := (@Integers.Int n).
 
-Inductive Selector :=
-| TupleSel (n : nat)
-| ListSel (n : nat)
-| RecordSel (s : string)
-.
 
 (* Internally defined somehow *)
 Inductive binop :=
@@ -120,7 +115,12 @@ with Declaration :=
 with DeclGroup :=
      | Recursive (l : list Declaration)
      | NonRecursive (d : Declaration)
+with Selector :=
+     | TupleSel (n : nat)
+     | ListSel (e : Expr)
+     | RecordSel (s : string)
 .
+
 
 
 
