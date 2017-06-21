@@ -139,7 +139,9 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge E c (bit false) ->
       eval_expr ge E f v ->
       eval_expr ge E (EIf c t f) v
-(* TODO: eval_comp *)
+| eval_comp :
+    forall E e l,
+      eval_expr ge E (EComp e l) (vcomp e E l)
 | eval_local_var :
     forall E id v,
       E id = Some v ->

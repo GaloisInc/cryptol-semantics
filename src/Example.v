@@ -36,9 +36,13 @@ Definition id_ge := bind_decl_group id_cry
 
 Definition E := extend empty 12 (bits (@repr width nz 2)).
 
+
 Lemma eval_id :
   eval_expr id_ge E (EApp (EVar 242) (EVar 12)) (bits (@repr width nz 2)).
 Proof.
+
+(* Start of old proof *)
+    
   econstructor. unfold id_ge.
   simpl. eapply eval_global_var. unfold E. unfold extend. simpl. unfold empty. auto.
   simpl. reflexivity.
