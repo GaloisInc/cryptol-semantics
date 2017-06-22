@@ -5,21 +5,22 @@ Require Import String.
 (* Borrow from CompCert *)
 Require Import Coqlib.
 Require Import Integers.
+Require Import Builtins.
 
-Definition ident := Z.
+Definition ident : Type := Z * string.
+
+Definition ident_eq :
+  forall (x y : ident),
+    { x = y } + { x <> y }.
+Proof.
+  decide equality.
+  eapply string_dec.
+  eapply Z.eq_dec.
+Defined.
 
 Definition BitV (n : nat) : Type := (@Integers.Int n).
 
 
-(* Internally defined somehow *)
-Inductive binop :=
-| Plus
-| Eq
-.
-
-Inductive unop :=
-| Neg
-.
 
 Inductive Kind :=
 | KType
@@ -62,8 +63,8 @@ Inductive TConstr :=
 .     
 
 Inductive TV_t :=
-| TVFree (id : ident) (k : Kind) (l : list TV_t)
-| TVBound (id : ident) (k : Kind)
+| TVFree (n : nat) (k : Kind) (l : list TV_t)
+| TVBound (n : nat) (k : Kind)
 .
 
 Inductive Typ :=
@@ -74,12 +75,8 @@ Inductive Typ :=
 .
 
 Inductive Expr :=
-(* (* literal bits *) *)
-(* | ELit {w : nat} (bv : BitV w) *)
-(* binary operation *)
-| EBinop (op : binop) (l r : Expr)
-(* unary operation *)
-| EUnop (op : unop) (a : Expr)
+(* builtin *)
+| EBuiltin (b : builtin) (l : list Expr)
 (* Literal finite list, e.g. [1,2,3] *)
 | EList (l : list Expr)
 (* Tuples, e.g. (1,2,3) *)
@@ -110,6 +107,7 @@ with Match :=
      | From (id : ident) (e : Expr)
 with DeclDef :=
      | DExpr (e : Expr)
+     | DPrim
 with Declaration := 
      | Decl (id : ident) (d : DeclDef)
 with DeclGroup :=

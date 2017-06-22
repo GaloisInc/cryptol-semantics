@@ -11,7 +11,7 @@ Require Import Tactics.
 
 Import HaskellListNotations.
 Open Scope string_scope.
-
+(*
 Definition inflist := (NonRecursive
                          (Decl 245 (DExpr
                                       (EApp (EApp
@@ -164,3 +164,5 @@ Proof.
   (* TODO *)
   
 Admitted.  
+
+*)

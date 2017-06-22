@@ -5,8 +5,15 @@ Require Import String.
 
 (* Borrow from CompCert *)
 Require Import Coqlib.
+
 Require Import Integers.
 Require Import AST.
+Require Import Builtins.
+Require Import Values.
+Require Import BuiltinSem.
+
+Definition extend { vtype : Type } (E : ident -> option vtype) (id : ident) (v : vtype) :=
+  fun x => if ident_eq x id then Some v else E x.
 
 Definition genv := ident -> option Expr.
 Definition gempty : genv := fun _ => None.
@@ -15,8 +22,13 @@ Fixpoint declare (l : list Declaration) (ge : genv) :=
   match l with
   | nil => ge
   | (Decl id (DExpr e)) :: r =>
-    let ge' := fun x => if Z.eq_dec x id then Some e else ge x in
-    declare r ge'
+    declare r (extend ge id e)
+  | (Decl id DPrim) :: r =>
+    match lookup_prim id with
+    | Some exp =>
+      declare r (extend ge id exp)
+    | None => declare r ge (* TODO: maybe handle this as an error? *)
+    end
   end.
 
 Definition bind_decl_group (g : DeclGroup) (ge : genv) : genv :=
@@ -32,22 +44,10 @@ Fixpoint bind_decl_groups (lg : list DeclGroup) (ge : genv) : genv :=
     bind_decl_groups gs (bind_decl_group g ge)
   end.
 
-Inductive val :=
-| bit (b : bool) (* Can we ever get this now? *)
-| bits {n} (b : BitV n) (* bitvector *)
-| close (id : ident) (e : Expr) (E : ident -> option val)  (* closure *)
-| tuple (l : list val) (* heterogeneous tuples *)
-| rec (l : list (string * val))
-| vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
-| vnil (* empty list *)
-| vcomp (e : Expr) (E : ident -> option val) (l : list (list Match)) (* lazy list comprehension *)
-.
 
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
 
-Definition extend (E : env) (id : ident) (v : val) : env :=
-  fun x => if Z.eq_dec x id then Some v else E x.
 
 
 (* Conversion from fully computed finite list to lazy list via trivial thunking *)
@@ -55,25 +55,9 @@ Fixpoint thunk_list (l : list val) : val :=
   match l with
   | nil => vnil
   | f :: r =>
-    vcons f (EVar 0) (extend empty 0 (thunk_list r))
+    vcons f (EVar (0,""%string)) (extend empty (0,""%string) (thunk_list r))
   end.
 
-(* TODO: move this to Op.v *)
-Inductive eval_binop : binop -> val -> val -> val -> Prop :=
-| eval_plus :
-    forall {w : nat} {nz : w <> O} (n m : BitV w) {p : w <> O},
-      eval_binop Plus (bits n) (bits m) (bits (@add w nz n m))
-| eval_eq :
-    forall {w : nat} {nz : w <> O} (n m : BitV w) {p : w <> O},
-      eval_binop Eq (bits n) (bits m) (bit (@eq w n m))
-.
-
-(* TODO: move this to Op.v *)
-Inductive eval_unop : unop -> val -> val -> Prop :=
-| eval_neg :
-    forall {w : nat} {nz : w <> O} (n : BitV w) {p : w <> O},
-      eval_unop Neg (bits n) (bits (@neg w nz n))
-.
 
 (* TODO: is this used? *)
 Lemma nat_nz :
@@ -87,6 +71,7 @@ Proof.
   remember (Pos2Nat.is_pos p). omega.
 Qed.  
 
+(* record lookup *)
 Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
   match l with
   | nil => None
@@ -95,17 +80,11 @@ Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
   end.
 
 Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
-| eval_un_op :
-    forall E ae av op v,
-      eval_expr ge E ae av ->
-      eval_unop op av v ->
-      eval_expr ge E (EUnop op ae) v
-| eval_bin_op :
-    forall E le lv re rv op v,
-      eval_expr ge E le lv ->
-      eval_expr ge E re rv ->
-      eval_binop op lv rv v ->
-      eval_expr ge E (EBinop op le re) v
+| eval_builtin_sem :
+    forall E l vs b v,
+      Forall2 (eval_expr ge E) l vs ->
+      eval_builtin b vs v ->
+      eval_expr ge E (EBuiltin b l) v
 | eval_list :
     forall E l vs vres,
       Forall2 (eval_expr ge E) l vs ->
@@ -171,20 +150,17 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge E idx (bits i) ->
       select_list ge E (Z.to_nat (unsigned i)) e v ->
       eval_expr ge E (ESel e (ListSel idx)) v
-(* Special case of a numeric program literal, e is always EVar 0 so that might be some builtin we could define *)
-| eval_tapp_const :
-    forall E e n (w : Z) (nz : w > 0) wn (nz' : wn <> O),
-      wn = Z.to_nat w ->
-      eval_expr ge E (ETApp (ETApp e (TCon (TC (TCNum n)) nil)) (TCon (TC (TCNum w)) nil)) (bits (@repr wn nz' n))
-(* TODO: we should probably make rules for TAbs and TApp that do something *)
+
 | eval_tapp :
-    forall E e t v,
-      eval_expr ge E e v ->
+    forall E e id e' E' v t,
+      eval_expr ge E e (tclose id e' E') ->
+      eval_expr ge (extend E' id (typ t)) e' v ->
       eval_expr ge E (ETApp e t) v
 | eval_tabs :
-    forall E e a v,
-      eval_expr ge E e v ->
-      eval_expr ge E (ETAbs a e) v
+    forall E e id,
+      eval_expr ge E (ETAbs id e) (tclose id e E)
+
+
 (* select the nth element from a lazy list *)
 with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
      | select_zero :
@@ -217,14 +193,21 @@ with index_match (ge : genv) : env -> nat -> list Match -> env -> Prop :=
          forall E n id e v,
            select_list ge E n e v ->
            index_match ge E n ((From id e) :: nil) (extend E id v)
-     | idx_mid : (* take an element from the non-last lists, slightly complicated accounting *)
+     | idx_mid : (* take the mid element from *)
          forall E E' n r v id e m t len,
            index_match ge E n r E' ->
-           select_list ge E m e v ->
+           select_list ge E (S m) e v ->
            matchlength ge E r len ->
            (* m * matchlength r  + n *)
-           t = ((m * len) + n)%nat ->
+           t = (((S m) * len) + n)%nat ->
            index_match ge E t ((From id e) :: r) (extend E' id v)
+     | idx_first :
+         forall E n r E' v id e,
+           index_match ge E n r E' ->
+           select_list ge E O e v ->
+           index_match ge E n ((From id e) :: r) (extend E' id v)
+
+(* because the lists are potentially infinite, we can't  *)
 with matchlength (ge : genv) : env -> list Match -> nat -> Prop :=
      | len_one :
          forall E id e n,
@@ -303,3 +286,8 @@ with length (ge : genv) : env -> Expr -> nat -> Prop :=
 
 
 
+(* Special case of a numeric program literal, e is always EVar 0 so that might be some builtin we could define *)
+(* | eval_tapp_const : *)
+(*     forall E e n (w : Z) (nz : w > 0) wn (nz' : wn <> O), *)
+(*       wn = Z.to_nat w -> *)
+(*       eval_expr ge E (ETApp (ETApp e (TCon (TC (TCNum n)) nil)) (TCon (TC (TCNum w)) nil)) (bits (@repr wn nz' n)) *)

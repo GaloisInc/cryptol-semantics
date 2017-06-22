@@ -15,11 +15,11 @@ Import HaskellListNotations.
 
 Require Import Fib. 
 
-
+(*
 Definition nz32 (n:Z) := @repr 32 nz n.
 Definition add32 (x y : Int) := @add 32 nz x y. 
 Definition sub32 (x y : Int) := @sub 32 nz x y. 
-
+*)
 (*
 Fixpoint fib (n : @Int 32) : (@Int 32) := 
   if (eq n (nz32 0)) then (nz32 1)

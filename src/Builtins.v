@@ -1,21 +1,54 @@
-Require Import AST.
+(* Here we have the syntax of builtin operators *)
 
-(* Borrow from CompCert *)
-Require Import Coqlib.
-
-(* TODO: make sure we can shadow variables 5 and 6 here, or change up *)
-(* Pretty sure this just works, due to eager evaluation order *)
-Definition builtin_binop (id : ident) (op : binop) : DeclGroup :=
-  NonRecursive (Decl id (DExpr (EAbs 5 (EAbs 6 (EBinop op (EVar 5) (EVar 6)))))).
-
-Definition builtin_unop (id : ident) (op : unop) : DeclGroup :=
-  NonRecursive (Decl id (DExpr (EAbs 5 (EUnop op (EVar 5))))).
-
-(* 17 -> eq *)
-(* 1 -> plus *)
-(* 11 -> neg *)
-(* 40 -> @ *)
-Definition plus_decl := builtin_binop 1 Plus.
-Definition eq_decl := builtin_binop 17 Eq.
-Definition neg_decl := builtin_unop 11 Neg.
-(*Definition list_sel_decl := NonRecursive (Decl 40 (DExpr (EAbs 5 (EAbs 6 (EListSel*)
+(* Internally defined somehow *)
+Inductive builtin :=
+| Demote (* (NonRecursive (Decl (0,"demote") DPrim)) *)
+| Plus (* (NonRecursive (Decl (1,"+") DPrim)) *)
+| Minus (* (NonRecursive (Decl (2,"-") DPrim)), *)
+| Times (* (NonRecursive (Decl (3,"*") DPrim)), *)
+| Div (* (NonRecursive (Decl (4,"/") DPrim)), *)
+| Mod (* (NonRecursive (Decl (5,"%") DPrim)), *)
+| Exp (* (NonRecursive (Decl (6,"^^") DPrim)), *)
+| lg2 (* (NonRecursive (Decl (7,"lg2") DPrim)), *)
+| true_builtin (* (NonRecursive (Decl (9,"True") DPrim)), *)
+| false_builtin (* (NonRecursive (Decl (10,"False") DPrim)), *)
+| Neg (* (NonRecursive (Decl (11,"negate") DPrim)), *)
+| Compl (* (NonRecursive (Decl (12,"complement") DPrim)), *)
+| Lt (* (NonRecursive (Decl (13,"<") DPrim)), *)
+| Gt (* (NonRecursive (Decl (14,">") DPrim)), *)
+| Le (* (NonRecursive (Decl (15,"<=") DPrim)), *)
+| Ge (* (NonRecursive (Decl (16,">=") DPrim)), *)
+| Eq (* (NonRecursive (Decl (17,"==") DPrim)), *)
+| Neq (* (NonRecursive (Decl (18,"!=") DPrim)) *)
+| And (* (NonRecursive (Decl (26,"&&") DPrim)), *)
+| Or (* (NonRecursive (Decl (27,"||") DPrim)), *)
+| Xor (* (NonRecursive (Decl (28,"^") DPrim)), *)
+| Zero (* (NonRecursive (Decl (29,"zero") DPrim)), *)
+| Shiftl (* (NonRecursive (Decl (30,"<<") DPrim)), *)
+| Shiftr (* (NonRecursive (Decl (31,">>") DPrim)), *)
+| Rotl (* (NonRecursive (Decl (32,"<<<") DPrim)), *)
+| Rotr (* (NonRecursive (Decl (33,">>>") DPrim)), *)
+| Cons (* (NonRecursive (Decl (34,"#") DPrim)), *)
+| splitAt (* (NonRecursive (Decl (35,"splitAt") DPrim)), *)
+| join (* (NonRecursive (Decl (36,"join") DPrim)), *)
+| split (* (NonRecursive (Decl (37,"split") DPrim)), *)
+| reverse (* (NonRecursive (Decl (38,"reverse") DPrim)), *)
+| transpose (* (NonRecursive (Decl (39,"transpose") DPrim)), *)
+| At (* (NonRecursive (Decl (40,"@") DPrim)), *)
+| AtAt (* (NonRecursive (Decl (41,"@@") DPrim)), *)
+| Bang (* (NonRecursive (Decl (42,"!") DPrim)), *)
+| BangBang (* (NonRecursive (Decl (43,"!!") DPrim)), *)
+| update (* (NonRecursive (Decl (44,"update") DPrim)), *)
+| updateEnd (* (NonRecursive (Decl (45,"updateEnd") DPrim)) *)
+| fromThen (* (NonRecursive (Decl (48,"fromThen") DPrim)), *)
+| fromTo (* (NonRecursive (Decl (49,"fromTo") DPrim)), *)
+| fromThenTo (* (NonRecursive (Decl (50,"fromThenTo") DPrim)), *)
+| infFrom (* (NonRecursive (Decl (51,"infFrom") DPrim)), *)
+| infFromThen (* (NonRecursive (Decl (52,"infFromThen") DPrim)), *)
+| error (* (NonRecursive (Decl (53,"error") DPrim)), *)
+| pmult (* (NonRecursive (Decl (54,"pmult") DPrim)), *)
+| pdiv (* (NonRecursive (Decl (55,"pdiv") DPrim)), *)
+| pmod (* (NonRecursive (Decl (56,"pmod") DPrim)), *)
+| random (* (NonRecursive (Decl (57,"random") DPrim)) *)
+| trace (* (NonRecursive (Decl (68,"trace") DPrim)), *)
+.

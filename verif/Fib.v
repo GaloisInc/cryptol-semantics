@@ -29,6 +29,7 @@ Import HaskellListNotations.
 
 (* right side of this generated from cryptol implementation *)
 
+(* 
 Definition fib_cry : DeclGroup := (Recursive [(Decl 484 (DExpr (EAbs 485 (EIf (EApp (EApp (ETApp (EVar 259) (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])) (EVar 485)) (ETApp (ETApp (EVar 242) (TCon (TC (TCNum 0)) [])) (TCon (TC (TCNum 32)) []))) (ETApp (ETApp (EVar 242) (TCon (TC (TCNum 1)) [])) (TCon (TC (TCNum 32)) [])) (EIf (EApp (EApp (ETApp (EVar 259) (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])) (EVar 485)) (ETApp (ETApp (EVar 242) (TCon (TC (TCNum 1)) [])) (TCon (TC (TCNum 32)) []))) (ETApp (ETApp (EVar 242) (TCon (TC (TCNum 1)) [])) (TCon (TC (TCNum 32)) [])) (EApp (EApp (ETApp (EVar 243) (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])) (EApp (EVar 484) (EApp (EApp (ETApp (EVar 243) (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])) (EVar 485)) (EApp (ETApp (EVar 253) (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])) (ETApp (ETApp (EVar 242) (TCon (TC (TCNum 1)) [])) (TCon (TC (TCNum 32)) [])))))) (EApp (EVar 484) (EApp (EApp (ETApp (EVar 243) (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])) (EVar 485)) (EApp (ETApp (EVar 253) (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])) (ETApp (ETApp (EVar 242) (TCon (TC (TCNum 2)) [])) (TCon (TC (TCNum 32)) [])))))))))))]).
 
 Definition width : nat := 32. 
@@ -208,3 +209,4 @@ Proof.
 
 
 
+*)
