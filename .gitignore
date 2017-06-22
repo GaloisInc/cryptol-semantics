@@ -5,3 +5,5 @@
 *.v.d
 Makefile.coq
 _CoqProject
+.DS_Store
+*~
