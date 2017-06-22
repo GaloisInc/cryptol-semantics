@@ -81,7 +81,7 @@ Proof.
       * e. 
         -- local. 
         -- local.   
-        -- constructor; exact nz.  
+        -- econstructor. exact nz. exact nz. reflexivity.   
     + e. 
   Unshelve. exact nz. 
 Qed.   
@@ -102,7 +102,7 @@ Proof.
       * e. 
         -- local. 
         -- local.   
-        -- constructor; exact nz.  
+        -- econstructor; try exact nz. reflexivity. 
     + eapply eval_if_t.               (* Matches second base case *)
       * e. e. e. global. e. local.  
         -- unfold extend. e. 
@@ -110,7 +110,7 @@ Proof.
         -- e. 
            ++ local. 
            ++ local.   
-           ++ constructor; exact nz.
+           ++ econstructor; try exact nz. reflexivity. 
       * e.  
   Unshelve. all: exact nz. 
 Qed.    
@@ -123,9 +123,10 @@ Proof.
   - global. e. 
   - e. 
     + eapply eval_global_var. unfold E2. unfold Env. unfold extend. simpl. 
-  
-Lemma plus_f0_f1 : eval_expr fib_ge E2 (EApp (EVar 242) (eval_expr fib_ge E (EApp (EVar fibnum) (EVar fibvar))) (eval_expr fib_ge E1 (EApp (EVar fibnum) (EVar fibvar)))) (bits (@repr width nz 0)).  
+Admitted. 
 
+(*Lemma plus_f0_f1 : eval_expr fib_ge E2 (EApp (EVar 242) (eval_expr fib_ge E (EApp (EVar fibnum) (EVar fibvar))) (eval_expr fib_ge E1 (EApp (EVar fibnum) (EVar fibvar)))) (bits (@repr width nz 0)).  
+*)
 
 (* Fib 2 = 2 *)
 Lemma eval_fib2 : eval_expr fib_ge E2 (EApp (EVar fibnum) (EVar fibvar)) (bits (@repr width nz 2)).
@@ -140,7 +141,7 @@ Proof.
       * e. 
         -- local. 
         -- local.   
-        -- constructor; exact nz. 
+        -- econstructor; try exact nz. reflexivity. 
     + eapply eval_if_f.                (* Doesn't match second base case *)
       * e. e. e. global. e. local.  
         -- unfold extend. e. 
@@ -148,7 +149,7 @@ Proof.
         -- e. 
           ++ local. 
           ++ local.   
-          ++ constructor; exact nz.
+          ++ econstructor; try exact nz. reflexivity. 
       * econstructor.                  (* Take recursive case *)
       (* Something is going wrong in the next line *)
       e. e. e. global. e. e. global. e. e. e. e. global. e. local. e. local. 
@@ -166,8 +167,15 @@ Proof.
     + simpl. reflexivity. 
     + econstructor. 
   - econstructor. unfold E. unfold extend. simpl. reflexivity. 
-  - 
-Admitted. 
+  - eapply eval_if_f. e. e. e. global. e. local. local. local. e. local. local.
+    + econstructor; try exact nz. reflexivity.
+    + eapply eval_if_f. e. e. e. global. e. local. local. local. e. local. local.
+      * econstructor; try exact nz. reflexivity. 
+      * (* Getting closer. This econstructor is maybe not right*)
+    econstructor. e. e. e. global. e. e. global. local. e.  e. e. global. local. local. e. local.
+Admitted.   
+        
+
 
 (*
  (* #3 *)unfold fib_ge. simpl. 

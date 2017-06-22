@@ -47,6 +47,7 @@ end.
 Eval compute in (nz32 (Z.of_nat (fib 5))).   
 
 (* For the condition of the equiv theorem *)
+(* Not a useful way to do this (?) *)
 Definition Is_true (b:bool) :=
   match b with
     | true => True
@@ -65,13 +66,16 @@ Proof.
   e.
   - global. e.
   - local. 
-  - induction (Z.to_nat (Int32_to_Z n)). (* induction on n as a nat *)
-    + eapply eval_if_t. 
-    e. e. e. global. e. local. e. e. e. local. local.
-      * constructor; exact nz.
-      * e. 
-    + econstructor. e. e. e. global. e. local. e. e. e. local. local.
-      * destruct p. (* these aren't all true. Probably chose a constructor too early (eval_if_t) *)
+  - induction n, intval. 
+     + (* base case *)
+       econstructor. e. e. e. global. e. local. local. local. e. local. local. 
+       * econstructor; try exact nz. reflexivity.  
+       * e.  
+     + (* inductive case *)
+       induction p. (* need to know more about p (?) *)
+       eapply eval_if_f. e. e. e. global. e. local. local. local. e. local. local.
+       * (* presumably if p~1 is positive it doesn't equal 0 so this should be true *) econstructor; try exact nz. unfold eq. unfold zeq. unfold unsigned. unfold repr. unfold intval. unfold Z_mod_modulus. destruct (Z.eq_dec (P_mod_two_p p~1 width) 0); auto. unfold P_mod_two_p in e. admit.  
+       * Admitted. 
 
 
 
