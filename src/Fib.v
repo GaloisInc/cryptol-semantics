@@ -2,8 +2,8 @@
 (* DONE        Change .cry so it uses + and (-) 
    DONE (?)    Figure out numbers for Plus, Eq, Neg
    PARTIAL     Use tactics to finish proofs
-               Write Fib in coq (using 32 bit nats from compcert library)
-               Prove equivalence of Fib implementations
+   DONE        Write Fib in coq (using 32 bit nats from compcert library)
+   PARTIAL     Prove equivalence of Fib implementations
 *)
 
 
