@@ -107,9 +107,10 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_binop op lv rv v ->
       eval_expr ge E (EBinop op le re) v
 | eval_list :
-    forall E l vs,
+    forall E l vs vres,
       Forall2 (eval_expr ge E) l vs ->
-      eval_expr ge E (EList l) (thunk_list vs)
+      vres = thunk_list vs ->
+      eval_expr ge E (EList l) vres
 | eval_tuple :
     forall E l vs,
       Forall2 (eval_expr ge E) l vs ->
@@ -184,6 +185,7 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E e a v,
       eval_expr ge E e v ->
       eval_expr ge E (ETAbs a e) v
+(* select the nth element from a lazy list *)
 with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
      | select_zero :
          forall E e v re rE,
@@ -194,8 +196,56 @@ with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
            eval_expr ge E e (vcons v' re rE) ->
            select_list ge rE n re v ->
            select_list ge E (S n) e v
-(* TODO: *)
-(* | select_comp : *)
+     | select_comp :
+         forall E e compExp compE llm n E' v,
+           eval_expr ge E e (vcomp compExp compE llm) ->
+           par_match ge compE n llm E' ->
+           eval_expr ge E' compExp v ->
+           select_list ge E n e v
+with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
+     | par_one :
+         forall E n,
+           par_match ge E n nil E
+     | par_more :
+         forall E n lm E' lr E'',
+           index_match ge E n lm E' ->
+           par_match ge E' n lr E'' ->
+           par_match ge E n (lm :: lr) E''
+(* provide the nth bound environment for one part of a list comprehension *)
+with index_match (ge : genv) : env -> nat -> list Match -> env -> Prop :=
+     | idx_last : (* take the nth element from the last list *)
+         forall E n id e v,
+           select_list ge E n e v ->
+           index_match ge E n ((From id e) :: nil) (extend E id v)
+     | idx_mid : (* take an element from the non-last lists, slightly complicated accounting *)
+         forall E E' n r v id e m t len,
+           index_match ge E n r E' ->
+           select_list ge E m e v ->
+           matchlength ge E r len ->
+           (* m * matchlength r  + n *)
+           t = ((m * len) + n)%nat ->
+           index_match ge E t ((From id e) :: r) (extend E' id v)
+with matchlength (ge : genv) : env -> list Match -> nat -> Prop :=
+     | len_one :
+         forall E id e n,
+           length ge E e n ->
+           matchlength ge E ((From id e) :: nil) n
+     | len_more :
+         forall E id e r n l m,
+           matchlength ge E r n ->
+           length ge E e m ->
+           l = (m * n)%nat ->
+           matchlength ge E ((From id e) :: r) l
+with length (ge : genv) : env -> Expr -> nat -> Prop :=
+     | len_nil :
+         forall E e,
+           eval_expr ge E e vnil ->
+           length ge E e O
+     | len_cons :
+         forall E e v rE re n,
+           eval_expr ge E e (vcons v re rE) ->
+           length ge rE re n ->
+           length ge E e (S n)
 .
 
 
