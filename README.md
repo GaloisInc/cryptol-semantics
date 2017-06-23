@@ -43,7 +43,5 @@ WARNING: This project is its infancy, and under active development.
 1. Use the cryptol fork to load your favorite cryptol program: `cryptol <filename>`
 1. In the interactive prompt type `:all` to print out an AST of every current top level declaration
 1. Copy the output and paste it as the right hand side of a variable declaration in Coq
-1. Currently literals are represented as (EVar 0), change them to the literal you want (e.g. 32 should be `(lit 32)`)
-1. Currently Types are printed out but not parsed (will be fixed)
-1. Use the `eval_expr` relation to construt arguments that your terms evaluate to what you want
+1. Use the `eval_expr` relation to construct arguments that your terms evaluate to what you want
 

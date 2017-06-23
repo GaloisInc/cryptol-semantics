@@ -34,6 +34,8 @@ Definition table : list (string * Expr) :=
   ("demote", mb 2 0 Demote) ::
   ("+", mb 1 2 Plus) ::
   ("-", mb 1 2 Minus) ::
+  ("*", mb 1 2 Times) ::
+  ("/", mb 1 2 Div) ::
   ("negate", mb 1 1 Neg) ::
   ("==", mb 1 2 Eq) ::
   nil.
@@ -44,6 +46,27 @@ Inductive eval_builtin : builtin -> list val -> val -> Prop :=
     forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
       b3 = @add w nz b1 b2 ->
       eval_builtin Plus (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
+| eval_minus :
+    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
+      b3 = @sub w nz b1 b2 ->
+      eval_builtin Minus (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
+| eval_times :
+    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
+      b3 = @mul w nz b1 b2 ->
+      eval_builtin Times (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
+| eval_div :
+    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
+      b3 = @divu w nz b1 b2 -> (* I assume that division is unsigned in cryptol *)
+      eval_builtin Div (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
+| eval_mod :
+    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
+      b3 = @modu w nz b1 b2 ->
+      eval_builtin Mod (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
+(* | eval_exp : *) (* TODO: write pow over bits, or implement in Cryptol *)
+(*     forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t, *)
+(*       b3 = @exp w nz b1 b2 -> *)
+(*       eval_builtin Exp (t :: (bits b1) :: (bits b2) :: nil) (bits b3) *)
+    
 | eval_eq :
     forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
       b = @eq w b1 b2 ->
