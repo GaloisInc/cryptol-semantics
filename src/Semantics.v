@@ -108,16 +108,10 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge E e (rec l) ->
       lookup str l = Some v ->
       eval_expr ge E (ESel e (RecordSel str)) v
-(* TODO: eval_list_sel *)                
-| eval_if_t : 
-    forall E c t f v,
-      eval_expr ge E c (bit true) ->
-      eval_expr ge E t v ->
-      eval_expr ge E (EIf c t f) v
-| eval_if_f :
-    forall E c t f v,
-      eval_expr ge E c (bit false) ->
-      eval_expr ge E f v ->
+| eval_if :
+    forall E c t f v b,
+      eval_expr ge E c (bit b) ->
+      eval_expr ge E (if b then t else f) v ->
       eval_expr ge E (EIf c t f) v
 | eval_comp :
     forall E e l,
