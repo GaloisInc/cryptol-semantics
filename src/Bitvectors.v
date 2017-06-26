@@ -194,8 +194,21 @@ Section Bits.
   Definition ltu {ws : nat} (x y: @Int ws) : bool :=
     if zlt (unsigned x) (unsigned y) then true else false.
 
-  Definition neg {ws : nat} {nonzero : ws <> O} (x: @Int ws) : @Int ws := @repr ws nonzero (- unsigned x).
-
+  (* Derived Unsigned Comparisons *)
+  (* x <= y <--> x < y || x = y *)
+  Definition leu {ws : nat} (x y: @Int ws) : bool :=
+    if ltu x y then true else eq x y.
+  (* x > y <--> ~ (x <= y)  *)
+  Definition gtu {ws : nat} (x y: @Int ws) : bool :=
+    if leu x y then false else true.
+  (* x >= y <--> ~(x < y) *)
+  Definition geu {ws : nat} (x y: @Int ws) : bool :=
+    if ltu x y then false else true.
+  Definition neq {ws : nat} (x y: @Int ws) : bool :=
+    if eq x y then false else true.
+  
+  Definition neg {ws : nat} {nonzero : ws <> O} (x: @Int ws) : @Int ws :=
+    @repr ws nonzero (- unsigned x).
   Definition add {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
     @repr ws nonzero (unsigned x + unsigned y).
   Definition sub {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=

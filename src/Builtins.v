@@ -28,7 +28,7 @@ Inductive builtin :=
 | Shiftr (* (NonRecursive (Decl (31,">>") DPrim)), *)
 | Rotl (* (NonRecursive (Decl (32,"<<<") DPrim)), *)
 | Rotr (* (NonRecursive (Decl (33,">>>") DPrim)), *)
-| Cons (* (NonRecursive (Decl (34,"#") DPrim)), *)
+| Append (* (NonRecursive (Decl (34,"#") DPrim)), *)
 | splitAt (* (NonRecursive (Decl (35,"splitAt") DPrim)), *)
 | join (* (NonRecursive (Decl (36,"join") DPrim)), *)
 | split (* (NonRecursive (Decl (37,"split") DPrim)), *)
