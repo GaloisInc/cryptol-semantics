@@ -3,13 +3,13 @@ Import ListNotations.
 
 (* Borrow from CompCert *)
 Require Import Coqlib.
-Require Import Integers.
+Require Import Bitvectors.
 
 Require Import AST.
 Require Import Semantics.
 Require Import Utils.
 Require Import Builtins.
-Require Import Tactics.  
+Require Import EvalTac.
         
 Require Import ZArith.Znat.  
 

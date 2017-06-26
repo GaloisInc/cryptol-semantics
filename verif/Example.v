@@ -4,7 +4,7 @@ Require Import String.
 
 (* Borrow from CompCert *)
 Require Import Coqlib.
-Require Import Integers.
+Require Import Bitvectors.
 
 Require Import AST.
 Require Import Semantics.
@@ -13,7 +13,7 @@ Require Import Builtins.
 Require Import BuiltinSem.
 Require Import Values.        
 
-Require Import Tactics.
+Require Import EvalTac.
 
 Import HaskellListNotations.
 Open Scope string.
@@ -35,15 +35,6 @@ Definition id_ge := bind_decl_groups whole_prog gempty.
 
 Definition E := extend empty (12,"input") (bits (@repr width nz 2)).
 
-Ltac ec := econstructor; try unfold mb; try reflexivity.
-Ltac g := eapply eval_global_var; try reflexivity; try (unfold mb; simpl).
-
-Ltac e :=
-  match goal with
-  | [ |- eval_expr _ ?E (EVar ?id) _ ] =>
-    try solve [ec]; g
-  | [ |- _ ] => ec
-  end.
 
 Lemma eval_id :
     eval_expr id_ge E (EApp (EVar (242,"id")) (EVar (12,"input"))) (bits (@repr width nz 2)).

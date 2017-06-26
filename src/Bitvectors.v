@@ -883,6 +883,20 @@ Section Bits.
     destruct x; destruct y.
     simpl. red; intro. elim n. apply mkint_eq. auto.
   Qed.
+
+  Theorem unsigned_eq :
+    forall {ws : nat} {nz : ws <> O} (x y: (@Int ws)),
+      unsigned x = unsigned y ->
+      x = y.
+  Proof.
+    intros.
+    remember (@eq_spec ws nz x y) as eqs.
+    clear Heqeqs. destruct (eq x y) eqn:?; auto.
+    unfold eq in Heqb. rewrite H in Heqb.
+    rewrite zeq_true in Heqb. congruence.
+  Qed.
+
+  
 (*
   Theorem eq_true: forall x, eq x x = true.
   Proof.

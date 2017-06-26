@@ -4,7 +4,7 @@ Require Import String.
 
 (* Borrow from CompCert *)
 Require Import Coqlib.
-Require Import Integers.
+Require Import Bitvectors.
 Require Import Builtins.
 
 Definition ident : Type := Z * string.
@@ -18,7 +18,7 @@ Proof.
   eapply Z.eq_dec.
 Defined.
 
-Definition BitV (n : nat) : Type := (@Integers.Int n).
+Definition BitV (n : nat) : Type := (@Bitvectors.Int n).
 
 
 

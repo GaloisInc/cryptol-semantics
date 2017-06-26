@@ -6,7 +6,8 @@ Require Import String.
 (* Borrow from CompCert *)
 Require Import Coqlib.
 
-Require Import Integers.
+(*Require Import Integers.*)
+Require Import Bitvectors.
 Require Import AST.
 Require Import Builtins.
 Require Import Values.

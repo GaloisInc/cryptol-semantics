@@ -6,7 +6,7 @@ Require Import Coqlib.
 Require Import AST.
 Require Import Builtins.
 Require Import Values.
-Require Import Integers.
+Require Import Bitvectors.
 
 Open Scope string.
 
@@ -39,10 +39,10 @@ Definition table : list (string * Expr) :=
   ("%", mb 1 2 Mod) ::
   ("^^", mb 1 2 Exp) ::
   ("lg2", mb 1 2 lg2) ::
-  ("True", mb 9 9 true_builtin) ::
-  ("False", mb 9 9 false_builtin) ::
-  ("negate", mb 1 1 Neg) ::
-  ("complement", mb 9 9 Compl) ::
+  ("True", mb 0 0 true_builtin) ::
+  ("False", mb 0 0 false_builtin) ::
+  ("negate", mb 1 1 Neg) :: (* TESTED *)
+  ("complement", mb 1 1 Compl) ::
   ("<", mb 1 2 Lt) ::
   (">", mb 1 2 Gt) ::
   ("<=", mb 1 2 Le) ::
@@ -129,14 +129,15 @@ Inductive eval_builtin : builtin -> list val -> val -> Prop :=
     forall {w : nat} {nz : w <> O} (b1 b2 : BitV w) t,
       b2 = @not w nz b1 ->
       eval_builtin Compl (t :: (bits b1) :: nil) (bits b2)
+| eval_lt :
+    forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
+      b = @ltu w b1 b2 ->
+      eval_builtin Lt (t :: (bits b1) :: (bits b2) :: nil) (bit b)
+    
 | eval_eq :
     forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
       b = @eq w b1 b2 ->
       eval_builtin Eq (t :: (bits b1) :: (bits b2) :: nil) (bit b)
-| eval_neg :
-    forall {w : nat} {nz : w <> O} (b1 b2 : BitV w) t,
-      b2 = @neg w nz b1 ->
-      eval_builtin Neg (t :: (bits b1) :: nil) (bits b2)
 .
 
 Fixpoint lookup {A : Type} (s : string) (t : list (string * A)) : option A :=
