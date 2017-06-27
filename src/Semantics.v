@@ -155,7 +155,6 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E e id,
       eval_expr ge E (ETAbs id e) (tclose id e E)
 
-
 (* select the nth element from a lazy list *)
 with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
      | select_zero :
@@ -173,6 +172,28 @@ with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
            par_match ge compE n llm E' ->
            eval_expr ge E' compExp v ->
            select_list ge E n e v
+     | select_app_1 :
+         forall E e t1 t2 t3 e1 e2 AE n v,
+           eval_expr ge E e (vapp t1 t2 t3 e1 e2 AE) ->
+           select_list ge AE n e1 v ->
+           select_list ge E n e v
+     | select_app_2 :
+         forall E e t1 t2 t3 e1 e2 AE n v m k,
+           eval_expr ge E e (vapp t1 t2 t3 e1 e2 AE) ->
+           length ge AE e1 m ->
+           select_list ge AE k e2 v ->
+           n = (m + k)%nat ->
+           select_list ge E n e v
+     | select_slice :
+         forall E e lo hi lexp AE n k v,
+           eval_expr ge E e (vslice lo hi lexp AE) ->
+           select_list ge AE k lexp v ->
+           k = (lo + n)%nat ->
+           select_list ge E n e v
+(* select_splitAt will be simpler *)
+(* select_split will be tricky *)
+
+
 with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
      | par_one :
          forall E n,
@@ -201,7 +222,6 @@ with index_match (ge : genv) : env -> nat -> list Match -> env -> Prop :=
            index_match ge E n r E' ->
            select_list ge E O e v ->
            index_match ge E n ((From id e) :: r) (extend E' id v)
-
 (* because the lists are potentially infinite, we can't  *)
 with matchlength (ge : genv) : env -> list Match -> nat -> Prop :=
      | len_one :
@@ -226,63 +246,3 @@ with length (ge : genv) : env -> Expr -> nat -> Prop :=
            length ge E e (S n)
 .
 
-
-
-
-(* List comprehension is weird *)
-
-(* | eval_comp : (* Doesn't yet tie the knot, no self reference yet *) *)
-(*     forall l head vs E lvs' lvs, *)
-(*       Forall2 (eval_expr ge E) (map snd l) lvs' -> *)
-(*       lvs' = map seq lvs -> *)
-(*       Forall2 (fun e' v => eval_expr ge e' head v) (comp_envs E (combine (map fst l) lvs)) vs -> *)
-(*       eval_expr ge E (EComp head l) (seq vs) *)
-
-(*| eval_list_sel_fin :
-    forall {n} E lst lv idx (bs : BitV n) v,
-      eval_expr E lst (seq lv) ->
-      eval_expr E idx (bits bs) ->
-      nth_error lv (nat_of_bits bs) = Some v ->
-      eval_expr E (EListSel lst idx) v
-| eval_list_sel_inf :
-    forall {n} E lst g E' idx (bs : BitV n) v,
-      eval_expr E lst (infseq g E') ->
-      eval_expr E idx (bits bs) ->
-      eval_expr E' (g (nat_of_bits bs)) v ->
-      eval_expr E (EListSel lst idx) v*)
-
-(* Definition extend_list (E : env) (id : ident) (vs : list val) : list env := *)
-(*   map (fun x => extend E id x) vs. *)
-
-(* Fixpoint decl_exprs (l : list Declaration) : list Expr := *)
-(*   match l with *)
-(*   | nil => nil *)
-(*   | (Decl id (DExpr e)) :: r => e :: decl_exprs r *)
-(*   end. *)
-
-(* Fixpoint decl_ids (l : list Declaration) : list ident := *)
-(*   match l with *)
-(*   | nil => nil *)
-(*   | (Decl id _) :: r => id :: decl_ids r *)
-(*   end. *)
-(* Definition zrepr {w : Z} {nz : w > 0} (n : Z) : BitV (Z.to_nat w). *)
-(*   refine (@repr (Z.to_nat w) _ n). *)
-(*   unfold Z.gt in *. unfold Z.compare in *. *)
-(*   destruct w; simpl in nz; try congruence. *)
-(*   unfold Z.to_nat. *)
-(*   remember (Pos2Nat.is_pos p). omega. *)
-(* Defined. *)
-
-(* Fixpoint fold_extend (E : env) (l : list (ident * val)) : env := *)
-(*   match l with *)
-(*   | nil => E *)
-(*   | (id,v) :: r => extend (fold_extend E r) id v *)
-(*   end. *)
-
-
-
-(* Special case of a numeric program literal, e is always EVar 0 so that might be some builtin we could define *)
-(* | eval_tapp_const : *)
-(*     forall E e n (w : Z) (nz : w > 0) wn (nz' : wn <> O), *)
-(*       wn = Z.to_nat w -> *)
-(*       eval_expr ge E (ETApp (ETApp e (TCon (TC (TCNum n)) nil)) (TCon (TC (TCNum w)) nil)) (bits (@repr wn nz' n)) *)

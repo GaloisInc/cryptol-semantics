@@ -57,10 +57,10 @@ Definition table : list (string * Expr) :=
   (">>", mb 1 2 Shiftr) ::
   ("<<<", mb 1 2 Rotl) ::
   (">>>", mb 1 2 Rotr) ::
-  ("#", mb 1 2 Append) ::
-  ("splitAt", mb 9 9 splitAt) ::
+  ("#", mb 3 2 Append) ::
+  ("splitAt", mb 3 1 splitAt) ::
   ("join", mb 9 9 join) ::
-  ("split", mb 9 9 split) ::
+  ("split", mb 3 1 split) ::
   ("reverse", mb 9 9 reverse) ::
   ("transpose", mb 9 9 transpose) ::
   ("@", mb 9 9 At) ::
@@ -165,10 +165,10 @@ Inductive eval_builtin : builtin -> list val -> val -> Prop :=
     forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
       b3 = @xor w nz b1 b2 ->
       eval_builtin Xor (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_zero :
+| eval_zero : (* TODO: cryptol's builtin zero works in more cases than this *)
     forall {ws : nat} {nz : ws <> O} (w : Z) (b : BitV ws),
       ws = Z.to_nat w ->
-      b = @repr ws nz 0 ->
+      b = @repr ws nz 0 -> 
       eval_builtin Zero ((typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b)
 | eval_shiftl :
     forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
@@ -187,8 +187,8 @@ Inductive eval_builtin : builtin -> list val -> val -> Prop :=
       b3 = @ror w nz b1 b2 ->
       eval_builtin Rotr (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 (*| eval_append :*)
-(*| eval_splitAt *)
-
+(*| eval_splitAt : *)
+(*| eval_split : *)
 .
 
 Fixpoint lookup {A : Type} (s : string) (t : list (string * A)) : option A :=
@@ -203,21 +203,4 @@ Definition find_builtin (s : string) : option Expr :=
 Definition lookup_prim (id : ident) : option Expr :=
   let (_,n) := id in
   find_builtin n.
-
-(* Sanity check to make sure all the prims are in the table above *)
-Lemma id_for_all_prims :
-  forall p,
-  exists s x y,
-    lookup s table = Some (mb x y p).
-Proof.
-  intros. 
-  unfold table.
-  destruct p;
-    unfold lookup;
-    do 3 eexists;
-  match goal with
-  | [ |- context[if string_dec ?X ?Y then _ else _] ] => instantiate (3 := X); simpl; reflexivity
-  end.
-  
-Qed.
 
