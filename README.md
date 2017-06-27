@@ -38,6 +38,8 @@ WARNING: This project is its infancy, and under active development.
 1. `./configure`
 1. `make`
 
+RECOMMENDATION: Some proofs can take a while to check, so use `make -jN` instead of simply `make` to build in parallel, where N is the number of threads you want (usually the number of cores available to you).
+
 ## Using the evaluation model
 
 1. Use the cryptol fork to load your favorite cryptol program: `cryptol <filename>`
