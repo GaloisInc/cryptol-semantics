@@ -28,98 +28,14 @@ Definition whole_prog := [(NonRecursive (Decl (0,"demote") DPrim)),(NonRecursive
 
 Definition ge := bind_decl_groups whole_prog gempty.
 
+
 Definition nz : (8 <> O)%nat.
   omega.
 Defined.
 
-Definition five := @repr 8 nz 5.
-
-Lemma eval_t :
-  eval_expr ge empty (EVar (242,"t")) (bits five).
-Proof.
-  repeat e.
-Qed.
-
-Lemma eval_f :
-  eval_expr ge empty (EVar (243,"f")) (bits five).
-Proof.
-  repeat e.
-Qed.
-
-Definition thirty := @repr 8 nz 30.
-
-Lemma eval_times :
-  eval_expr ge empty (EVar (244,"times")) (bits thirty).
-Proof.
-  repeat e.
-  Unshelve.
-  all: exact nz.
-Qed.
-
-
-Lemma eval_div :
-  eval_expr ge empty (EVar (245,"div")) (bits five).
-Proof.
-  repeat e.
-  Unshelve.
-  all: exact nz.
-Qed.
-
-Lemma eval_mod :
-  eval_expr ge empty (EVar (246,"mod")) (bits five).
-Proof.
-  repeat e.
-  Unshelve.
-  all: exact nz.
-Qed.
 
 Definition v(z : Z) := @repr 8 nz z.
 
-Lemma eval_exp :
-  eval_expr ge empty (EVar (247,"exp")) (bits (v 128)).
-Proof.
-Admitted. (* TODO: implement exponentiation *)
-
-
-Lemma eval_lgtest :
-  eval_expr ge empty (EVar (248,"lgtest")) (bits (v 7)).
-Proof.
-Admitted. (* TODO: implement lg2 *)
-
-Lemma eval_p :
-  eval_expr ge empty (EVar (249,"p")) (bits five).
-Proof.
-  repeat e.
-  Unshelve.
-  all: exact nz.
-Qed.
-
-Lemma eval_m :
-  eval_expr ge empty (EVar (250,"m")) (bits five).
-Proof.
-  repeat e.
-  Unshelve.
-  all: exact nz.
-Qed.
-
-Lemma eval_neg :
-  eval_expr ge empty (EVar (251,"neg")) (bits five).
-Proof.
-  repeat e.
-  eapply unsigned_eq.
-  simpl. reflexivity.
-
-  Unshelve.
-  all: exact nz.
-Qed.
-
-Lemma eval_comp :
-  eval_expr ge empty (EVar (252,"comp")) (bits five).
-Proof.                            
-  repeat e.
-  Unshelve.
-  all: exact nz.
-Qed.
 
 
   
