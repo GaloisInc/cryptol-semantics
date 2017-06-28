@@ -71,7 +71,7 @@ Inductive Typ :=
 | TCon (tc : TConstr) (l : list Typ)
 | TVar (tv : TV_t)
 | TUser (id : ident) (l : list Typ) (t : Typ)
-| TRec (l : list (ident * Typ))
+| TRec (l : list (string * Typ))
 .
 
 Inductive Expr :=
@@ -105,6 +105,7 @@ Inductive Expr :=
 | EWhere (e : Expr) (l : list DeclGroup)
 with Match :=
      | From (id : ident) (e : Expr)
+     | MLet (d : Declaration)
 with DeclDef :=
      | DExpr (e : Expr)
      | DPrim
