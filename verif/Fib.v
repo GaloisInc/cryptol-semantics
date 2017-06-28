@@ -38,17 +38,17 @@ Definition width : nat := 32.
 Definition fibident : ident := (484, "fib"). 
 Definition fibvar : ident := (12, "var"). 
 
-Lemma nz : width <> O.
-Proof. 
-  unfold width. congruence. 
-Qed.
+(* Lemma nz : width <> O. *)
+(* Proof.  *)
+(*   unfold width. congruence.  *)
+(* Qed. *)
 
 
 (* Global environment *)
 Definition fib_ge := bind_decl_groups fib_cry gempty. 
 
 
-Definition nz32 (n:Z) := bits (@repr width nz n). 
+Definition nz32 (n:Z) := bits (@repr width n). 
 Definition Env (n:Z) := extend empty fibvar (nz32 n). 
 
 Definition E := Env 0. 
@@ -59,7 +59,6 @@ Proof.
   e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. 
   e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. 
   (* lol *)
-  Unshelve. exact nz. 
 Qed. 
 
 Definition E1 := Env 1.
@@ -69,7 +68,6 @@ Lemma eval_fib1 : eval_expr fib_ge E1 (EApp (EVar fibident) (EVar fibvar)) (nz32
 Proof. 
   repeat e.
 
-  Unshelve. all: exact nz.
 Qed. 
 
 Definition E3 := Env 3.
@@ -79,7 +77,6 @@ Lemma eval_fib3 : eval_expr fib_ge E3 (EApp (EVar fibident) (EVar fibvar)) (nz32
 Proof. 
   repeat e. (* Takes like 10 min *)
 
-  Unshelve. all: exact nz. 
 Qed.  
   
 

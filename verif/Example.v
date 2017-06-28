@@ -24,26 +24,18 @@ Definition whole_prog := [(NonRecursive (Decl (0,"demote") DPrim)),(NonRecursive
 
 Definition width : nat := 32.
 
-Lemma nz :
-  width <> O.
-Proof.
-  unfold width. congruence.
-Qed.
-
 
 Definition id_ge := bind_decl_groups whole_prog gempty.
 
-Definition E := extend empty (12,"input") (bits (@repr width nz 2)).
+Definition E := extend empty (12,"input") (bits (@repr width 2)).
 
 
 Lemma eval_id :
-    eval_expr id_ge E (EApp (EVar (242,"id")) (EVar (12,"input"))) (bits (@repr width nz 2)).
+    eval_expr id_ge E (EApp (EVar (242,"id")) (EVar (12,"input"))) (bits (@repr width 2)).
 Proof.
   unfold id_ge.
   repeat e.
   
-  Unshelve.
-  all: cbv; omega.
 Qed.
 
 

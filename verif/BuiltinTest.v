@@ -29,12 +29,9 @@ Definition whole_prog := [(NonRecursive (Decl (0,"demote") DPrim)),(NonRecursive
 Definition ge := bind_decl_groups whole_prog gempty.
 
 
-Definition nz : (8 <> O)%nat.
-  omega.
-Defined.
 
 
-Definition v(z : Z) := @repr 8 nz z.
+Definition v(z : Z) := @repr 8 z.
 
 
 

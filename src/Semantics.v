@@ -240,30 +240,30 @@ with eval_builtin (ge : genv) : builtin -> list val -> val -> Prop :=
 | eval_demote_zero_width : (* silly 0 :[0] *)
       eval_builtin ge Demote ((typ (TCon (TC (TCNum 0)) nil)) :: (typ (TCon (TC (TCNum 0)) nil)) :: nil) (vnil)
 | eval_demote_bits :
-    forall {ws : nat} {nz : ws <> O} (w n : Z) (b : BitV ws),
+    forall {ws : nat} (w n : Z) (b : BitV ws),
       ws = Z.to_nat w ->
-      b = @repr ws nz n ->
+      b = @repr ws n ->
       eval_builtin ge Demote ((typ (TCon (TC (TCNum n)) nil)) :: (typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b)
 | eval_plus :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @add w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @add w b1 b2 ->
       eval_builtin ge Plus (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_minus :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @sub w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @sub w b1 b2 ->
       eval_builtin ge Minus (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_times :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @mul w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @mul w b1 b2 ->
       eval_builtin ge Times (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_div :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @divu w nz b1 b2 -> (* I assume that division is unsigned in cryptol *)
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @divu w b1 b2 -> (* I assume that division is unsigned in cryptol *)
       unsigned b2 <> 0 -> (* no division by 0 *)
       eval_builtin ge Div (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_mod :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @modu w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @modu w b1 b2 ->
       eval_builtin ge Mod (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 (* | eval_exp : *) (* TODO: write pow over bits, or implement in Cryptol *)
 (*     forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t, *)
@@ -278,12 +278,12 @@ with eval_builtin (ge : genv) : builtin -> list val -> val -> Prop :=
 | eval_false :
     eval_builtin ge false_builtin nil (bit false)
 | eval_negate :
-    forall {w : nat} {nz : w <> O} (b1 b2 : BitV w) t,
-      b2 = @neg w nz b1 ->
+    forall {w : nat} (b1 b2 : BitV w) t,
+      b2 = @neg w b1 ->
       eval_builtin ge Neg (t :: (bits b1) :: nil) (bits b2)
 | eval_compl :
-    forall {w : nat} {nz : w <> O} (b1 b2 : BitV w) t,
-      b2 = @not w nz b1 ->
+    forall {w : nat} (b1 b2 : BitV w) t,
+      b2 = @not w b1 ->
       eval_builtin ge Compl (t :: (bits b1) :: nil) (bits b2)
 | eval_lt :
     forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
@@ -310,37 +310,37 @@ with eval_builtin (ge : genv) : builtin -> list val -> val -> Prop :=
       b = @neq w b1 b2 ->
       eval_builtin ge Neq (t :: (bits b1) :: (bits b2) :: nil) (bit b)
 | eval_and :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @and w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @and w b1 b2 ->
       eval_builtin ge And (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_or :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @or w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @or w b1 b2 ->
       eval_builtin ge Or (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_xor :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @xor w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @xor w b1 b2 ->
       eval_builtin ge Xor (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_zero : (* TODO: cryptol's builtin zero works in more cases than this *)
-    forall {ws : nat} {nz : ws <> O} (w : Z) (b : BitV ws),
+    forall {ws : nat} (w : Z) (b : BitV ws),
       ws = Z.to_nat w ->
-      b = @repr ws nz 0 -> 
+      b = @repr ws 0 -> 
       eval_builtin ge Zero ((typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b)
 | eval_shiftl :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @shl w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @shl w b1 b2 ->
       eval_builtin ge Shiftl (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_shiftr :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @shru w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @shru w b1 b2 ->
       eval_builtin ge Shiftr (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_rotl :    
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @rol w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @rol w b1 b2 ->
       eval_builtin ge Rotl (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_rotr :    
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @ror w nz b1 b2 ->
+    forall {w : nat} (b1 b2 b3 : BitV w) t,
+      b3 = @ror w b1 b2 ->
       eval_builtin ge Rotr (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
 | eval_append :
     forall E t1 t2 t3 v1 v2 e1 e2,

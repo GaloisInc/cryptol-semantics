@@ -29,11 +29,6 @@ Definition b := EVar (245,"b").
 Definition c := EVar (246,"c").
 Definition d := EVar (247,"d").
 
-Lemma nz :
-  8%nat <> O.
-Proof.
-  congruence.
-Qed.
 
-Definition v (z : Z) := @repr 8 nz z.
+Definition v (z : Z) := @repr 8 z.
 

@@ -108,22 +108,8 @@ Section Bits.
     unfold modulus. apply two_power_nat_two_p.
   Qed.
 
-  Remark wordsize_pos {ws : nat} : ws <> O -> (@zwordsize ws) > 0.
-  Proof.
-    intros.
-    unfold zwordsize.
-    destruct ws; try congruence.
-    simpl. rewrite Zpos_P_of_succ_nat.
-    omega.
-  Qed.
 
   
-  Remark modulus_pos {ws : nat} : ws <> O -> (@modulus ws) > 0.
-  Proof.
-    rewrite modulus_power. intros.
-    apply two_p_gt_ZERO.
-    apply wordsize_pos in H. omega.
-  Qed.
 
   Lemma P_mod_two_p_range:
     forall n p, 0 <= P_mod_two_p p n < two_power_nat n.
@@ -156,35 +142,45 @@ Section Bits.
     destruct (H n p) as [y EQ].
     symmetry. apply Zmod_unique with y. auto. apply P_mod_two_p_range.
   Qed.
+
+
+  Lemma two_power_nat_pos :
+    forall x,
+      0 < two_power_nat x.
+  Proof.
+    intros. unfold two_power_nat.
+    split; try omega.
+  Qed.
   
   Lemma Z_mod_modulus_range:
-    forall {ws : nat} x, ws <> O -> 0 <= (@Z_mod_modulus ws x) < (@modulus ws).
+    forall {ws : nat} x, 0 <= (@Z_mod_modulus ws x) < (@modulus ws).
   Proof.
     intros; unfold Z_mod_modulus.
-    destruct x.
-    - generalize (@modulus_pos ws); omega.
+    destruct x. 
+    - unfold modulus. split; try omega.
+      apply two_power_nat_pos.
     - apply P_mod_two_p_range.
     - set (r := P_mod_two_p p ws).
       assert (0 <= r < (@modulus ws)) by apply P_mod_two_p_range.
       destruct (zeq r 0).
-      + generalize (@modulus_pos ws); omega.
+      + unfold modulus. split; try omega.
+        apply two_power_nat_pos.
       + omega.
   Qed.
 
   Lemma Z_mod_modulus_range':
-    forall {ws : nat} x, ws <> O -> -1 < (@Z_mod_modulus ws x) < (@modulus ws).
+    forall {ws : nat} x, -1 < (@Z_mod_modulus ws x) < (@modulus ws).
   Proof.
     intros. generalize (@Z_mod_modulus_range ws x); omega.
   Qed.
-
   
-  Definition repr {ws : nat} {nonzero : ws <> O } (x: Z) : @Int ws :=
-    mkint ws (Z_mod_modulus x) (@Z_mod_modulus_range' ws x nonzero).
+  Definition repr {ws : nat} (x: Z) : @Int ws :=
+    mkint ws (Z_mod_modulus x) (@Z_mod_modulus_range' ws x).
 
-  Definition zero {ws : nat} {nonzero : ws <> O} := @repr ws nonzero 0.
-  Definition one {ws : nat} {nonzero : ws <> O} := @repr ws nonzero 1.
-  Definition mone {ws : nat} {nonzero : ws <> O} := @repr ws nonzero (-1).
-  Definition iwordsize {ws : nat} {nonzero : ws <> O} := @repr ws nonzero (@zwordsize ws).
+  Definition zero {ws : nat} := @repr ws  0.
+  Definition one {ws : nat}  := @repr ws  1.
+  Definition mone {ws : nat}  := @repr ws  (-1).
+  Definition iwordsize {ws : nat}  := @repr ws (@zwordsize ws).
 
 
   Definition eq {ws : nat} (x y: @Int ws) : bool :=
@@ -207,84 +203,84 @@ Section Bits.
   Definition neq {ws : nat} (x y: @Int ws) : bool :=
     if eq x y then false else true.
   
-  Definition neg {ws : nat} {nonzero : ws <> O} (x: @Int ws) : @Int ws :=
-    @repr ws nonzero (- unsigned x).
-  Definition add {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
-    @repr ws nonzero (unsigned x + unsigned y).
-  Definition sub {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
-    @repr ws nonzero (unsigned x - unsigned y).
-  Definition mul {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
-    @repr ws nonzero (unsigned x * unsigned y).
+  Definition neg {ws : nat}  (x: @Int ws) : @Int ws :=
+    repr (- unsigned x).
+  Definition add {ws : nat}  (x y: @Int ws) : @Int ws :=
+    repr (unsigned x + unsigned y).
+  Definition sub {ws : nat}  (x y: @Int ws) : @Int ws :=
+    repr (unsigned x - unsigned y).
+  Definition mul {ws : nat}  (x y: @Int ws) : @Int ws :=
+    repr (unsigned x * unsigned y).
 
-  Definition divs {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
-    @repr ws nonzero (Z.quot (signed x) (signed y)).
-  Definition mods {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
-    @repr ws nonzero (Z.rem (signed x) (signed y)).
+  Definition divs {ws : nat}  (x y: @Int ws) : @Int ws :=
+    repr (Z.quot (signed x) (signed y)).
+  Definition mods {ws : nat}  (x y: @Int ws) : @Int ws :=
+    repr (Z.rem (signed x) (signed y)).
 
-  Definition divu {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
-    @repr ws nonzero (unsigned x / unsigned y).
-  Definition modu {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
-    @repr ws nonzero ((unsigned x) mod (unsigned y)).
+  Definition divu {ws : nat}  (x y: @Int ws) : @Int ws :=
+    repr (unsigned x / unsigned y).
+  Definition modu {ws : nat}  (x y: @Int ws) : @Int ws :=
+    repr ((unsigned x) mod (unsigned y)).
 
   (** Bitwise boolean operations. *)
 
-  Definition and {ws : nat} {nonzero : ws <> O} (x y: @Int ws): @Int ws := @repr ws nonzero (Z.land (unsigned x) (unsigned y)).
-  Definition or {ws : nat} {nonzero : ws <> O} (x y: @Int ws): @Int ws := @repr ws nonzero (Z.lor (unsigned x) (unsigned y)).
-  Definition xor {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws := @repr ws nonzero (Z.lxor (unsigned x) (unsigned y)).
+  Definition and {ws : nat}  (x y: @Int ws): @Int ws := repr (Z.land (unsigned x) (unsigned y)).
+  Definition or {ws : nat}  (x y: @Int ws): @Int ws := repr  (Z.lor (unsigned x) (unsigned y)).
+  Definition xor {ws : nat}  (x y: @Int ws) : @Int ws := repr (Z.lxor (unsigned x) (unsigned y)).
 
-  Definition not {ws : nat} {nonzero : ws <> O} (x: @Int ws) : @Int ws := @xor ws nonzero x (@mone ws nonzero).
+  Definition not {ws : nat}  (x: @Int ws) : @Int ws := xor x (@mone ws ).
 
   (** Shifts and rotates. *)
 
-  Definition shl {ws : nat} {nonzero : ws <> O} (x y: @Int ws): @Int ws := @repr ws nonzero (Z.shiftl (unsigned x) (unsigned y)).
-  Definition shru {ws : nat} {nonzero : ws <> O} (x y: @Int ws): @Int ws := @repr ws nonzero (Z.shiftr (unsigned x) (unsigned y)).
-  Definition shr {ws : nat} {nonzero : ws <> O} (x y: @Int ws): @Int ws := @repr ws nonzero (Z.shiftr (signed x) (unsigned y)).
+  Definition shl {ws : nat}  (x y: @Int ws): @Int ws := repr (Z.shiftl (unsigned x) (unsigned y)).
+  Definition shru {ws : nat}  (x y: @Int ws): @Int ws := repr (Z.shiftr (unsigned x) (unsigned y)).
+  Definition shr {ws : nat}  (x y: @Int ws): @Int ws := repr (Z.shiftr (signed x) (unsigned y)).
 
 
-  Definition rol {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
+  Definition rol {ws : nat}  (x y: @Int ws) : @Int ws :=
     let n := (unsigned y) mod (@zwordsize ws) in
-    @repr ws nonzero (Z.lor (Z.shiftl (unsigned x) n) (Z.shiftr (unsigned x) ((@zwordsize ws) - n))).
-  Definition ror {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
+    repr (Z.lor (Z.shiftl (unsigned x) n) (Z.shiftr (unsigned x) ((@zwordsize ws) - n))).
+  Definition ror {ws : nat}  (x y: @Int ws) : @Int ws :=
     let n := (unsigned y) mod (@zwordsize ws) in
-    @repr ws nonzero (Z.lor (Z.shiftr (unsigned x) n) (Z.shiftl (unsigned x) ((@zwordsize ws) - n))).
+    repr (Z.lor (Z.shiftr (unsigned x) n) (Z.shiftl (unsigned x) ((@zwordsize ws) - n))).
 
-  Definition rolm {ws : nat} {nonzero : ws <> O} (x a m: @Int ws): @Int ws := @and ws nonzero (@rol ws nonzero x a) m.
+  Definition rolm {ws : nat}  (x a m: @Int ws): @Int ws := and (rol x a) m.
 
   (** Viewed as signed divisions by powers of two, [shrx] rounds towards
   zero, while [shr] rounds towards minus infinity. *)
 
-  Definition shrx {ws : nat} {nonzero : ws <> O} (x y: @Int ws): @Int ws :=
-    @divs ws nonzero x (@shl ws nonzero (@one ws nonzero) y).
+  Definition shrx {ws : nat}  (x y: @Int ws): @Int ws :=
+    divs x (shl one y).
 
   (** High half of full multiply. *)
 
-  Definition mulhu {ws : nat} {nonzero : ws <> O} (x y: @Int ws): @Int ws := @repr ws nonzero ((unsigned x * unsigned y) / (@modulus ws)).
-  Definition mulhs {ws : nat} {nonzero : ws <> O} (x y: @Int ws): @Int ws := @repr ws nonzero ((signed x * signed y) / (@modulus ws)).
+  Definition mulhu {ws : nat}  (x y: @Int ws): @Int ws := repr ((unsigned x * unsigned y) / (@modulus ws)).
+  Definition mulhs {ws : nat}  (x y: @Int ws): @Int ws := repr ((signed x * signed y) / (@modulus ws)).
 
   (** Condition flags *)
 
-  Definition negative {ws : nat} {nonzero : ws <> O} (x: @Int ws): @Int ws :=
-    if lt x (@zero ws nonzero) then (@one ws nonzero) else (@zero ws nonzero).
+  Definition negative {ws : nat}  (x: @Int ws): @Int ws :=
+    if lt x zero then one else zero.
 
-  Definition add_carry {ws : nat} {nonzero : ws <> O} (x y cin: @Int ws): @Int ws :=
-    if zlt (unsigned x + unsigned y + unsigned cin) (@modulus ws) then (@zero ws nonzero) else (@one ws nonzero).
+  Definition add_carry {ws : nat}  (x y cin: @Int ws): @Int ws :=
+    if zlt (unsigned x + unsigned y + unsigned cin) (@modulus ws) then zero else one.
 
-  Definition add_overflow {ws : nat} {nonzero : ws <> O} (x y cin: @Int ws): @Int ws :=
+  Definition add_overflow {ws : nat}  (x y cin: @Int ws): @Int ws :=
     let s := signed x + signed y + signed cin in
-    if zle (@min_signed ws) s && zle s (@max_signed ws) then (@zero ws nonzero) else (@one ws nonzero).
+    if zle (@min_signed ws) s && zle s (@max_signed ws) then zero else one.
 
-  Definition sub_borrow {ws : nat} {nonzero : ws <> O} (x y bin: @Int ws): @Int ws :=
-    if zlt (unsigned x - unsigned y - unsigned bin) 0 then (@one ws nonzero) else (@zero ws nonzero).
+  Definition sub_borrow {ws : nat}  (x y bin: @Int ws): @Int ws :=
+    if zlt (unsigned x - unsigned y - unsigned bin) 0 then one else zero.
 
-  Definition sub_overflow {ws : nat} {nonzero : ws <> O} (x y bin: @Int ws): @Int ws :=
+  Definition sub_overflow {ws : nat}  (x y bin: @Int ws): @Int ws :=
     let s := signed x - signed y - signed bin in
-    if zle (@min_signed ws) s && zle s (@max_signed ws) then (@zero ws nonzero) else (@one ws nonzero).
+    if zle (@min_signed ws) s && zle s (@max_signed ws) then zero else one.
 
   (** [shr_carry x y] is 1 if [x] is negative and at least one 1 bit is shifted away. *)
 
-  Definition shr_carry {ws : nat} {nonzero : ws <> O} (x y: @Int ws) : @Int ws :=
-    if lt x (@zero ws nonzero) && negb (eq (@and ws nonzero x (@sub ws nonzero (@shl ws nonzero (@one ws nonzero) y) (@one ws nonzero))) (@zero ws nonzero))
-    then (@one ws nonzero) else (@zero ws nonzero).
+  Definition shr_carry {ws : nat}  (x y: @Int ws) : @Int ws :=
+    if lt x zero && negb (eq (@and ws  x (@sub ws  (@shl ws  one y) one)) zero)
+    then one else zero.
 
   (** Zero and sign extensions *)
 
@@ -321,9 +317,9 @@ Section Bits.
            (fun x => if Z.odd x then -1 else 0)
            x.
 
-  Definition zero_ext {ws : nat} {nonzero : ws <> O} (n: Z) (x: @Int ws) : @Int ws := @repr ws nonzero (Zzero_ext n (unsigned x)).
+  Definition zero_ext {ws : nat}  (n: Z) (x: @Int ws) : @Int ws := repr (Zzero_ext n (unsigned x)).
 
-  Definition sign_ext {ws : nat} {nonzero : ws <> O} (n: Z) (x: @Int ws) : @Int ws := @repr ws nonzero (Zsign_ext n (unsigned x)).
+  Definition sign_ext {ws : nat}  (n: Z) (x: @Int ws) : @Int ws := repr (Zsign_ext n (unsigned x)).
 
   (** Decomposition of a number as a sum of powers of two. *)
 
@@ -336,14 +332,14 @@ Section Bits.
       else Z_one_bits m (Z.div2 x) (i+1)
     end.
 
-  Definition one_bits {ws : nat} {nonzero : ws <> O} (x: @Int ws) : list (@Int ws) :=
-    List.map (@repr ws nonzero) (Z_one_bits ws (unsigned x) 0).
+  Definition one_bits {ws : nat}  (x: @Int ws) : list (@Int ws) :=
+    List.map repr (Z_one_bits ws (unsigned x) 0).
 
   (** Recognition of powers of two. *)
 
-  Definition is_power2 {ws : nat} {nonzero : ws <> O} (x: @Int ws) : option (@Int ws) :=
+  Definition is_power2 {ws : nat}  (x: @Int ws) : option (@Int ws) :=
     match Z_one_bits ws (unsigned x) 0 with
-    | i :: nil => Some (@repr ws nonzero i)
+    | i :: nil => Some (@repr ws  i)
     | _ => None
     end.
 
@@ -369,9 +365,9 @@ Section Bits.
     | Cge => negb (ltu x y)
     end.
 
-  Definition is_false {ws : nat} {nonzero : ws <> O} (x: @Int ws) : Prop := x = (@zero ws nonzero).
-  Definition is_true  {ws : nat} {nonzero : ws <> O} (x: @Int ws) : Prop := x <> (@zero ws nonzero).
-  Definition notbool  {ws : nat} {nonzero : ws <> O} (x: @Int ws) : @Int ws  := if eq x (@zero ws nonzero) then (@one ws nonzero) else (@zero ws nonzero).
+  Definition is_false {ws : nat}  (x: @Int ws) : Prop := x = zero.
+  Definition is_true  {ws : nat}  (x: @Int ws) : Prop := x <> zero.
+  Definition notbool  {ws : nat}  (x: @Int ws) : @Int ws  := if eq x zero then one else zero.
 
 
   Lemma mkint_eq:
@@ -401,33 +397,43 @@ Section Bits.
 
   (** x86-style extended division and modulus *)
 
-  Definition divmodu2 {ws : nat} {nonzero : ws <> O} (nhi nlo: @Int ws) (d: @Int ws) : option (@Int ws * @Int ws) :=
-    if eq_dec d (@zero ws nonzero) then None else
+  Definition divmodu2 {ws : nat}  (nhi nlo: @Int ws) (d: @Int ws) : option (@Int ws * @Int ws) :=
+    if eq_dec d zero then None else
       (let (q, r) := Z.div_eucl (unsigned nhi * (@modulus ws) + unsigned nlo) (unsigned d) in
-       if zle q (@max_unsigned ws) then Some(@repr ws nonzero q, @repr ws nonzero r) else None).
+       if zle q (@max_unsigned ws) then Some(repr q, repr r) else None).
 
-  Definition divmods2 {ws : nat} {nonzero : ws <> O} (nhi nlo: @Int ws) (d: @Int ws) : option (@Int ws * @Int ws) :=
-    if eq_dec d (@zero ws nonzero) then None else
+  Definition divmods2 {ws : nat}  (nhi nlo: @Int ws) (d: @Int ws) : option (@Int ws * @Int ws) :=
+    if eq_dec d zero then None else
       (let (q, r) := Z.quotrem (signed nhi * (@modulus ws) + unsigned nlo) (signed d) in
-       if zle (@min_signed ws) q && zle q (@max_signed ws) then Some(@repr ws nonzero q, @repr ws nonzero r) else None).
+       if zle (@min_signed ws) q && zle q (@max_signed ws) then Some(repr q, repr r) else None).
 
+  Remark wordsize_pos {ws : nat} : ws <> O -> (@zwordsize ws) > 0.
+  Proof.
+    intros.
+    unfold zwordsize.
+    destruct ws; try congruence.
+    simpl. rewrite Zpos_P_of_succ_nat.
+    omega.
+  Qed.
 
-
-
-
-  
-
-
+  Remark modulus_pos {ws : nat} : ws <> O -> (@modulus ws) > 0.
+  Proof.
+    rewrite modulus_power. intros.
+    apply two_p_gt_ZERO.
+    apply wordsize_pos in H. omega.
+  Qed.
 
   Lemma Z_mod_modulus_eq:
-    forall {ws : nat} {nz : ws <> O} x, @Z_mod_modulus ws x = x mod (@modulus ws).
+    forall {ws : nat} x, ws <> O -> @Z_mod_modulus ws x = x mod (@modulus ws).
   Proof.
     intros. unfold Z_mod_modulus. destruct x.
     - rewrite Zmod_0_l. auto.
     - apply P_mod_two_p_eq.
     - generalize (P_mod_two_p_range ws p) (P_mod_two_p_eq ws p).
       fold (@modulus ws). intros A B.
-      exploit (Z_div_mod_eq (Zpos p) (@modulus ws)). apply modulus_pos. assumption. intros C.
+      exploit (Z_div_mod_eq (Zpos p) (@modulus ws)).
+      apply modulus_pos.
+      assumption. intros C.
       set (q := Zpos p / (@modulus ws)) in *.
       set (r := P_mod_two_p p ws) in *.
       
@@ -438,7 +444,6 @@ Section Bits.
       + symmetry. apply Zmod_unique with (-q - 1). rewrite C. ring.
         omega.
   Qed.
-
 
   (** Conversely, [repr] takes a Coq integer and returns the corresponding
   machine integer.  The argument is treated modulo [modulus]. *)
@@ -453,9 +458,9 @@ Section Bits.
   (** * Properties of integers and integer arithmetic *)
 
   (** ** Properties of [modulus], [max_unsigned], etc. *)
-
+  (*
   Remark half_modulus_power:
-    forall {ws : nat} {nz : ws <> O},
+    forall {ws : nat},
       @half_modulus ws = two_p (@zwordsize ws - 1).
   Proof.
     intros.
@@ -463,10 +468,12 @@ Section Bits.
     set (ws1 := zwordsize - 1).
     replace (zwordsize) with (Zsucc ws1).
     rewrite two_p_S. rewrite Zmult_comm. apply Z_div_mult. omega.
-    unfold ws1. generalize (@wordsize_pos ws). omega.
+    unfold ws1.
+    generalize (@wordsize_pos ws). omega.
     unfold ws1. omega.
   Qed.
 
+  
   Remark half_modulus_modulus:
     forall {ws : nat} {nz : ws <> O},
     (@modulus ws) = 2 * (@half_modulus ws).
@@ -476,7 +483,7 @@ Section Bits.
     rewrite <- two_p_S. apply f_equal. omega.
     generalize (@wordsize_pos ws); omega.
   Qed.
-
+   *)
   (** Relative positions, from greatest to smallest:
   <<
       max_unsigned
@@ -487,7 +494,7 @@ Section Bits.
       min_signed
    >>
    *)
-
+(*
   Remark half_modulus_pos:
     forall {ws : nat} {nz : ws <> O},
     @half_modulus ws > 0.
@@ -512,7 +519,7 @@ Section Bits.
     intros.
     unfold max_signed. generalize (@half_modulus_pos ws nz). omega.
   Qed.
-(*
+
   Remark wordsize_max_unsigned: zwordsize <= max_unsigned.
   Proof.
     assert (zwordsize < modulus).
@@ -533,13 +540,18 @@ Section Bits.
     unfold max_signed, max_unsigned. rewrite half_modulus_modulus.
     generalize half_modulus_pos. omega.
   Qed.
-
+*)
   Lemma unsigned_repr_eq:
-    forall x, unsigned (repr x) = Zmod x modulus.
+    forall {ws : nat} x, unsigned (@repr ws x) = Zmod x (@modulus ws).
   Proof.
-    intros. simpl. apply Z_mod_modulus_eq.
+    intros. destruct ws.
+    simpl. unfold modulus. unfold two_power_nat. simpl.
+    rewrite Zmod_1_r. unfold Z_mod_modulus.
+    destruct x; simpl; auto.
+    simpl. apply Z_mod_modulus_eq.
+    congruence.
   Qed.
-
+(*
   Lemma signed_repr_eq:
     forall x, signed (repr x) = if zlt (Zmod x modulus) half_modulus then Zmod x modulus else Zmod x modulus - modulus.
   Proof.
@@ -779,15 +791,15 @@ Section Bits.
   Proof.
     intros. rewrite <- (repr_unsigned y). apply eqm_samerepr; auto.
   Qed.
-
+*)
   Theorem unsigned_repr:
-    forall z, 0 <= z <= max_unsigned -> unsigned (repr z) = z.
+    forall {ws : nat} z, 0 <= z <= (@max_unsigned ws) -> (@unsigned ws (repr z)) = z.
   Proof.
     intros. rewrite unsigned_repr_eq.
     apply Zmod_small. unfold max_unsigned in H. omega.
   Qed.
   Hint Resolve unsigned_repr: ints.
-
+(*
   Theorem signed_repr:
     forall z, min_signed <= z <= max_signed -> signed (repr z) = z.
   Proof.
@@ -888,7 +900,7 @@ Section Bits.
     rewrite zeq_false. auto. auto.
   Qed.
 *)
-  Theorem eq_spec: forall {ws : nat} {nz : ws <> O} (x y: (@Int ws)), if eq x y then x = y else x <> y.
+  Theorem eq_spec: forall {ws : nat} (x y: (@Int ws)), if eq x y then x = y else x <> y.
   Proof.
     intros; unfold eq. case (eq_dec x y); intro.
     subst y. rewrite zeq_true. auto.
@@ -898,12 +910,12 @@ Section Bits.
   Qed.
 
   Theorem unsigned_eq :
-    forall {ws : nat} {nz : ws <> O} (x y: (@Int ws)),
+    forall {ws : nat} (x y: (@Int ws)),
       unsigned x = unsigned y ->
       x = y.
   Proof.
     intros.
-    remember (@eq_spec ws nz x y) as eqs.
+    remember (@eq_spec ws x y) as eqs.
     clear Heqeqs. destruct (eq x y) eqn:?; auto.
     unfold eq in Heqb. rewrite H in Heqb.
     rewrite zeq_true in Heqb. congruence.

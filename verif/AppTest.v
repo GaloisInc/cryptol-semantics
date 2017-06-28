@@ -27,12 +27,8 @@ Definition v : ident := (248,"v").
 
 Definition ge := bind_decl_groups whole_prog gempty.
 
-Definition nz : (8 <> O)%nat.
-  omega.
-Defined.
 
-
-Definition v8(z : Z) := @repr 8 nz z.
+Definition v8(z : Z) := @repr 8 z.
 
 
 Lemma eval_m :
@@ -62,9 +58,5 @@ Proof.
 
   e.
   e. e.
-  Unshelve.
-  all: try exact nz.
-  simpl. unfold Pos.to_nat. simpl.
-  congruence.
   
 Qed.

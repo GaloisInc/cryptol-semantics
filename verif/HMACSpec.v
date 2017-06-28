@@ -25,13 +25,7 @@ End HASH_FUNCTION.
 
 Definition byte := @Int 8.
 
-Lemma nz :
-  (8 <> 0)%nat.
-Proof.
-  congruence.
-Qed.
-
-Definition byte_repr := @repr 8 nz.
+Definition byte_repr := @repr 8.
 
 Module Type HMAC_Module.
   Parameter HMAC: byte -> byte -> list Z -> list Z -> list Z.
@@ -53,7 +47,7 @@ Definition mkKey (l:list Z) : list Z :=
 Definition KeyPreparation (l:list Z) : list byte := map byte_repr (mkKey l).
 
 Definition mkArg (key:list byte) (pad:byte): list byte :=
-       (map (fun p => @xor _ nz (fst p) (snd p))
+       (map (fun p => xor (fst p) (snd p))
           (combine key (sixtyfour pad))).
 Definition mkArgZ key (pad:byte): list Z :=
      map unsigned (mkArg key pad).
@@ -99,9 +93,11 @@ Lemma SF_ByteRepr x: isbyteZ x ->
 Proof. intros. unfold sixtyfour.
        rewrite map_list_repeat. f_equal.
        unfold unsigned. unfold byte_repr. unfold repr. unfold intval. 
-       destruct H. rewrite (@Z_mod_modulus_eq _ nz). unfold modulus.
+       destruct H.
+       rewrite Z_mod_modulus_eq. unfold modulus.
        unfold two_power_nat. simpl.
        rewrite Zmod_small; omega.
+       congruence.
 Qed.
 
 Lemma length_SF {A} (a:A) :length (sixtyfour a) = HF.BlockSize.
