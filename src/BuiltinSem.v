@@ -63,7 +63,7 @@ Definition table : list (string * Expr) :=
   ("split", mb 3 1 split) ::
   ("reverse", mb 9 9 reverse) ::
   ("transpose", mb 9 9 transpose) ::
-  ("@", mb 9 9 At) ::
+  ("@", mb 3 2 At) ::
   ("@@", mb 9 9 AtAt) ::
   ("!", mb 9 9 Bang) ::
   ("!!", mb 9 9 BangBang) ::
@@ -81,115 +81,6 @@ Definition table : list (string * Expr) :=
   ("random", mb 9 9 random) ::
   ("trace", mb 9 9 trace) ::
   nil.
-
-(* Here we have the semantics of all builtins *)
-Inductive eval_builtin : builtin -> list val -> val -> Prop :=
-| eval_demote :
-    forall {ws : nat} {nz : ws <> O} (w n : Z) (b : BitV ws),
-      ws = Z.to_nat w ->
-      b = @repr ws nz n ->
-      eval_builtin Demote ((typ (TCon (TC (TCNum n)) nil)) :: (typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b)
-| eval_plus :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @add w nz b1 b2 ->
-      eval_builtin Plus (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_minus :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @sub w nz b1 b2 ->
-      eval_builtin Minus (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_times :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @mul w nz b1 b2 ->
-      eval_builtin Times (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_div :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @divu w nz b1 b2 -> (* I assume that division is unsigned in cryptol *)
-      eval_builtin Div (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_mod :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @modu w nz b1 b2 ->
-      eval_builtin Mod (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-(* | eval_exp : *) (* TODO: write pow over bits, or implement in Cryptol *)
-(*     forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t, *)
-(*       b3 = @exp w nz b1 b2 -> *)
-(*       eval_builtin Exp (t :: (bits b1) :: (bits b2) :: nil) (bits b3) *)
-(* | eval_lg2 : *) (* TODO: what is lg2? log base 2? *)
-(*     forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t, *)
-(*       b3 = @lg2 w nz b1 b2 -> *)
-(*       eval_builtin lg2 (t :: (bits b1) :: (bits b2) :: nil) (bits b3) *)
-| eval_true :
-    eval_builtin true_builtin nil (bit true)
-| eval_false :
-    eval_builtin false_builtin nil (bit false)
-| eval_negate :
-    forall {w : nat} {nz : w <> O} (b1 b2 : BitV w) t,
-      b2 = @neg w nz b1 ->
-      eval_builtin Neg (t :: (bits b1) :: nil) (bits b2)
-| eval_compl :
-    forall {w : nat} {nz : w <> O} (b1 b2 : BitV w) t,
-      b2 = @not w nz b1 ->
-      eval_builtin Compl (t :: (bits b1) :: nil) (bits b2)
-| eval_lt :
-    forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
-      b = @ltu w b1 b2 ->
-      eval_builtin Lt (t :: (bits b1) :: (bits b2) :: nil) (bit b)
-| eval_gt :
-    forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
-      b = @gtu w b1 b2 ->
-      eval_builtin Gt (t :: (bits b1) :: (bits b2) :: nil) (bit b)
-| eval_le :  
-    forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
-      b = @leu w b1 b2 ->
-      eval_builtin Le (t :: (bits b1) :: (bits b2) :: nil) (bit b)
-| eval_ge :
-    forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
-      b = @geu w b1 b2 ->
-      eval_builtin Ge (t :: (bits b1) :: (bits b2) :: nil) (bit b)
-| eval_eq :
-    forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
-      b = @eq w b1 b2 ->
-      eval_builtin Eq (t :: (bits b1) :: (bits b2) :: nil) (bit b)
-| eval_neq :
-    forall {w : nat} (b1 b2 : BitV w) (b : bool) t,
-      b = @neq w b1 b2 ->
-      eval_builtin Neq (t :: (bits b1) :: (bits b2) :: nil) (bit b)
-| eval_and :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @and w nz b1 b2 ->
-      eval_builtin And (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_or :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @or w nz b1 b2 ->
-      eval_builtin Or (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_xor :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @xor w nz b1 b2 ->
-      eval_builtin Xor (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_zero : (* TODO: cryptol's builtin zero works in more cases than this *)
-    forall {ws : nat} {nz : ws <> O} (w : Z) (b : BitV ws),
-      ws = Z.to_nat w ->
-      b = @repr ws nz 0 -> 
-      eval_builtin Zero ((typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b)
-| eval_shiftl :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @shl w nz b1 b2 ->
-      eval_builtin Shiftl (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_shiftr :
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @shru w nz b1 b2 ->
-      eval_builtin Shiftr (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_rotl :    
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @rol w nz b1 b2 ->
-      eval_builtin Rotl (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_rotr :    
-    forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t,
-      b3 = @ror w nz b1 b2 ->
-      eval_builtin Rotr (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-(*| eval_append :*)
-(*| eval_splitAt : *)
-(*| eval_split : *)
-.
 
 Fixpoint lookup {A : Type} (s : string) (t : list (string * A)) : option A :=
   match t with

@@ -11,5 +11,6 @@ Lemma eval_div :
 Proof.
   repeat e.
   Unshelve.
-  all: exact nz.
+  all: try exact nz.
+  all: simpl; congruence.
 Qed.

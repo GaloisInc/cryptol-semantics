@@ -119,6 +119,11 @@ with Selector :=
      | RecordSel (s : string)
 .
 
+Definition extend { vtype : Type } (E : ident -> option vtype) (id : ident) (v : vtype) :=
+  fun x => if ident_eq x id then Some v else E x.
+
+Definition genv := ident -> option Expr.
+Definition gempty : genv := fun _ => None.
 
 
 
