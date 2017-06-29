@@ -110,10 +110,14 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 (*       select_list ge E (Z.to_nat (unsigned i)) e v -> *)
 (*       eval_expr ge E (ESel e (ListSel idx)) v *)
 | eval_tapp :
-    forall E e id e' E' v t,
+    forall E e id e' E' v t te,
       eval_expr ge E e (tclose id e' E') ->
+      eval_expr ge E te (typ t) -> 
       eval_expr ge (extend E' id (typ t)) e' v ->
-      eval_expr ge E (ETApp e t) v
+      eval_expr ge E (ETApp e te) v
+| eval_typ :
+    forall E t,
+      eval_expr ge E (ETyp t) (typ t)
 | eval_tabs :
     forall E e id,
       eval_expr ge E (ETAbs id e) (tclose id e E)
@@ -268,6 +272,12 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       select_list ge E O l v ->
       eval_expr ge E idx vnil ->
       eval_builtin ge E At (t1 :: t2 :: t3 :: l :: idx :: nil) v
+| eval_true :
+    forall E,
+      eval_builtin ge E true_builtin nil (bit true)
+| eval_false :
+    forall E,
+      eval_builtin ge E false_builtin nil (bit false)
 (* | eval_minus : *)
 (*     forall {w : nat} (b1 b2 b3 : BitV w) t, *)
 (*       b3 = @sub w b1 b2 -> *)
@@ -293,10 +303,6 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 (* (*     forall {w : nat} {nz : w <> O} (b1 b2 b3 : BitV w) t, *) *)
 (* (*       b3 = @lg2 w nz b1 b2 -> *) *)
 (* (*       eval_builtin ge lg2 (t :: (bits b1) :: (bits b2) :: nil) (bits b3) *) *)
-(* | eval_true : *)
-(*     eval_builtin ge true_builtin nil (bit true) *)
-(* | eval_false : *)
-(*     eval_builtin ge false_builtin nil (bit false) *)
 (* | eval_negate : *)
 (*     forall {w : nat} (b1 b2 : BitV w) t, *)
 (*       b2 = @neg w b1 -> *)

@@ -109,20 +109,13 @@ Theorem eval_expr_if_eval : forall gen en e v,
 Proof. 
   intros. induction e. inversion H. destruct b in H1; try inversion H1; subst.
   (* EBuiltin true *)
-  - admit.
-(*  - econstructor. 
-    + destruct l. apply Forall2_nil. inversion H1. 
-    + destruct b; try inversion H. destruct l; inversion H1. 
-      * econstructor.
-      * destruct l; inversion H. econstructor. *)
+  - econstructor.
+    destruct l. inv H1. destruct b; simpl in H; inv H.
+    econstructor; eauto. congruence.
  (* EBuiltin false *)
-  - admit.
-(*  - econstructor. 
-    + destruct l. apply Forall2_nil. inversion H1. 
-    + destruct b; try inversion H. destruct l; inversion H1. 
-      * inversion H. subst. inversion H5. 
-      * destruct l; inversion H. econstructor. *)
-
+  - econstructor.
+    destruct l. inv H1. destruct b; simpl in H; inv H.
+    econstructor; eauto. congruence.
  (* EList *)  
   - inversion H.  
  (* ETuple *)
@@ -146,8 +139,5 @@ Proof.
  (* EApp *) 
   - inversion H. 
  (* EWhere *)
-  - inversion H. destruct l. 
-    + econstructor. simpl. apply IHe. assumption. 
-    + econstructor. destruct d. inversion H1. 
-      admit.    
+  - inversion H.
 Admitted.   

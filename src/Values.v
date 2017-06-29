@@ -21,7 +21,7 @@ Fixpoint to_bitv {ws : nat} (l : list val) : option (BitV ws) :=
   | nil, O => Some (@repr 0 0)
   | (bit b) :: r, S n =>
     match @to_bitv n r with
-    | Some bv => Some (@repr (S n) (unsigned bv + if b then (two_power_nat (S n)) else 0))
+    | Some bv => Some (@repr (S n) (unsigned bv + if b then (two_power_nat n) else 0))
     | None => None
     end
   | _,_ => None
