@@ -44,6 +44,13 @@ Definition sample_env : env := extend (extend empty (0, "zero") (bit true))
                                    (1, "one") (bit false). 
 
 
+
+
+
+(************ Examples ************)
+
+(* eval (if 0 then 1 else 0) = 0 *)
 Eval compute in (eval gempty sample_env (EIf (EBuiltin false_builtin nil) (EVar (0, "zero")) (EVar (1, "one")))).   
 
-
+(* eval (if 1 then 1 else 0) = 1 *)
+Eval compute in (eval gempty sample_env (EIf (EBuiltin true_builtin nil) (EVar (0, "zero")) (EVar (1, "one")))).
