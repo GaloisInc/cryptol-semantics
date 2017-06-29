@@ -1,0 +1,14 @@
+This file is to document some of the dark corners of cryptol, especially those which made the semantics non-obvious.
+
+1. Sequences are lazy. This means that evaluation needs to be delayed until individual elements of sequences are accessed.
+
+2. [0] is a type, which is inhabited by a single value (unit) which acts like 0.
+
+3. Since there is only one value of type [0], errors can't happen in expressions of that type, and they always evaluate to that value. Even when the expression contains a call to "error". However, "(0 : [0]) / (0 : [0]) : [0]" still gives an error (though I'm not sure it should).
+
+4. Types are not computationally irrelevant, and thus type variables cannot be erased.
+
+5. All arithmetic is unsigned, and is defined over bitvectors of any length. This leads to surprising results, such as "1 + 1 = 0" and "-1 > 5 = True"
+
+
+

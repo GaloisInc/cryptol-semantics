@@ -39,8 +39,6 @@ Fixpoint bind_decl_groups (lg : list DeclGroup) (ge : genv) : genv :=
     bind_decl_groups gs (bind_decl_group g ge)
   end.
 
-
-
 (* Conversion from fully computed finite list to lazy list via trivial thunking *)
 Fixpoint thunk_list (l : list val) : val :=
   match l with
@@ -48,19 +46,6 @@ Fixpoint thunk_list (l : list val) : val :=
   | f :: r =>
     vcons f (EVar (0,""%string)) (extend empty (0,""%string) (thunk_list r))
   end.
-
-
-(* TODO: is this used? *)
-Lemma nat_nz :
-  forall z (nz : z > 0),
-    Z.to_nat z <> O.
-Proof.
-  intros.
-  unfold Z.gt in *. unfold Z.compare in *. 
-  destruct z; simpl in nz; try congruence.
-  unfold Z.to_nat.
-  remember (Pos2Nat.is_pos p). omega.
-Qed.  
 
 (* record lookup *)
 Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
@@ -104,9 +89,7 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge E c (bit b) ->
       eval_expr ge E (if b then t else f) v ->
       eval_expr ge E (EIf c t f) v
-| eval_comp :
-    forall E e l,
-      eval_expr ge E (EComp e l) (vcomp e E l)
+                
 | eval_local_var :
     forall E id v,
       E id = Some v ->
@@ -126,8 +109,8 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge E a av ->
       eval_expr ge (extend E' id av) exp v ->
       eval_expr ge E (EApp f a) v
-| eval_where :
-    forall E exp decls v,
+| eval_where : (* TODO: this might not get scoping right, as decls might not shadow existing locals correctly *)
+    forall E exp decls v, 
       eval_expr (bind_decl_groups decls ge) E exp v ->
       eval_expr ge E (EWhere exp decls) v
 | eval_list_sel :
@@ -143,7 +126,11 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_tabs :
     forall E e id,
       eval_expr ge E (ETAbs id e) (tclose id e E)
-
+(* TODO: fix this *)
+(*| eval_comp :
+    forall E e l,
+      eval_expr ge E (EComp e l) (vcomp e E l)*)
+                
 (* select the nth element from a lazy list *)
 with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
      | select_zero :
@@ -155,7 +142,7 @@ with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
            eval_expr ge E e (vcons v' re rE) ->
            select_list ge rE n re v ->
            select_list ge E (S n) e v
-     | select_comp :
+(*     | select_comp :
          forall E e compExp compE llm n E' v,
            eval_expr ge E e (vcomp compExp compE llm) ->
            par_match ge compE n llm E' ->
@@ -185,6 +172,7 @@ with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
            lo = (n * (Z.to_nat j))%nat ->
            hi = (lo + (Z.to_nat j))%nat ->
            select_list ge E n e (vslice lo hi lexp AE)
+*)
 
 with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
      | par_one :
@@ -237,9 +225,7 @@ with length (ge : genv) : env -> Expr -> nat -> Prop :=
            length ge rE re n ->
            length ge E e (S n)
 with eval_builtin (ge : genv) : builtin -> list val -> val -> Prop :=
-| eval_demote_zero_width : (* silly 0 :[0] *)
-      eval_builtin ge Demote ((typ (TCon (TC (TCNum 0)) nil)) :: (typ (TCon (TC (TCNum 0)) nil)) :: nil) (vnil)
-| eval_demote_bits :
+| eval_demote :
     forall {ws : nat} (w n : Z) (b : BitV ws),
       ws = Z.to_nat w ->
       b = @repr ws n ->
@@ -342,12 +328,12 @@ with eval_builtin (ge : genv) : builtin -> list val -> val -> Prop :=
     forall {w : nat} (b1 b2 b3 : BitV w) t,
       b3 = @ror w b1 b2 ->
       eval_builtin ge Rotr (t :: (bits b1) :: (bits b2) :: nil) (bits b3)
-| eval_append :
+(*| eval_append :
     forall E t1 t2 t3 v1 v2 e1 e2,
       e1 = EVar (1,"") ->
       e2 = EVar (2,"") ->
       E = extend (extend empty (1,"") v1) (2,"") v2  ->
-      eval_builtin ge Append (t1 :: t2 :: t3 :: v1 :: v2 :: nil) (vapp e1 e2 E)
+      eval_builtin ge Append (t1 :: t2 :: t3 :: v1 :: v2 :: nil) (* TODO *)*)
 | eval_at_bits :
     forall {w : nat} E n e v t1 t2 t3 v1 (b : BitV w),
       select_list ge E n e v ->
@@ -355,13 +341,13 @@ with eval_builtin (ge : genv) : builtin -> list val -> val -> Prop :=
       e = EVar (0,"") ->
       n = Z.to_nat (unsigned b) ->
       eval_builtin ge At (t1 :: t2 :: t3 :: v1 :: (bits b) :: nil) v
-| eval_at_vnil : (* silly 0 : [0] *)
+| eval_at_vnil : (* This case seems weird, but I think it's necessary *)
     forall E e v t1 t2 t3 v1,
       select_list ge E O e v ->
       E = extend empty (0,"") v1 ->
       e = EVar (0,"") ->
       eval_builtin ge At (t1 :: t2 :: t3 :: v1 :: vnil :: nil) v
-| eval_splitAt :
+(*| eval_splitAt :
     forall E e v front back t,
       E = extend empty (1,"") v ->
       e = EVar (1,"") ->
@@ -372,7 +358,11 @@ with eval_builtin (ge : genv) : builtin -> list val -> val -> Prop :=
       E = extend empty (1,"") v ->
       e = EVar (1,"") ->
       eval_builtin ge split ((typ (TCon (TC (TCNum n)) nil)) :: (typ (TCon (TC (TCNum m)) nil)) :: t :: v :: nil)
-                   (vsplit n m e E)
+                   (vsplit n m e E)*)
+(*| eval_join : *)
+(* Produces the one dimensional cartesian product of a 2 dimensional sequence *)
+(* sorta like a list comprehension *)
+    
 .
 
 
