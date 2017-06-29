@@ -562,7 +562,7 @@ Section Bits.
 
   (** We define and state properties of equality and arithmetic modulo a
   positive integer. *)
-
+*)
   Section EQ_MODULO.
 
     Variable modul: Z.
@@ -643,7 +643,7 @@ Section Bits.
     Qed.
 
   End EQ_MODULO.
-
+(*
   Lemma eqmod_divides:
     forall n m x y, eqmod n x y -> Zdivide m n -> eqmod m x y.
   Proof.
@@ -655,9 +655,9 @@ Section Bits.
     $2^{wordsize}$ #2<sup>wordsize</sup>#. *)
 
   Hint Resolve modulus_pos: ints.
-
-  Definition eqm := eqmod modulus.
-
+*)
+  Definition eqm {ws : nat} := eqmod (@modulus ws).
+(*
   Lemma eqm_refl: forall x, eqm x x.
   Proof (eqmod_refl modulus).
   Hint Resolve eqm_refl: ints.
@@ -701,13 +701,19 @@ Section Bits.
   Hint Resolve eqm_mult: ints.
 
   (** ** Properties of the coercions between [Z] and [int] *)
-
-  Lemma eqm_samerepr: forall x y, eqm x y -> repr x = repr y.
+*)
+  Lemma eqm_samerepr: forall {ws} x y, @eqm ws x y -> @repr ws x = @repr ws y.
   Proof.
     intros. unfold repr. apply mkint_eq.
-    rewrite !Z_mod_modulus_eq. apply eqmod_mod_eq. auto with ints. exact H.
+    destruct ws.
+    unfold Z_mod_modulus. simpl. destruct x; destruct y; reflexivity.
+    rewrite !Z_mod_modulus_eq; try congruence.
+    apply eqmod_mod_eq.
+    unfold modulus.
+    eapply Coqlib.two_power_nat_pos.
+    assumption.
   Qed.
-
+(*
   Lemma eqm_unsigned_repr:
     forall z, eqm z (unsigned (repr z)).
   Proof.
@@ -766,17 +772,23 @@ Section Bits.
     unfold min_signed, max_signed.
     rewrite half_modulus_modulus in *. omega.
   Qed.
-
+*)
   Theorem repr_unsigned:
-    forall i, repr (unsigned i) = i.
+    forall {ws} i, @repr ws (unsigned i) = i.
   Proof.
     destruct i; simpl. unfold repr. apply mkint_eq.
+    destruct ws.
+    unfold two_power_nat in *. simpl in *.
+    replace (intval0) with 0 by omega.
+    simpl. reflexivity.
+    
     rewrite Z_mod_modulus_eq. apply Zmod_small.
-    unfold modulus. unfold wordsize.
+    unfold modulus. 
     omega.
+    congruence.
   Qed.
   Hint Resolve repr_unsigned: ints.
-
+(*
   Lemma repr_signed:
     forall i, repr (signed i) = i.
   Proof.
@@ -1370,7 +1382,7 @@ Proof.
   unfold proj_sumbool; rewrite ! zle_true by omega; simpl.
   unfold Q, R; rewrite H2; auto.
 Qed.
-
+*)
 (** ** Bit-level properties *)
 
 (** ** Properties of bit-level operations over [Z] *)
@@ -1487,10 +1499,13 @@ Proof.
 Qed.
 
 Lemma eqm_same_bits:
-  forall x y,
-  (forall i, 0 <= i < zwordsize -> Z.testbit x i = Z.testbit y i) ->
-  eqm x y.
-Proof (eqmod_same_bits wordsize).
+  forall {ws} x y,
+  (forall i, 0 <= i < @zwordsize ws -> Z.testbit x i = Z.testbit y i) ->
+  @eqm ws x y.
+Proof.
+  intros. 
+  eapply (eqmod_same_bits ws); eauto.
+Qed.
 
 Lemma same_bits_eqmod:
   forall n x y i,
@@ -1515,11 +1530,15 @@ Proof.
 Qed.
 
 Lemma same_bits_eqm:
-  forall x y i,
-  eqm x y ->
-  0 <= i < zwordsize ->
+  forall {ws : nat} x y i,
+    @eqm ws x y ->
+  0 <= i < @zwordsize ws ->
   Z.testbit x i = Z.testbit y i.
-Proof (same_bits_eqmod wordsize).
+Proof.
+  intros.
+  eapply (same_bits_eqmod ws); eauto.
+Qed.
+
 
 Remark two_power_nat_infinity:
   forall x, 0 <= x -> exists n, x < two_power_nat n.
@@ -1665,29 +1684,39 @@ Qed.
 
 (** ** Bit-level reasoning over type [int] *)
 
-Definition testbit (x: int) (i: Z) : bool := Z.testbit (unsigned x) i.
+
+Definition testbit {ws : nat} (x: @Int ws) (i: Z) : bool := Z.testbit (unsigned x) i.
 
 Lemma testbit_repr:
-  forall x i,
-  0 <= i < zwordsize ->
-  testbit (repr x) i = Z.testbit x i.
+  forall {ws} x i,
+  0 <= i < @zwordsize ws ->
+  @testbit ws (repr x) i = Z.testbit x i.
 Proof.
-  intros. unfold testbit. apply same_bits_eqm; auto with ints.
+  intros. destruct ws.
+  unfold zwordsize in H. simpl in H. omega.
+  unfold testbit.
+  eapply (same_bits_eqm); try eassumption.
+  erewrite unsigned_repr_eq.
+  eapply eqmod_sym.
+  eapply eqmod_mod.
+  unfold modulus.
+  eapply Coqlib.two_power_nat_pos.
 Qed.
 
 Lemma same_bits_eq:
-  forall x y,
-  (forall i, 0 <= i < zwordsize -> testbit x i = testbit y i) ->
+  forall ws (x y : @Int ws),
+  (forall i, 0 <= i < @zwordsize ws -> testbit x i = testbit y i) ->
   x = y.
 Proof.
   intros. rewrite <- (repr_unsigned x). rewrite <- (repr_unsigned y).
   apply eqm_samerepr. apply eqm_same_bits. auto.
 Qed.
-
+(*
 Lemma bits_above:
-  forall x i, i >= zwordsize -> testbit x i = false.
+  forall ws (x : @Int ws) i, i >= @zwordsize ws -> testbit x i = false.
 Proof.
-  intros. apply Ztestbit_above with wordsize; auto. apply unsigned_range.
+  intros. eapply Ztestbit_above; auto.
+  apply unsigned_range.
 Qed.
 
 Lemma bits_zero:
@@ -5331,3 +5360,4 @@ Hint Resolve Ptrofs.modulus_pos Ptrofs.eqm_refl Ptrofs.eqm_refl2 Ptrofs.eqm_sym 
   Ptrofs.repr_unsigned Ptrofs.repr_signed Ptrofs.unsigned_repr : ints.
  *)
 
+  

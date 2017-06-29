@@ -103,6 +103,16 @@ Inductive Expr :=
 (* MISSING: EProofApp *)
 (* Where, e.g. 1 + x where { x = 2 } *)
 | EWhere (e : Expr) (l : list DeclGroup)
+
+(* The following expressions are not in the source langugage, but are *)
+(* necessary for evaluation *)
+(* list append *)
+| EAppend (e1 e2 : Expr)
+(* head of list *)
+| EHead (e : Expr)
+(* tail of list (n times) *)
+| ETail (n : nat) (e : Expr)
+
 with Match :=
      | From (id : ident) (e : Expr)
      | MLet (d : Declaration)
