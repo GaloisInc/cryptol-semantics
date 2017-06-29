@@ -108,18 +108,21 @@ Theorem eval_expr_if_eval : forall gen en e v,
    eval gen en e = Some v -> eval_expr gen en e v.
 Proof. 
   intros. induction e. inversion H. destruct b in H1; try inversion H1; subst.
- (* EBuiltin true *)  
-  - econstructor. 
+  (* EBuiltin true *)
+  - admit.
+(*  - econstructor. 
     + destruct l. apply Forall2_nil. inversion H1. 
     + destruct b; try inversion H. destruct l; inversion H1. 
       * econstructor.
-      * destruct l; inversion H. econstructor. 
+      * destruct l; inversion H. econstructor. *)
  (* EBuiltin false *)
-  - econstructor. 
+  - admit.
+(*  - econstructor. 
     + destruct l. apply Forall2_nil. inversion H1. 
     + destruct b; try inversion H. destruct l; inversion H1. 
       * inversion H. subst. inversion H5. 
-      * destruct l; inversion H. econstructor. 
+      * destruct l; inversion H. econstructor. *)
+
  (* EList *)  
   - inversion H.  
  (* ETuple *)
