@@ -39,7 +39,10 @@ Proof.
   e. e. e. e.
 
   e. 
-  eapply eval_lift_over_2_lists.
+  eapply eval_lift_over_list_binary.
+  simpl. auto.
+
+
   
   instantiate (3 := [EVar (3, "")]).
   simpl. reflexivity.

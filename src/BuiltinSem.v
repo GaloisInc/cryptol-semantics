@@ -28,42 +28,72 @@ Definition mb (num_type_args : nat) (num_args : nat) (b : builtin) : Expr :=
   let t_e := iter num_type_args (fun n => fun x => ETAbs ((Z.of_nat (n + num_args )), "") x) raw_e in
   t_e.
 
+(* Used in semantics to lift operations over lists, records, tuples *)
+Definition is_pointwise_liftable_unary (b : builtin) : Prop :=
+  match b with
+  | Neg => True
+  | Compl => True
+  | lg2 => True
+  | _ => False
+  end.
+
+Definition is_pointwise_liftable_binary (b : builtin) : Prop :=
+  match b with
+  | Plus => True
+  | Minus => True
+  | Times => True
+  | Div => True
+  | Mod => True
+  | Exp => True
+  | Lt => True
+  | Gt => True
+  | Le => True
+  | Ge => True
+  | Eq => True
+  | Neq => True
+  | And => True
+  | Or => True
+  | Xor => True
+  | _ => False
+  end.
+
 
 (* table of builtins, along with their arity *)
+(* mb 9 9 _ indicates hasn't been implemented, will break when tested *)
 Definition table : list (string * Expr) :=
-  ("demote", mb 2 0 Demote) :: (* TESTED *)
+  ("demote", mb 2 0 Demote) :: 
   ("+", mb 1 2 Plus) :: (* TESTED *)
-  ("-", mb 1 2 Minus) :: (* TESTED *)
-  ("*", mb 1 2 Times) :: (* TESTED *)
-  ("/", mb 1 2 Div) :: (* TESTED *)
-  ("%", mb 1 2 Mod) :: (* TESTED *)
+  ("-", mb 1 2 Minus) :: 
+  ("*", mb 1 2 Times) :: 
+  ("/", mb 1 2 Div) :: 
+  ("%", mb 1 2 Mod) :: 
   ("^^", mb 1 2 Exp) :: (* Underlying op not implemented *)
   ("lg2", mb 1 2 lg2) :: (* Underlying op not implemented *)
   ("True", mb 0 0 true_builtin) :: (* TESTED *)
   ("False", mb 0 0 false_builtin) :: (* TESTED *)
-  ("negate", mb 1 1 Neg) :: (* TESTED *)
-  ("complement", mb 1 1 Compl) :: (* TESTED *)
-  ("<", mb 1 2 Lt) :: (* Implemented, needs testing *)
-  (">", mb 1 2 Gt) :: (* Implemented, needs testing *)
-  ("<=", mb 1 2 Le) :: (* Implemented, needs testing *)
-  (">=", mb 1 2 Ge) :: (* Implemented, needs testing *)
-  ("==", mb 1 2 Eq) :: (* Implemented, needs testing *)
-  ("!=", mb 1 2 Neq) :: (* Implemented, needs testing *)
-  ("&&", mb 1 2 And) :: (* Implemented, needs testing *)
-  ("||", mb 1 2 Or) :: (* Implemented, needs testing *)
-  ("^", mb 1 2 Xor) :: (* Implemented, needs testing *)
-  ("zero", mb 1 0 Zero) :: (* Partially implemented, needs testing (and full implementation) *)
-  ("<<", mb 1 2 Shiftl) :: (* Implemented, needs testing *)
-  (">>", mb 1 2 Shiftr) :: (* Implemented, needs testing *)
-  ("<<<", mb 1 2 Rotl) :: (* Implemented, needs testing *)
-  (">>>", mb 1 2 Rotr) :: (* Implemented, needs testing *)
-  ("#", mb 3 2 Append) :: (* TESTED *)
-  ("splitAt", mb 3 1 splitAt) :: (* TESTED *)
+  ("negate", mb 1 1 Neg) :: 
+  ("complement", mb 1 1 Compl) :: 
+  ("<", mb 1 2 Lt) :: 
+  (">", mb 1 2 Gt) :: 
+  ("<=", mb 1 2 Le) ::
+  (">=", mb 1 2 Ge) ::
+  ("==", mb 1 2 Eq) ::
+  ("!=", mb 1 2 Neq) ::
+  ("&&", mb 1 2 And) ::
+  ("||", mb 1 2 Or) :: 
+  ("^", mb 1 2 Xor) :: 
+  ("zero", mb 1 0 Zero) :: 
+  ("<<", mb 1 2 Shiftl) :: 
+  (">>", mb 1 2 Shiftr) :: 
+  ("<<<", mb 1 2 Rotl) :: 
+  (">>>", mb 1 2 Rotr) :: 
+  ("#", mb 3 2 Append) :: 
+  ("splitAt", mb 3 1 splitAt) :: 
   ("join", mb 9 9 join) :: (* Not yet implemented *)
-  ("split", mb 3 1 split) :: (* TESTED *)
+  ("split", mb 3 1 split) :: 
   ("reverse", mb 9 9 reverse) :: (* Not yet implemented *)
   ("transpose", mb 9 9 transpose) :: (* Not yet implemented *)
-  ("@", mb 3 2 At) :: (* TESTED *)
+  ("@", mb 3 2 At) :: 
   ("@@", mb 9 9 AtAt) :: (* Not yet implemented *)
   ("!", mb 9 9 Bang) :: (* Not yet implemented *)
   ("!!", mb 9 9 BangBang) :: (* Not yet implemented *)

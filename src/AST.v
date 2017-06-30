@@ -63,8 +63,8 @@ Inductive TConstr :=
 .     
 
 Inductive TV_t :=
-| TVFree (n : nat) (k : Kind) (l : list TV_t)
-| TVBound (n : nat) (k : Kind)
+| TVFree (n : Z) (k : Kind) (l : list TV_t)
+| TVBound (n : Z) (k : Kind)
 .
 
 Inductive Typ :=
@@ -73,6 +73,7 @@ Inductive Typ :=
 | TUser (id : ident) (l : list Typ) (t : Typ)
 | TRec (l : list (string * Typ))
 .
+
 
 Inductive Expr :=
 (* builtin *)
