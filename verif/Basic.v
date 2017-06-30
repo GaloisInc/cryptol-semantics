@@ -27,11 +27,12 @@ Definition ge := bind_decl_groups whole_prog gempty.
 Definition z : ident := (244,"z").
 
 Lemma eval_z :
-  force_list ge empty (EVar z) ([bit true, bit true]).
+  exists v,
+    eval_expr ge empty (EVar z) v /\ force_list ge empty v ([bit true, bit true]).
 Proof.
+  eexists. split.
   e.
-  e. e. e. e.
-  g.
+  e. e. e. g.
   e. e.
   e. g.
   e. e. g.
@@ -40,17 +41,19 @@ Proof.
   e. g. e.
   e. g. e. e. e. g.
   e. e. e.
-  e. e.
+  e.
+
+  e. e. e.
 
   eapply force_cons. e.
   eapply force_cons. e.
-  eapply force_nil. e.
+  eapply force_nil. 
   eapply force_cons. e.
   eapply force_cons. e.
-  eapply force_nil. e.
+  eapply force_nil. 
   unfold to_bitv. instantiate (2 := 2%nat).
   simpl. reflexivity.
   unfold to_bitv. reflexivity.
-  simpl. reflexivity.
-  e. e. e. e.
+
+  repeat e.
 Qed.

@@ -3,17 +3,18 @@ Require Import String.
 Require Import Coqlib.
 Require Import Bitvectors.
 
-Inductive val :=
-| bit (b : bool) (* Can we ever get this now? *)
-(*| bits {n} (b : BitV n) (* bitvector *)*)
-| close (id : ident) (e : Expr) (E : ident -> option val)  (* closure *)
-| tclose (id : ident) (e : Expr) (E : ident -> option val) (* type closure *)
-| tuple (l : list val) (* heterogeneous tuples *)
-| rec (l : list (string * val)) (* records *)
-| typ (t : Typ) (* type value, used to fill in type variables *)
-| vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
-| vnil (* empty list *)
-.
+(* Now mutually defined with Expr in AST.v *)
+(* Inductive val := *)
+(* | bit (b : bool) (* Can we ever get this now? *) *)
+(* (*| bits {n} (b : BitV n) (* bitvector *)*) *)
+(* | close (id : ident) (e : Expr) (E : ident -> option val)  (* closure *) *)
+(* | tclose (id : ident) (e : Expr) (E : ident -> option val) (* type closure *) *)
+(* | tuple (l : list val) (* heterogeneous tuples *) *)
+(* | rec (l : list (string * val)) (* records *) *)
+(* | typ (t : Typ) (* type value, used to fill in type variables *) *)
+(* | vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *) *)
+(* | vnil (* empty list *) *)
+(* . *)
 
 (* convert a forced list of bits to a bitvector *)
 Fixpoint to_bitv {ws : nat} (l : list val) : option (BitV ws) :=
@@ -78,5 +79,5 @@ Fixpoint thunk_list (l : list val) : val :=
   match l with
   | nil => vnil
   | f :: r =>
-    vcons f (EVar (0,""%string)) (extend empty (0,""%string) (thunk_list r))
+    vcons f (EValue (thunk_list r)) empty
   end.

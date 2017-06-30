@@ -114,7 +114,8 @@ Inductive Expr :=
 | EHead (e : Expr)
 (* tail of list (n times) *)
 | ETail (n : nat) (e : Expr)
-
+(* Expression that is a value *)
+| EValue (v : val)
 with Match :=
      | From (id : ident) (e : Expr)
      | MLet (d : Declaration)
@@ -130,6 +131,16 @@ with Selector :=
      | TupleSel (n : nat)
      | ListSel (e : Expr)
      | RecordSel (s : string)
+with val :=
+     | bit (b : bool) (* Can we ever get this now? *)
+     (*| bits {n} (b : BitV n) (* bitvector *)*)
+     | close (id : ident) (e : Expr) (E : ident -> option val)  (* closure *)
+     | tclose (id : ident) (e : Expr) (E : ident -> option val) (* type closure *)
+     | tuple (l : list val) (* heterogeneous tuples *)
+     | rec (l : list (string * val)) (* records *)
+     | typ (t : Typ) (* type value, used to fill in type variables *)
+     | vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
+     | vnil (* empty list *)
 .
 
 Definition extend { vtype : Type } (E : ident -> option vtype) (id : ident) (v : vtype) :=

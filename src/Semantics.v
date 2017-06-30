@@ -1,7 +1,7 @@
+Require Import String.
 Require Import List.
 Import ListNotations.
 Require Import Coq.Arith.PeanoNat.
-Require Import String.
 
 (* Borrow from CompCert *)
 Require Import Coqlib.
@@ -12,6 +12,8 @@ Require Import AST.
 Require Import Builtins.
 Require Import Values.
 Require Import BuiltinSem.
+
+Open Scope list_scope.
 
 Fixpoint declare (l : list Declaration) (ge : genv) :=
   match l with
@@ -47,6 +49,18 @@ Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
   | (s,v) :: r =>
     if string_dec str s then Some v else lookup str r
   end.
+
+Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -> list C -> Prop :=
+| Forall3_nil :
+    Forall3 TR [] [] []
+| Forall3_cons :
+    forall x y z lx ly lz,
+      TR x y z ->
+      Forall3 TR lx ly lz ->
+      Forall3 TR (x :: lx) (y :: ly) (z :: lz).
+
+  
+
 
 Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_builtin_sem :
@@ -104,11 +118,13 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E exp decls v, 
       eval_expr (bind_decl_groups decls ge) E exp v ->
       eval_expr ge E (EWhere exp decls) v
-(* | eval_list_sel : *)
-(*     forall E idx {w : nat} (i : BitV w) v e, *)
-(*       eval_expr ge E idx (bits i) -> *)
-(*       select_list ge E (Z.to_nat (unsigned i)) e v -> *)
-(*       eval_expr ge E (ESel e (ListSel idx)) v *)
+| eval_list_sel :
+    forall E idx vidx {w : nat} (i : BitV w) e v vs,
+      eval_expr ge E idx vidx ->
+      force_list ge E vidx vs ->
+      to_bitv vs = Some i ->
+      select_list ge E (Z.to_nat (unsigned i)) e v ->
+      eval_expr ge E (ESel e (ListSel idx)) v
 | eval_tapp :
     forall E e id e' E' v t te,
       eval_expr ge E e (tclose id e' E') ->
@@ -146,19 +162,20 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge E e (vcons v e' E') ->
       eval_expr ge E' (ETail n e') v' ->
       eval_expr ge E (ETail (S n) e) v'
-
+| eval_value :
+    forall E v,
+      eval_expr ge E (EValue v) v
 (* Force complete evaluation of a lazy list *)
 (* Used for converting a list of bits into a number to evaluate arithmetic *)
-with force_list (ge : genv) : env -> Expr -> list val -> Prop :=
+with force_list (ge : genv) : env -> val -> list val -> Prop :=
      | force_nil :
-         forall E e,
-           eval_expr ge E e vnil ->
-           force_list ge E e nil
+         forall E,
+           force_list ge E vnil nil
      | force_cons :
-         forall E e e' E' l v,
-           eval_expr ge E e (vcons v e' E') ->
-           force_list ge E' e' l ->
-           force_list ge E e (v::l)
+         forall E E' e v v' l,
+           eval_expr ge E' e v' ->
+           force_list ge E v' l ->
+           force_list ge E (vcons v e E') (v::l)
                 
 (* select the nth element from a lazy list *)
 with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
@@ -202,7 +219,7 @@ with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
            hi = (lo + (Z.to_nat j))%nat ->
            select_list ge E n e (vslice lo hi lexp AE)
 *)
-
+(*
 with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
      | par_one :
          forall E n,
@@ -252,21 +269,24 @@ with length (ge : genv) : env -> Expr -> nat -> Prop :=
            eval_expr ge E e (vcons v re rE) ->
            length ge rE re n ->
            length ge E e (S n)
+*)
 with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 (* | eval_demote : *)
 (*     forall {ws : nat} (w n : Z) (b : BitV ws), *)
 (*       ws = Z.to_nat w -> *)
 (*       b = @repr ws n -> *)
 (*       eval_builtin ge Demote ((typ (TCon (TC (TCNum n)) nil)) :: (typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b) *)
-| eval_plus :
-    forall {w} (b1 b2 b3 : BitV w) E v1 v2 v3 l1 l2 t,
+| eval_plus_base : (* evaluate plus over bitvectors *)
+    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
+      (* TODO: eval_expr t (bitv_type w)*)
+      eval_expr ge E e1 v1 ->
+      eval_expr ge E e2 v2 ->
       force_list ge E v1 l1 ->
       force_list ge E v2 l2 ->
       to_bitv l1 = Some b1 ->
       to_bitv l2 = Some b2 ->
-      b3 = add b1 b2 ->
-      v3 = thunk_list (from_bitv b3) ->
-      eval_builtin ge E Plus (t :: v1 :: v2 :: nil) (v3)
+      v3 = thunk_list (from_bitv (add b1 b2)) ->
+      eval_builtin ge E Plus (t :: e1 :: e2 :: nil) (v3)
 | eval_at_vnil : (* This case seems weird, but it's necessary (cryptol does this) *)
     forall E l v t1 t2 t3 idx,
       select_list ge E O l v ->
@@ -278,6 +298,17 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 | eval_false :
     forall E,
       eval_builtin ge E false_builtin nil (bit false)
+| eval_lift_over_2_lists :
+    forall E l1 vs1 l2 vs2 v targs largs bi lv1 lv2 vl,
+      (* is_binary_builtin bi -> *)
+      eval_expr ge E l1 lv1 ->
+      eval_expr ge E l2 lv2 ->
+      force_list ge E lv1 vs1 ->
+      force_list ge E lv2 vs2 ->
+      Forall3 (fun a1 => fun a2 => fun v => eval_builtin ge E bi (targs ++ a1 :: a2 :: nil) v) (map EValue vs1) (map EValue vs2) vl ->
+      largs = targs ++ (l1 :: l2 :: nil) -> (* last 2 are the values, could be arbitrary # of type args *)
+      v = thunk_list vl ->
+      eval_builtin ge E bi largs v
 (* | eval_minus : *)
 (*     forall {w : nat} (b1 b2 b3 : BitV w) t, *)
 (*       b3 = @sub w b1 b2 -> *)
