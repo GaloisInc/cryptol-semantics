@@ -301,12 +301,12 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 | eval_lift_over_2_lists :
     forall E l1 vs1 l2 vs2 v targs largs bi lv1 lv2 vl,
       (* is_binary_builtin bi -> *)
+      largs = targs ++ (l1 :: l2 :: nil) -> (* last 2 are the values, could be arbitrary # of type args *)
       eval_expr ge E l1 lv1 ->
       eval_expr ge E l2 lv2 ->
       force_list ge E lv1 vs1 ->
       force_list ge E lv2 vs2 ->
       Forall3 (fun a1 => fun a2 => fun v => eval_builtin ge E bi (targs ++ a1 :: a2 :: nil) v) (map EValue vs1) (map EValue vs2) vl ->
-      largs = targs ++ (l1 :: l2 :: nil) -> (* last 2 are the values, could be arbitrary # of type args *)
       v = thunk_list vl ->
       eval_builtin ge E bi largs v
 (* | eval_minus : *)
