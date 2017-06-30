@@ -27,8 +27,9 @@ Definition ge := bind_decl_groups whole_prog gempty.
 Definition z : ident := (244,"z").
 
 Lemma eval_z :
-  eval_expr ge empty (EVar z) (thunk_list [bit true, bit true]).
+  force_list ge empty (EVar z) ([bit true, bit true]).
 Proof.
+  e.
   e. e. e. e.
   g.
   e. e.
@@ -39,7 +40,7 @@ Proof.
   e. g. e.
   e. g. e. e. e. g.
   e. e. e.
-  e. e. simpl.
+  e. e.
 
   eapply force_cons. e.
   eapply force_cons. e.
@@ -51,4 +52,5 @@ Proof.
   simpl. reflexivity.
   unfold to_bitv. reflexivity.
   simpl. reflexivity.
+  e. e. e. e.
 Qed.
