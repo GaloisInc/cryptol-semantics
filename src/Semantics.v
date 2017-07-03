@@ -276,9 +276,39 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 (*       ws = Z.to_nat w -> *)
 (*       b = @repr ws n -> *)
 (*       eval_builtin ge Demote ((typ (TCon (TC (TCNum n)) nil)) :: (typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b) *)
+| eval_times_base : (* evaluate times over bitvectors *)
+    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
+      eval_expr ge E e1 v1 ->
+      eval_expr ge E e2 v2 ->
+      force_list ge E v1 l1 ->
+      force_list ge E v2 l2 ->
+      to_bitv l1 = Some b1 ->
+      to_bitv l2 = Some b2 ->
+      v3 = thunk_list (from_bitv (mul b1 b2)) ->
+      eval_builtin ge E Times (t :: e1 :: e2 :: nil) (v3)
+| eval_div_base : (* evaluate div over bitvectors *)
+    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
+      eval_expr ge E e1 v1 ->
+      eval_expr ge E e2 v2 ->
+      force_list ge E v1 l1 ->
+      force_list ge E v2 l2 ->
+      to_bitv l1 = Some b1 ->
+      to_bitv l2 = Some b2 ->
+      unsigned b2 <> 0 ->
+      v3 = thunk_list (from_bitv (divu b1 b2)) ->
+      eval_builtin ge E Div (t :: e1 :: e2 :: nil) (v3)
+| eval_minus_base : (* evaluate minus over bitvectors *)
+    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
+      eval_expr ge E e1 v1 ->
+      eval_expr ge E e2 v2 ->
+      force_list ge E v1 l1 ->
+      force_list ge E v2 l2 ->
+      to_bitv l1 = Some b1 ->
+      to_bitv l2 = Some b2 ->
+      v3 = thunk_list (from_bitv (sub b1 b2)) ->
+      eval_builtin ge E Minus (t :: e1 :: e2 :: nil) (v3)
 | eval_plus_base : (* evaluate plus over bitvectors *)
     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
-      (* TODO: eval_expr t (bitv_type w)*)
       eval_expr ge E e1 v1 ->
       eval_expr ge E e2 v2 ->
       force_list ge E v1 l1 ->
