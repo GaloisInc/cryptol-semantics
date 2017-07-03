@@ -14,6 +14,6 @@ This file is to document some of the dark corners of cryptol, especially those w
 
 7. zero is well typed at any type, even function types (it evaluates to the constant zero function)
 
-
+8. 0x4 : [3] is an error, whereas 4 : [3] is fine.
 
 

@@ -38,21 +38,23 @@ Proof.
   e. e. e. g.
   e. e. e. e.
 
-  e. 
-  eapply eval_lift_over_list_binary.
-  simpl. auto.
-
-
-  
-  instantiate (3 := [EVar (3, "")]).
+  e.
+  eapply eval_lift_binary_builtin.
+  solve [simpl; auto].
+  instantiate (3 := (EVar (3,"")) :: nil).
   simpl. reflexivity.
+
   e. e.
   e. e. e. e. e.
   e.
 
-  repeat e. instantiate (2 := 2%nat). simpl. reflexivity.
-  simpl. reflexivity. simpl. reflexivity.
+  repeat e.
+  repeat e.
+  instantiate (2 := 2%nat). simpl. reflexivity.
+  simpl. reflexivity. 
   split.
-  e. e. e.
+  e. eapply eval_lift_binary_nil.
+  e. e.
   e. e. e. e. e.
+  e.
 Qed.

@@ -131,6 +131,10 @@ Inductive Expr :=
 | ETail (n : nat) (e : Expr)
 (* Expression that is a value *)
 | EValue (v : val)
+(* Lifted evaluation of unary builtin *)
+| ELiftUnary (b : builtin) (targs : list Expr) (e : Expr)
+(* Lifted evaluation of binary builtin *)             
+| ELiftBinary (b : builtin) (targs : list Expr) (e1 e2 : Expr) (env1 env2 : ident -> option val)
 with Match :=
      | From (id : ident) (e : Expr)
      | MLet (d : Declaration)

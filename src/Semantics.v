@@ -266,6 +266,28 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_value :
     forall E v,
       eval_expr ge E (EValue v) v
+(* lifting operations over lists lazily *)
+| eval_lift_unary_cons :
+    forall E a vinit e E' bi targs v,
+      eval_expr ge E a (vcons vinit e E') ->
+      eval_builtin ge E bi (targs ++ (EValue vinit) :: nil) v ->
+      eval_expr ge E (ELiftUnary bi targs a) (vcons v (ELiftUnary bi targs e) E')
+| eval_lift_unary_nil :
+    forall E a vnil bi targs,
+      eval_expr ge E a vnil ->
+      eval_expr ge E (ELiftUnary bi targs a) vnil
+| eval_lift_binary_cons :
+    forall E a b AE BE v bi targs ae be aE' bE' va vb,
+      eval_expr ge AE a (vcons va ae aE') ->
+      eval_expr ge BE b (vcons vb be bE') ->
+      eval_builtin ge E bi (targs ++ (EValue va) :: (EValue vb) :: nil) v ->
+      eval_expr ge E (ELiftBinary bi targs a b AE BE) (vcons v (ELiftBinary bi targs ae be aE' bE') empty)
+| eval_lift_binary_nil :
+    forall E a b vnil bi targs AE BE,
+      (* both lists must be same length to add, so no extra eval rule is needed if only one list is nil *)
+      eval_expr ge AE a vnil ->
+      eval_expr ge BE b vnil ->
+      eval_expr ge E (ELiftBinary bi targs a b AE BE) vnil
 (* Force complete evaluation of a lazy list *)
 (* Used for converting a list of bits into a number to evaluate arithmetic *)
 with force_list (ge : genv) : env -> val -> list val -> Prop :=
@@ -429,67 +451,79 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 | eval_false :
     forall E,
       eval_builtin ge E false_builtin nil (bit false)
-
+| eval_lift_unary_builtin :
+    forall largs targs a E bi v,
+      is_pointwise_liftable_unary bi -> 
+      largs = targs ++ (a :: nil) ->
+      eval_expr ge E (ELiftUnary bi targs a) v ->
+      eval_builtin ge E bi largs v
+| eval_lift_binary_builtin :
+    forall largs targs a b E bi v,
+      is_pointwise_liftable_binary bi -> 
+      largs = targs ++ (a :: b :: nil) ->
+      eval_expr ge E (ELiftBinary bi targs a b E E) v ->
+      eval_builtin ge E bi largs v
+                   
 (* Below are 6 rules for lifting evaluation of builtins over records, tuples, and lists *)
 (* The list rules look different because lists are lazy *)
-| eval_lift_over_record_unary :
-    forall bi largs targs r E lidv vl v,
-      is_pointwise_liftable_unary bi ->
-      largs = targs ++ (r :: nil) ->
-      eval_expr ge E r (rec lidv) ->
-      Forall2 (fun a => fun v => eval_builtin ge E bi (targs ++ a :: nil) v)
-              (map EValue (map snd lidv)) vl ->
-      v = rec (combine (map fst lidv) vl) ->
-      eval_builtin ge E bi largs v
-| eval_lift_over_record_binary :
-    forall bi largs targs r1 r2 E lidv1 lidv2 vl v,
-      is_pointwise_liftable_binary bi ->
-      largs = targs ++ (r1 :: r2 :: nil) ->
-      eval_expr ge E r1 (rec lidv1) ->
-      eval_expr ge E r2 (rec lidv2) ->
-      Forall3 (fun a1 => fun a2 => fun v => eval_builtin ge E bi (targs ++ a1 :: a2 :: nil) v)
-              (map EValue (map snd lidv1))
-              (map EValue (map snd lidv2)) vl ->
-      map fst lidv1 = map fst lidv2 ->
-      v = rec (combine (map fst lidv1) vl) ->
-      eval_builtin ge E bi largs v
-| eval_lift_over_tuple_unary :
-    forall bi largs targs E l lv vl v,
-      is_pointwise_liftable_unary bi ->
-      largs = targs ++ (l :: nil) ->
-      eval_expr ge E l (tuple lv) ->
-      Forall2 (fun a => fun v => eval_builtin ge E bi (targs ++ a :: nil) v) (map EValue lv) vl ->
-      v = tuple vl ->
-      eval_builtin ge E bi largs v
-| eval_lift_over_tuple_binary :
-    forall E bi largs v vl targs l1 l2 lv1 lv2,
-      is_pointwise_liftable_binary bi ->
-      largs = targs ++ (l1 :: l2 :: nil) ->
-      eval_expr ge E l1 (tuple lv1) ->
-      eval_expr ge E l2 (tuple lv2) ->
-      Forall3 (fun a1 => fun a2 => fun v => eval_builtin ge E bi (targs ++ a1 :: a2 :: nil) v) (map EValue lv1) (map EValue lv2) vl ->
-      v = tuple vl ->              
-      eval_builtin ge E bi largs v
-| eval_lift_over_list_unary :
-    forall bi largs targs l E lv vs vl v,
-      is_pointwise_liftable_unary bi ->
-      largs = targs ++ (l :: nil) ->
-      eval_expr ge E l lv ->
-      force_list ge E lv vs ->
-      Forall2 (fun a => fun v => eval_builtin ge E bi (targs ++ a :: nil) v) (map EValue vs) vl ->
-      v = thunk_list vl ->
-      eval_builtin ge E bi largs v
-| eval_lift_over_list_binary :
-    forall E l1 vs1 l2 vs2 v targs largs bi lv1 lv2 vl,
-      is_pointwise_liftable_binary bi ->
-      largs = targs ++ (l1 :: l2 :: nil) -> (* last 2 are the values, could be arbitrary # of type args *)
-      eval_expr ge E l1 lv1 ->
-      eval_expr ge E l2 lv2 ->
-      force_list ge E lv1 vs1 ->
-      force_list ge E lv2 vs2 ->
-      Forall3 (fun a1 => fun a2 => fun v => eval_builtin ge E bi (targs ++ a1 :: a2 :: nil) v) (map EValue vs1) (map EValue vs2) vl ->
-      v = thunk_list vl ->
-      eval_builtin ge E bi largs v
+(* | eval_lift_over_record_unary : *)
+(*     forall bi largs targs r E lidv vl v, *)
+(*       is_pointwise_liftable_unary bi -> *)
+(*       largs = targs ++ (r :: nil) -> *)
+(*       eval_expr ge E r (rec lidv) -> *)
+(*       Forall2 (fun a => fun v => eval_builtin ge E bi (targs ++ a :: nil) v) *)
+(*               (map EValue (map snd lidv)) vl -> *)
+(*       v = rec (combine (map fst lidv) vl) -> *)
+(*       eval_builtin ge E bi largs v *)
+(* | eval_lift_over_record_binary : *)
+(*     forall bi largs targs r1 r2 E lidv1 lidv2 vl v, *)
+(*       is_pointwise_liftable_binary bi -> *)
+(*       largs = targs ++ (r1 :: r2 :: nil) -> *)
+(*       eval_expr ge E r1 (rec lidv1) -> *)
+(*       eval_expr ge E r2 (rec lidv2) -> *)
+(*       Forall3 (fun a1 => fun a2 => fun v => eval_builtin ge E bi (targs ++ a1 :: a2 :: nil) v) *)
+(*               (map EValue (map snd lidv1)) *)
+(*               (map EValue (map snd lidv2)) vl -> *)
+(*       map fst lidv1 = map fst lidv2 -> *)
+(*       v = rec (combine (map fst lidv1) vl) -> *)
+(*       eval_builtin ge E bi largs v *)
+(* | eval_lift_over_tuple_unary : *)
+(*     forall bi largs targs E l lv vl v, *)
+(*       is_pointwise_liftable_unary bi -> *)
+(*       largs = targs ++ (l :: nil) -> *)
+(*       eval_expr ge E l (tuple lv) -> *)
+(*       Forall2 (fun a => fun v => eval_builtin ge E bi (targs ++ a :: nil) v) (map EValue lv) vl -> *)
+(*       v = tuple vl -> *)
+(*       eval_builtin ge E bi largs v *)
+(* | eval_lift_over_tuple_binary : *)
+(*     forall E bi largs v vl targs l1 l2 lv1 lv2, *)
+(*       is_pointwise_liftable_binary bi -> *)
+(*       largs = targs ++ (l1 :: l2 :: nil) -> *)
+(*       eval_expr ge E l1 (tuple lv1) -> *)
+(*       eval_expr ge E l2 (tuple lv2) -> *)
+(*       Forall3 (fun a1 => fun a2 => fun v => eval_builtin ge E bi (targs ++ a1 :: a2 :: nil) v) (map EValue lv1) (map EValue lv2) vl -> *)
+(*       v = tuple vl ->               *)
+(*       eval_builtin ge E bi largs v *)
+(* | eval_lift_over_list_unary : *)
+(*     forall bi largs targs l E lv vs vl v, *)
+(*       is_pointwise_liftable_unary bi -> *)
+(*       largs = targs ++ (l :: nil) -> *)
+(*       eval_expr ge E l lv -> *)
+(*       force_list ge E lv vs -> *)
+(*       Forall2 (fun a => fun v => eval_builtin ge E bi (targs ++ a :: nil) v) (map EValue vs) vl -> *)
+(*       v = thunk_list vl -> *)
+(*       eval_builtin ge E bi largs v *)
+(* | eval_lift_over_list_binary : *)
+(*     forall E l1 vs1 l2 vs2 v targs largs bi lv1 lv2 vl, *)
+(*       is_pointwise_liftable_binary bi -> *)
+(*       largs = targs ++ (l1 :: l2 :: nil) -> (* last 2 are the values, could be arbitrary # of type args *) *)
+(*       eval_expr ge E l1 lv1 -> *)
+(*       eval_expr ge E l2 lv2 -> *)
+(*       force_list ge E lv1 vs1 -> *)
+(*       force_list ge E lv2 vs2 -> *)
+(*       Forall3 (fun a1 => fun a2 => fun v => eval_builtin ge E bi (targs ++ a1 :: a2 :: nil) v) (map EValue vs1) (map EValue vs2) vl -> *)
+(*       v = thunk_list vl -> *)
+(*       eval_builtin ge E bi largs v *)
 (* | eval_minus : *)
 (*     forall {w : nat} (b1 b2 b3 : BitV w) t, *)
 (*       b3 = @sub w b1 b2 -> *)
