@@ -134,10 +134,20 @@ Proof.
   - inversion H. 
  (* ETApp *)
   - inversion H.
- (* EAbs *)
+ (* ETyp *)
   - inversion H.
- (* EApp *) 
+ (* EApp *)
+  - inversion H.
+ (* EAbs *) 
   - inversion H. 
  (* EWhere *)
+  - inversion H. admit. 
+ (* EAppend *)
+  - inversion H.
+ (* EHead *)
+  - inversion H.
+ (* ETail *)
+  - inversion H.
+ (* EValue *)
   - inversion H.
 Admitted.   

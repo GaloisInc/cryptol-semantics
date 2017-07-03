@@ -16,6 +16,41 @@ Require Import Bitvectors.
 (* | vnil (* empty list *) *)
 (* . *)
 
+(*
+Definition unoption_bit (v : option val) : val :=
+  match v with 
+  | Some (bit b) => bit b
+  | _            => bit false
+end.
+
+Fixpoint all_bit (l : list val) : bool :=
+  match l with 
+  | nil => true
+  | cons x xs => 
+      match x with 
+      | (bit x') => all_bit xs
+      | _        => false
+      end
+end. 
+
+Fixpoint to_bit (v : val) : option (
+
+
+Function to_bitv {ws : nat} (l : list val) : option (BitV ws) :=
+  if all_bit l then Some (map unoption_bit l)  
+               else None. 
+ 
+*)
+
+
+
+
+
+
+
+
+
+
 (* convert a forced list of bits to a bitvector *)
 Fixpoint to_bitv {ws : nat} (l : list val) : option (BitV ws) :=
   match l, ws with
@@ -35,7 +70,8 @@ Fixpoint from_bitv' {ws : nat} (n : nat) (bv : BitV ws) : list val :=
   end.
 
 Definition from_bitv {ws : nat} (bv : BitV ws) : list val :=
-  from_bitv' ws bv.
+  from_bitv' ws bv.  
+
 
 Lemma tobit_length :
   forall l ws bv,
@@ -51,9 +87,44 @@ Proof.
   end; inv H.
   eapply IHl in Heqo. simpl. auto.
 Qed.
+
+Lemma tobitv_cons : forall a l ws (bv : BitV (S ws)),
+  to_bitv (a :: l) = Some bv -> 
+    exists (bv' : BitV ws),
+    to_bitv l = Some bv'.
+Proof. 
+  (* Need to find the right induction *)
+  intro a. intro l. induction (a::l); intros.    
+  - inversion H.
+  - inversion H. destruct a0; try congruence. 
+   (* types of bv in IHl0 and H differ *)
+    admit. 
+Admitted.
   
-(* @NATE: This lemma, or something like it, is what we want proven about to_bitv and from_bitv *)
 Lemma tobit_frombit :
+  forall l ws bv,
+    to_bitv l = Some bv ->
+    @from_bitv' ws ws bv = l.
+Proof.
+  induction l; intros.
+  - eapply tobit_length in H. subst. simpl. reflexivity.
+  - destruct ws. simpl in H. destruct a; congruence.
+    apply tobitv_cons in H. destruct H. apply IHl in H.
+    unfold from_bitv' in H.   
+Admitted. 
+(*
+  simpl in H. destruct a; try congruence. destruct (to_bitv l). 
+  - inversion H. destruct b. 
+    + simpl. f_equal. 
+      * f_equal. destruct (repr (unsigned b0 + two_power_nat ws)). 
+        destruct (Z.of_nat ws). 
+        
+  - inversion H.
+*)  
+     
+
+(* @NATE: This lemma, or something like it, is what we want proven about to_bitv and from_bitv *)
+(*Lemma tobit_frombit :
   forall l ws bv,
     to_bitv l = Some bv ->
     @from_bitv' ws ws bv = l.
@@ -69,8 +140,10 @@ Proof.
   eapply IHl in Heqo.
   f_equal. f_equal.
 Admitted.
+*)
 
-
+Definition env := ident -> option val.
+Definition empty : env := fun _ => None.
 
 (* Conversion from fully computed finite list to lazy list via trivial thunking *)
 Fixpoint thunk_list (l : list val) : val :=
