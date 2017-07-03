@@ -94,10 +94,13 @@ Lemma tobitv_cons : forall a l ws (bv : BitV (S ws)),
     to_bitv l = Some bv'.
 Proof. 
   (* Need to find the right induction *)
-  intro a. intro l. induction (a::l); intros.    
-  - inversion H.
-  - inversion H. destruct a0; try congruence. 
-   (* types of bv in IHl0 and H differ *)
+  (*intro a. intro l. revert a. *)induction l; intros.    
+  - inversion H. eapply tobit_length in H. inversion H. simpl. eauto.
+  - destruct ws.   
+    + eapply tobit_length in H. inversion H. 
+    + (* This looks right *)inversion H. destruct a; try congruence. destruct a0; try congruence. destruct l; try congruence. 
+      * eapply tobit_length in H. inversion H. simpl. eauto. 
+      * clear H1. destruct bv. 
     admit. 
 Admitted.
   
