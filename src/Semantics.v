@@ -15,6 +15,106 @@ Require Import BuiltinSem.
 
 Open Scope list_scope.
 
+Inductive eval_type (ge : genv) : env -> Typ -> Tval -> Prop :=
+| eval_tvar_bound :
+    forall E uid t k,
+      E (uid,""%string) = Some (typ t) ->
+      eval_type ge E (TVar (TVBound uid k)) t
+(* | eval_tvar_free : *)
+(* TODO: not sure what to do with free type variables...*)
+| eval_trec :
+    forall E l lv,
+      Forall2 (eval_type ge E) (map snd l) (map snd lv) ->
+      map fst l = map fst lv ->
+      eval_type ge E (TRec l) (trec lv)
+| eval_ttup :
+    forall E l lv n,
+      Forall2 (eval_type ge E) l lv ->
+      n = length l ->
+      eval_type ge E (TCon (TC (TCTuple n)) l) (ttup lv)
+| eval_tseq :
+    forall E l len lenv elem elemv,
+      l = len :: elem :: nil ->
+      eval_type ge E len lenv ->
+      eval_type ge E elem elemv ->
+      eval_type ge E (TCon (TC TCSeq) l) (tseq lenv elemv)
+| eval_tnum :
+    forall E n,
+      eval_type ge E (TCon (TC (TCNum n)) nil) (tnum n)
+| eval_tbit :
+    forall E,
+      eval_type ge E (TCon (TC TCBit) nil) tbit
+| eval_tinf :
+    forall E,
+      eval_type ge E (TCon (TC TCInf) nil) tinf
+| eval_tfunction_type_base :
+    forall E a arg r res,
+      eval_type ge E a arg ->
+      eval_type ge E r res ->
+      eval_type ge E (TCon (TC TCFun) (a :: r :: nil)) (tfun arg res)
+| eval_tfunction_type_rec :
+    forall E a r arg res,
+      eval_type ge E a arg ->
+      eval_type ge E (TCon (TC TCFun) r) res ->
+      eval_type ge E (TCon (TC TCFun) (a :: r)) (tfun arg res)
+| eval_type_add :
+    forall E l r a b n,
+      eval_type ge E l (tnum a) ->
+      eval_type ge E r (tnum b) ->
+      n = (a + b)%nat ->
+      eval_type ge E (TCon (TF TCAdd) (l :: r :: nil)) (tnum n)
+| eval_type_sub :
+    forall E l r a b n,
+      eval_type ge E l (tnum a) ->
+      eval_type ge E r (tnum b) ->
+      n = (a - b)%nat ->
+      eval_type ge E (TCon (TF TCSub) (l :: r :: nil)) (tnum n)
+| eval_type_mul :
+    forall E l r a b n,
+      eval_type ge E l (tnum a) ->
+      eval_type ge E r (tnum b) ->
+      n = (a * b)%nat ->
+      eval_type ge E (TCon (TF TCMul) (l :: r :: nil)) (tnum n)
+| eval_type_div :
+    forall E l r a b n,
+      eval_type ge E l (tnum a) ->
+      eval_type ge E r (tnum b) ->
+      b <> O ->
+      n = (a / b)%nat ->
+      eval_type ge E (TCon (TF TCDiv) (l :: r :: nil)) (tnum n)
+| eval_type_mod :
+    forall E l r a b n,
+      eval_type ge E l (tnum a) ->
+      eval_type ge E r (tnum b) ->
+      b <> O ->
+      n = (a mod b)%nat ->
+      eval_type ge E (TCon (TF TCMod) (l :: r :: nil)) (tnum n)
+| eval_type_exp :
+    forall E l r a b n,
+      eval_type ge E l (tnum a) ->
+      eval_type ge E r (tnum b) ->
+      n = Nat.pow a b ->
+      eval_type ge E (TCon (TF TCExp) (l :: r :: nil)) (tnum n)
+| eval_type_min :
+    forall E l r a b n,
+      eval_type ge E l (tnum a) ->
+      eval_type ge E r (tnum b) ->
+      n = min a b ->
+      eval_type ge E (TCon (TF TCMin) (l :: r :: nil)) (tnum n)
+| eval_type_max :
+    forall E l r a b n,
+      eval_type ge E l (tnum a) ->
+      eval_type ge E r (tnum b) ->
+      n = max a b ->
+      eval_type ge E (TCon (TF TCMax) (l :: r :: nil)) (tnum n)
+
+(* | eval_type_len_from_then_to : *)
+(* | eval_type_len_from_then : *)
+(* | eval_type_width : *)
+.
+
+
+
 Fixpoint declare (l : list Declaration) (ge : genv) :=
   match l with
   | nil => ge
@@ -132,8 +232,9 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge (extend E' id (typ t)) e' v ->
       eval_expr ge E (ETApp e te) v
 | eval_typ :
-    forall E t,
-      eval_expr ge E (ETyp t) (typ t)
+    forall E t tv,
+      eval_type ge E t tv ->
+      eval_expr ge E (ETyp t) (typ tv)
 | eval_tabs :
     forall E e id,
       eval_expr ge E (ETAbs id e) (tclose id e E)

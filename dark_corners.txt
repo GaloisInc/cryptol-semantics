@@ -10,5 +10,10 @@ This file is to document some of the dark corners of cryptol, especially those w
 
 5. All arithmetic is unsigned, and is defined over bitvectors of any length. This leads to surprising results, such as "1 + 1 = 0" and "-1 > 5 = True"
 
+6. zero, split, splitAt, and demote all have computationally relevant type arguments.
+
+7. zero is well typed at any type, even function types (it evaluates to the constant zero function)
+
+
 
 

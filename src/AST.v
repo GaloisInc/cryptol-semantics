@@ -1,26 +1,26 @@
+Require Import String.
 Require Import List.
 Import ListNotations.
-Require Import String.
 
 (* Borrow from CompCert *)
 Require Import Coqlib.
 Require Import Bitvectors.
 Require Import Builtins.
 
+(* An identifier is both a unique identifier and a name, but the name is meaningless *)
 Definition ident : Type := Z * string.
 
+(* This definition is what makes the name meaningless *)
+(* We leave the name in since it helps with reading ASTs *)
 Definition ident_eq :
   forall (x y : ident),
-    { x = y } + { x <> y }.
+    { fst x = fst y } + { fst x <> fst y }.
 Proof.
-  decide equality.
-  eapply string_dec.
-  eapply Z.eq_dec.
+  decide equality;
+  eapply Pos.eq_dec. 
 Defined.
 
 Definition BitV (n : nat) : Type := (@Bitvectors.Int n).
-
-
 
 Inductive Kind :=
 | KType
@@ -34,12 +34,12 @@ Inductive userType :=
 .
 
 Inductive TypeConstr :=
-| TCNum (n : Z)
+| TCNum (n : nat)
 | TCInf
 | TCBit
 | TCSeq
 | TCFun
-| TCTuple (n : Z)
+| TCTuple (n : nat)
 | TCNewtype (u : userType)
 .
 
@@ -63,8 +63,8 @@ Inductive TConstr :=
 .     
 
 Inductive TV_t :=
-| TVFree (n : Z) (k : Kind) (l : list TV_t)
-| TVBound (n : Z) (k : Kind)
+| TVFree (uid : Z) (k : Kind) (l : list TV_t)
+| TVBound (uid : Z) (k : Kind)
 .
 
 Inductive Typ :=
@@ -73,6 +73,20 @@ Inductive Typ :=
 | TUser (id : ident) (l : list Typ) (t : Typ)
 | TRec (l : list (string * Typ))
 .
+
+(* Type level values *)
+Inductive Tval :=
+| trec (l : list (string * Tval)) (* record *)
+| ttup (l : list Tval) (* tuple *)
+| tseq (len : Tval) (elem : Tval)
+| tfun (argt : Tval) (res : Tval)
+| tnum (n : nat)
+| tbit
+| tinf (* length of infinite streams *)
+.
+
+
+
 
 
 Inductive Expr :=
@@ -139,7 +153,7 @@ with val :=
      | tclose (id : ident) (e : Expr) (E : ident -> option val) (* type closure *)
      | tuple (l : list val) (* heterogeneous tuples *)
      | rec (l : list (string * val)) (* records *)
-     | typ (t : Typ) (* type value, used to fill in type variables *)
+     | typ (t : Tval) (* type value, used to fill in type variables *)
      | vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
      | vnil (* empty list *)
 .
@@ -150,5 +164,8 @@ Definition extend { vtype : Type } (E : ident -> option vtype) (id : ident) (v :
 Definition genv := ident -> option Expr.
 Definition gempty : genv := fun _ => None.
 
+
+Definition env := ident -> option val.
+Definition empty : env := fun _ => None.
 
 

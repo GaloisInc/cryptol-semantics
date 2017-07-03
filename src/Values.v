@@ -71,8 +71,6 @@ Proof.
 Admitted.
 
 
-Definition env := ident -> option val.
-Definition empty : env := fun _ => None.
 
 (* Conversion from fully computed finite list to lazy list via trivial thunking *)
 Fixpoint thunk_list (l : list val) : val :=
