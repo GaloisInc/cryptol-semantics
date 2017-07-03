@@ -100,7 +100,7 @@ Proof.
     + eapply tobit_length in H. inversion H. 
     + (* This looks right *)inversion H. destruct a; try congruence. destruct a0; try congruence. destruct l; try congruence. 
       * eapply tobit_length in H. inversion H. simpl. eauto. 
-      * clear H1. destruct bv. 
+      * clear H1. (* I believe this (?) *) 
     admit. 
 Admitted.
   
