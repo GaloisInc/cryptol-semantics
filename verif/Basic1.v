@@ -40,17 +40,10 @@ Proof.
   e. e. e.
   e.
 
-  e. e. e.
-
-  eapply force_cons. e.
-  eapply force_cons. e.
-  eapply force_nil. 
-  eapply force_cons. e.
-  eapply force_cons. e.
-  eapply force_nil. 
-  unfold to_bitv. instantiate (2 := 2%nat).
-  simpl. reflexivity.
-  unfold to_bitv. reflexivity.
-
   repeat e.
+  instantiate (2 := 2%nat). simpl. reflexivity.
+  simpl. reflexivity.
+  repeat e.
+
+  Unshelve. simpl; auto.
 Qed.

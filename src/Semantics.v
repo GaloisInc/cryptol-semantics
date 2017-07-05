@@ -150,6 +150,8 @@ Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
     if string_dec str s then Some v else lookup str r
   end.
 
+(* Just like Forall2, but with 3 lists *)
+(* Good for modeling evaluation of binary operators *)
 Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -> list C -> Prop :=
 | Forall3_nil :
     Forall3 TR [] [] []
@@ -158,9 +160,7 @@ Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -
       TR x y z ->
       Forall3 TR lx ly lz ->
       Forall3 TR (x :: lx) (y :: ly) (z :: lz).
-
   
-
 
 Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_builtin_sem :
@@ -339,52 +339,6 @@ with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
            select_list ge rE n re v ->
            select_list ge E (S n) e v
 with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
-(* | eval_demote : *)
-(*     forall {ws : nat} (w n : Z) (b : BitV ws), *)
-(*       ws = Z.to_nat w -> *)
-(*       b = @repr ws n -> *)
-(*       eval_builtin ge Demote ((typ (TCon (TC (TCNum n)) nil)) :: (typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b) *)
-| eval_times_base : (* evaluate times over bitvectors *)
-    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
-      eval_expr ge E e1 v1 ->
-      eval_expr ge E e2 v2 ->
-      force_list ge E v1 l1 ->
-      force_list ge E v2 l2 ->
-      to_bitv l1 = Some b1 ->
-      to_bitv l2 = Some b2 ->
-      v3 = thunk_list (from_bitv (mul b1 b2)) ->
-      eval_builtin ge E Times (t :: e1 :: e2 :: nil) (v3)
-| eval_div_base : (* evaluate div over bitvectors *)
-    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
-      eval_expr ge E e1 v1 ->
-      eval_expr ge E e2 v2 ->
-      force_list ge E v1 l1 ->
-      force_list ge E v2 l2 ->
-      to_bitv l1 = Some b1 ->
-      to_bitv l2 = Some b2 ->
-      unsigned b2 <> 0 ->
-      v3 = thunk_list (from_bitv (divu b1 b2)) ->
-      eval_builtin ge E Div (t :: e1 :: e2 :: nil) (v3)
-| eval_minus_base : (* evaluate minus over bitvectors *)
-    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
-      eval_expr ge E e1 v1 ->
-      eval_expr ge E e2 v2 ->
-      force_list ge E v1 l1 ->
-      force_list ge E v2 l2 ->
-      to_bitv l1 = Some b1 ->
-      to_bitv l2 = Some b2 ->
-      v3 = thunk_list (from_bitv (sub b1 b2)) ->
-      eval_builtin ge E Minus (t :: e1 :: e2 :: nil) (v3)
-| eval_plus_base : (* evaluate plus over bitvectors *)
-    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
-      eval_expr ge E e1 v1 ->
-      eval_expr ge E e2 v2 ->
-      force_list ge E v1 l1 ->
-      force_list ge E v2 l2 ->
-      to_bitv l1 = Some b1 ->
-      to_bitv l2 = Some b2 ->
-      v3 = thunk_list (from_bitv (add b1 b2)) ->
-      eval_builtin ge E Plus (t :: e1 :: e2 :: nil) (v3)
 | eval_at_vnil : (* This case seems weird, but it's necessary (cryptol does this) *)
     forall E l v t1 t2 t3 idx,
       select_list ge E O l v ->
@@ -396,6 +350,77 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 | eval_false :
     forall E,
       eval_builtin ge E false_builtin nil (bit false)
+(* | eval_demote : *)
+(*     forall {ws : nat} (w n : Z) (b : BitV ws), *)
+(*       ws = Z.to_nat w -> *)
+(*       b = @repr ws n -> *)
+(*       eval_builtin ge Demote ((typ (TCon (TC (TCNum n)) nil)) :: (typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b) *)
+| eval_binary_over_bitv_to_bitv :
+    forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args
+           (pr : strict_total_binary_op_over_bitv_to_bitv bi),
+      args = targ :: el :: er :: nil -> (* TODO: will there ever be more than one targ? *)
+      eval_expr ge E el vl ->
+      eval_expr ge E er vr ->
+      force_list ge E vl ll ->
+      force_list ge E vr lr ->
+      to_bitv ll = Some bl ->
+      to_bitv lr = Some br ->
+      vres = thunk_list (from_bitv ((binop_sem_bitv bi) pr bl br)) ->
+      eval_builtin ge E bi args vres
+| eval_binary_over_bitv_to_bit :
+    forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args 
+           (pr : strict_total_binary_op_over_bitv_to_bit bi),
+      args = targ :: el :: er :: nil -> (* TODO: will there ever be more than one targ? *)
+      eval_expr ge E el vl ->
+      eval_expr ge E er vr ->
+      force_list ge E vl ll ->
+      force_list ge E vr lr ->
+      to_bitv ll = Some bl ->
+      to_bitv lr = Some br ->
+      vres = bit ((binop_sem_bit bi) pr bl br) ->
+      eval_builtin ge E bi args vres
+(* | eval_times_base : (* evaluate times over bitvectors *) *)
+(*     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2, *)
+(*       eval_expr ge E e1 v1 -> *)
+(*       eval_expr ge E e2 v2 -> *)
+(*       force_list ge E v1 l1 -> *)
+(*       force_list ge E v2 l2 -> *)
+(*       to_bitv l1 = Some b1 -> *)
+(*       to_bitv l2 = Some b2 -> *)
+(*       v3 = thunk_list (from_bitv (mul b1 b2)) -> *)
+(*       eval_builtin ge E Times (t :: e1 :: e2 :: nil) (v3) *)
+| eval_div_base : (* evaluate div over bitvectors *)
+    (* different from other binary operators since can't divide by 0 *)
+    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
+      eval_expr ge E e1 v1 ->
+      eval_expr ge E e2 v2 ->
+      force_list ge E v1 l1 ->
+      force_list ge E v2 l2 ->
+      to_bitv l1 = Some b1 ->
+      to_bitv l2 = Some b2 ->
+      unsigned b2 <> 0 ->
+      v3 = thunk_list (from_bitv (divu b1 b2)) ->
+      eval_builtin ge E Div (t :: e1 :: e2 :: nil) (v3)
+(* | eval_minus_base : (* evaluate minus over bitvectors *) *)
+(*     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2, *)
+(*       eval_expr ge E e1 v1 -> *)
+(*       eval_expr ge E e2 v2 -> *)
+(*       force_list ge E v1 l1 -> *)
+(*       force_list ge E v2 l2 -> *)
+(*       to_bitv l1 = Some b1 -> *)
+(*       to_bitv l2 = Some b2 -> *)
+(*       v3 = thunk_list (from_bitv (sub b1 b2)) -> *)
+(*       eval_builtin ge E Minus (t :: e1 :: e2 :: nil) (v3) *)
+(* | eval_plus_base : (* evaluate plus over bitvectors *) *)
+(*     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2, *)
+(*       eval_expr ge E e1 v1 -> *)
+(*       eval_expr ge E e2 v2 -> *)
+(*       force_list ge E v1 l1 -> *)
+(*       force_list ge E v2 l2 -> *)
+(*       to_bitv l1 = Some b1 -> *)
+(*       to_bitv l2 = Some b2 -> *)
+(*       v3 = thunk_list (from_bitv (add b1 b2)) -> *)
+(*       eval_builtin ge E Plus (t :: e1 :: e2 :: nil) (v3) *)
 | eval_lift_unary_builtin :
     forall largs targs a E bi v,
       is_pointwise_liftable_unary bi -> 

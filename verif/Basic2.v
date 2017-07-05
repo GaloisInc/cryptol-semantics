@@ -57,4 +57,6 @@ Proof.
   e. e.
   e. e. e. e. e.
   e.
+  Unshelve.
+  simpl; auto.
 Qed.

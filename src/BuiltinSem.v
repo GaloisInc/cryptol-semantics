@@ -58,6 +58,84 @@ Definition is_pointwise_liftable_binary (b : builtin) : Prop :=
   end.
 
 
+(* binary operations over individual bits *)
+(* mutually exclusive of operators over bitvectors *)
+Definition strict_total_binary_op_over_bit (b : builtin) : Prop :=
+  match b with
+  | And => True
+  | Or => True
+  | Xor => True
+  | _ => False
+  end.
+
+(* total binary operators which operate over bitvectors *)
+(* i.e. operators which are total and strict over bitvectors *)
+Definition strict_total_binary_op_over_bitv_to_bitv (b : builtin) : Prop :=
+  match b with
+  | Plus => True
+  | Minus => True
+  | Times => True
+  | Div => False (* can't divide by 0, not total *)
+  | Mod => False (* can't mod by 0, not total *)
+  | Exp => True
+  | Lt => False (* produces a bit, not a bitvector *)
+  | Gt => False
+  | Le => False
+  | Ge => False
+  | Eq => False
+  | Neq => False
+  | Shiftl => False (* Shifts are strict in 2nd arg, work over infinite sequences in 1st, 1st doesn't have to be a bitvector *)
+  | Shiftr => False
+  | Rotl => False (* Rotates are strict in both args, but 1st arg doesn't have to be a bitvector *)
+  | Rotr => False
+  | _ => False
+  end.
+
+
+Definition strict_total_binary_op_over_bitv_to_bit (b : builtin) : Prop :=
+  match b with
+  | Lt => True
+  | Gt => True
+  | Le => True
+  | Ge => True
+  | Eq => False (* over bit *)
+  | Neq => False
+  | _ => False
+  end.
+
+Definition binop_sem_bitv (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bitv b) :
+  BitV w -> BitV w -> BitV w :=
+  match b,pr with
+  | Plus,_ => @add w
+  | Minus,_ => @sub w
+  | Times,_ => @mul w
+  | Exp,_ => @mul w (* Placeholder: TODO implement exp *)
+  | _,False => @mul w (* unreachable, but whatever *)
+  end.
+                  
+Definition binop_sem_bit (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bit b) :
+  BitV w -> BitV w -> bool :=
+  match b,pr with
+  | Lt,_ => @ltu w
+  | Gt,_ => @gtu w
+  | Le,_ => @leu w
+  | Ge,_ => @geu w
+  | _,False => @geu w (* Unreachable *)
+  end.
+
+Definition strict_total_unary_op_over_bit (b : builtin) : Prop :=
+  match b with
+  | Compl => True
+  | _ => False
+  end.
+
+Definition strict_total_unary_op_over_bitv (b : builtin) : Prop :=
+  match b with
+  | Neg => True
+  | lg2 => True
+  | _ => False
+  end.
+
 (* table of builtins, along with their arity *)
 (* mb 9 9 _ indicates hasn't been implemented, will break when tested *)
 Definition table : list (string * Expr) :=
@@ -108,8 +186,8 @@ Definition table : list (string * Expr) :=
   ("pmult", mb 9 9 pmult) :: (* Not yet implemented *)
   ("pdiv", mb 9 9 pdiv) :: (* Not yet implemented *)
   ("pmod", mb 9 9 pmod) :: (* Not yet implemented *)
-  ("random", mb 9 9 random) :: (* Not yet implemented *)
-  ("trace", mb 9 9 trace) :: (* Not yet implemented *)
+  ("random", mb 9 9 random) :: (* Not going to be implemented *)
+  ("trace", mb 9 9 trace) :: (* Not going to be implemented *)
   nil.
 
 Fixpoint lookup {A : Type} (s : string) (t : list (string * A)) : option A :=
