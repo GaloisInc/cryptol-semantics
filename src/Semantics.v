@@ -18,7 +18,7 @@ Open Scope list_scope.
 Inductive eval_type (ge : genv) : env -> Typ -> Tval -> Prop :=
 | eval_tvar_bound :
     forall E uid t k,
-      E (uid,""%string) = Some (typ t) ->
+      E (uid,""%string) = Some (typ t) -> (* this lookup can be done with any string, as ident_eq only uses uid *)
       eval_type ge E (TVar (TVBound uid k)) t
 (* | eval_tvar_free : *)
 (* TODO: not sure what to do with free type variables...*)
@@ -288,6 +288,33 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge AE a vnil ->
       eval_expr ge BE b vnil ->
       eval_expr ge E (ELiftBinary bi targs a b AE BE) vnil
+(* lift operators over tuples *)
+| eval_lift_unary_tuple :
+    forall E e vs vs' bi targs,
+      eval_expr ge E e (tuple vs) ->
+      Forall2 (fun vx => eval_builtin ge E bi (targs ++ (EValue vx) :: nil)) vs vs' ->
+      eval_expr ge E (ELiftUnary bi targs e) (tuple vs')
+| eval_lift_binary_tuple :
+    forall el er EL ER vsl vsr vs bi targs E,
+      eval_expr ge EL el (tuple vsl) ->
+      eval_expr ge ER er (tuple vsr) ->
+      Forall3 (fun vl => fun vr => eval_builtin ge E bi (targs ++ (EValue vl) :: (EValue vr) :: nil)) vsl vsr vs ->
+      eval_expr ge E (ELiftBinary bi targs el er EL ER) (tuple vs)
+(* lift operators over records *)
+| eval_lift_unary_record :
+    forall E e lidv vs lidv' bi targs,
+      eval_expr ge E e (rec lidv) ->
+      Forall2 (fun vx => eval_builtin ge E bi (targs ++ (EValue vx) :: nil)) (map snd lidv) vs ->
+      lidv' = combine (map fst lidv) vs ->
+      eval_expr ge E (ELiftUnary bi targs e) (rec lidv')
+| eval_lift_binary_record :
+    forall el er EL ER lidvl lidvr vs lidv' bi targs E,
+      eval_expr ge EL el (rec lidvl) ->
+      eval_expr ge ER er (rec lidvr) ->
+      Forall3 (fun vl => fun vr => eval_builtin ge E bi (targs ++ (EValue vl) :: (EValue vr) :: nil)) (map snd lidvl) (map snd lidvr) vs ->
+      map fst lidvl = map fst lidvr ->
+      lidv' = combine (map fst lidvl) vs ->
+      eval_expr ge E (ELiftBinary bi targs el er EL ER) (rec lidv')
 (* Force complete evaluation of a lazy list *)
 (* Used for converting a list of bits into a number to evaluate arithmetic *)
 with force_list (ge : genv) : env -> val -> list val -> Prop :=
@@ -311,88 +338,6 @@ with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
            eval_expr ge E e (vcons v' re rE) ->
            select_list ge rE n re v ->
            select_list ge E (S n) e v
-(*     | select_comp :
-         forall E e compExp compE llm n E' v,
-           eval_expr ge E e (vcomp compExp compE llm) ->
-           par_match ge compE n llm E' ->
-           eval_expr ge E' compExp v ->
-           select_list ge E n e v
-     | select_app_1 :
-         forall E e e1 e2 AE n v,
-           eval_expr ge E e (vapp  e1 e2 AE) ->
-           select_list ge AE n e1 v ->
-           select_list ge E n e v
-     | select_app_2 :
-         forall E e e1 e2 AE n v m k,
-           eval_expr ge E e (vapp e1 e2 AE) ->
-           length ge AE e1 m ->
-           select_list ge AE k e2 v ->
-           n = (m + k)%nat ->
-           select_list ge E n e v
-     | select_slice :
-         forall E e lo hi lexp AE n k v,
-           eval_expr ge E e (vslice lo hi lexp AE) ->
-           k = (lo + n)%nat ->
-           select_list ge AE k lexp v ->
-           select_list ge E n e v
-     | select_split : (* yields a slice, gets selected again *)
-         forall E e k j lexp AE lo hi n,
-           eval_expr ge E e (vsplit k j lexp AE) ->
-           lo = (n * (Z.to_nat j))%nat ->
-           hi = (lo + (Z.to_nat j))%nat ->
-           select_list ge E n e (vslice lo hi lexp AE)
-*)
-(*
-with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
-     | par_one :
-         forall E n,
-           par_match ge E n nil E
-     | par_more :
-         forall E n lm E' lr E'',
-           index_match ge E n lm E' ->
-           par_match ge E' n lr E'' ->
-           par_match ge E n (lm :: lr) E''
-(* provide the nth bound environment for one part of a list comprehension *)
-with index_match (ge : genv) : env -> nat -> list Match -> env -> Prop :=
-     | idx_last : (* take the nth element from the last list *)
-         forall E n id e v,
-           select_list ge E n e v ->
-           index_match ge E n ((From id e) :: nil) (extend E id v)
-     | idx_mid : (* take the mid element from *)
-         forall E E' n r v id e m t len,
-           index_match ge E n r E' ->
-           select_list ge E (S m) e v ->
-           matchlength ge E r len ->
-           (* m * matchlength r  + n *)
-           t = (((S m) * len) + n)%nat ->
-           index_match ge E t ((From id e) :: r) (extend E' id v)
-     | idx_first :
-         forall E n r E' v id e,
-           index_match ge E n r E' ->
-           select_list ge E O e v ->
-           index_match ge E n ((From id e) :: r) (extend E' id v)
-with matchlength (ge : genv) : env -> list Match -> nat -> Prop :=
-     | len_one :
-         forall E id e n,
-           length ge E e n ->
-           matchlength ge E ((From id e) :: nil) n
-     | len_more :
-         forall E id e r n l m,
-           matchlength ge E r n ->
-           length ge E e m ->
-           l = (m * n)%nat ->
-           matchlength ge E ((From id e) :: r) l
-with length (ge : genv) : env -> Expr -> nat -> Prop :=
-     | len_nil :
-         forall E e,
-           eval_expr ge E e vnil ->
-           length ge E e O
-     | len_cons :
-         forall E e v rE re n,
-           eval_expr ge E e (vcons v re rE) ->
-           length ge rE re n ->
-           length ge E e (S n)
-*)
 with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 (* | eval_demote : *)
 (*     forall {ws : nat} (w n : Z) (b : BitV ws), *)
@@ -644,6 +589,88 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 (*| eval_join : *)
 (* Produces the one dimensional cartesian product of a 2 dimensional sequence *)
 (* sorta like a list comprehension *)
+(*
+with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
+     | par_one :
+         forall E n,
+           par_match ge E n nil E
+     | par_more :
+         forall E n lm E' lr E'',
+           index_match ge E n lm E' ->
+           par_match ge E' n lr E'' ->
+           par_match ge E n (lm :: lr) E''
+(* provide the nth bound environment for one part of a list comprehension *)
+with index_match (ge : genv) : env -> nat -> list Match -> env -> Prop :=
+     | idx_last : (* take the nth element from the last list *)
+         forall E n id e v,
+           select_list ge E n e v ->
+           index_match ge E n ((From id e) :: nil) (extend E id v)
+     | idx_mid : (* take the mid element from *)
+         forall E E' n r v id e m t len,
+           index_match ge E n r E' ->
+           select_list ge E (S m) e v ->
+           matchlength ge E r len ->
+           (* m * matchlength r  + n *)
+           t = (((S m) * len) + n)%nat ->
+           index_match ge E t ((From id e) :: r) (extend E' id v)
+     | idx_first :
+         forall E n r E' v id e,
+           index_match ge E n r E' ->
+           select_list ge E O e v ->
+           index_match ge E n ((From id e) :: r) (extend E' id v)
+with matchlength (ge : genv) : env -> list Match -> nat -> Prop :=
+     | len_one :
+         forall E id e n,
+           length ge E e n ->
+           matchlength ge E ((From id e) :: nil) n
+     | len_more :
+         forall E id e r n l m,
+           matchlength ge E r n ->
+           length ge E e m ->
+           l = (m * n)%nat ->
+           matchlength ge E ((From id e) :: r) l
+with length (ge : genv) : env -> Expr -> nat -> Prop :=
+     | len_nil :
+         forall E e,
+           eval_expr ge E e vnil ->
+           length ge E e O
+     | len_cons :
+         forall E e v rE re n,
+           eval_expr ge E e (vcons v re rE) ->
+           length ge rE re n ->
+           length ge E e (S n)
+*)
+(*     | select_comp :
+         forall E e compExp compE llm n E' v,
+           eval_expr ge E e (vcomp compExp compE llm) ->
+           par_match ge compE n llm E' ->
+           eval_expr ge E' compExp v ->
+           select_list ge E n e v
+     | select_app_1 :
+         forall E e e1 e2 AE n v,
+           eval_expr ge E e (vapp  e1 e2 AE) ->
+           select_list ge AE n e1 v ->
+           select_list ge E n e v
+     | select_app_2 :
+         forall E e e1 e2 AE n v m k,
+           eval_expr ge E e (vapp e1 e2 AE) ->
+           length ge AE e1 m ->
+           select_list ge AE k e2 v ->
+           n = (m + k)%nat ->
+           select_list ge E n e v
+     | select_slice :
+         forall E e lo hi lexp AE n k v,
+           eval_expr ge E e (vslice lo hi lexp AE) ->
+           k = (lo + n)%nat ->
+           select_list ge AE k lexp v ->
+           select_list ge E n e v
+     | select_split : (* yields a slice, gets selected again *)
+         forall E e k j lexp AE lo hi n,
+           eval_expr ge E e (vsplit k j lexp AE) ->
+           lo = (n * (Z.to_nat j))%nat ->
+           hi = (lo + (Z.to_nat j))%nat ->
+           select_list ge E n e (vslice lo hi lexp AE)
+*)
     
 .
 
