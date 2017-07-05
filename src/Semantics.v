@@ -350,11 +350,12 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 | eval_false :
     forall E,
       eval_builtin ge E false_builtin nil (bit false)
-(* | eval_demote : *)
-(*     forall {ws : nat} (w n : Z) (b : BitV ws), *)
-(*       ws = Z.to_nat w -> *)
-(*       b = @repr ws n -> *)
-(*       eval_builtin ge Demote ((typ (TCon (TC (TCNum n)) nil)) :: (typ (TCon (TC (TCNum w)) nil)) :: nil) (bits b) *)
+| eval_demote :
+    forall E t1 value t2 width v,
+      eval_expr ge E t1 (typ (tnum value)) ->
+      eval_expr ge E t2 (typ (tnum width)) ->
+      v = thunk_list (from_bitv (@repr width (Z.of_nat value))) ->
+      eval_builtin ge E Demote (t1 :: t2 :: nil) v
 | eval_binary_over_bitv_to_bitv :
     forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args
            (pr : strict_total_binary_op_over_bitv_to_bitv bi),
