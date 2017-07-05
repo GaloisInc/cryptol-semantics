@@ -1,0 +1,42 @@
+Builtin operators in cryptol, while seemingly simple on the surface, are actually quite complicated when fully examined. Many can be lifted over structures, some are differently strict, and some act in ways you might not expect. This document attempts to codify (in English) the types and semantics of different builtin operators in cryptol.
+
+In cryptol there are 3 kinds of structures: streams (i.e. lazy lists), tuples, and records. A stream of bits is sometimes refered to as a bitvector. The only base type in cryptol is a bit, which can either be True or False.
+
++, -, *,^^
+
+Addition, subtraction, multiplication, and exponentiation in their simplest form have type bitvector -> bitvector -> bitvector, where they perform (addition/subtraction/multiplication) on the bitvectors. In this form they are strict in both arguments.
+
+These three operators can also be lifted over all structures to perform their operations pointwise, e.g. vector addition can be expressed with a single +. In their lifted form they have type a -> a -> a, where a is some (possible nested) structure on top of bitvectors. When that structure is a stream, these operators are lazy in both their arguments. 
+
+TODO: these can also lift over functions
+
+/, %
+
+Division and mod are just like the operators above, except they are not total, as it is an error to divide by 0. Other than that their types are identical to +,-, *, and ^^ above.
+
+lg2, Unary -, ~
+
+Log base 2, negation, and bitwise complement are unary builtin operators, which are strict in their argument when that argument is a bitvector. They are lazy in their argument when that argument is a stream of something other than bits, in which case they are lazily lifted over the elements of that stream. These operators likewise lift over all structures pointwise.
+
+<, >, <=, >=
+
+In cryptol, these operators have type : {a} (Cmp a) => a -> a -> Bit. In practice, the constraint (Cmp a) is satisfied for all types.
+
+TODO: here
+
+==, !=
+
+
+&&
+||
+^
+<<
+>>
+<<<
+>>>
+#
+@
+@@
+!
+!!
+

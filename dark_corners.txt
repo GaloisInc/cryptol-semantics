@@ -14,6 +14,9 @@ This file is to document some of the dark corners of cryptol, especially those w
 
 7. zero is well typed at any type, even function types (it evaluates to the constant zero function)
 
-8. 0x4 : [3] is an error, whereas 4 : [3] is fine.
+8. 0x4 : [3] is an error, whereas 4 : [3] is fine. Further confusing as the default behavior of the interpreter is to print out everything in hex.
 
+9. Not a dark corner so much as a lack of one, but you cannot compare infinite sequences for orderedness, or even equality. I consider this a very good thing.
+
+10. While numeric comparisons bottom out at bitvectors, they are also supported over bits: True > False produces True.
 
