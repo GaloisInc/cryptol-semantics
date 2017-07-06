@@ -193,7 +193,7 @@ Qed.
      
     destruct length. 
     + simpl. exfalso. *) 
-Admitted. 
+
 (*
   simpl in H. destruct a; try congruence. destruct (to_bitv l). 
   - inversion H. destruct b. 
