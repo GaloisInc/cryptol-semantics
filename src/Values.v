@@ -96,7 +96,7 @@ Proof.
   end; inv H.
   eapply IHl in Heqo. simpl. auto.
 Qed.
-
+(*
 Lemma tobitv_cons : forall a l ws (bv : BitV (S ws)),
   to_bitv (a :: l) = Some bv -> 
     exists (bv' : BitV ws),
@@ -111,7 +111,7 @@ Proof.
       * eapply tobit_length in H. inversion H. simpl. eauto. 
       * clear H1. (* I believe this (?) *) 
     admit. 
-Admitted.
+Admitted.*)
   
 
 Lemma frombitv_cons : forall l width length (bv : BitV width), 
@@ -122,17 +122,35 @@ Proof.
   intros. simpl. rewrite H. eauto. 
 Qed.  
 
-(* Write this lemma properly to match what we need for the end of tobit_frombit *)
-Lemma testbit_tobitv : forall ws l1 l2 v len (bv : BitV ws), 
+Lemma testbit_single : forall ws l1 (b0 : BitV ws) (b : bool) len (bv : BitV (S ws)), 
+  len = length l1 -> 
+  to_bitv l1 = Some b0 -> 
+  repr (unsigned b0 + (if b then two_power_nat ws else 0)) = bv -> 
+   testbit bv (Z.of_nat len) = b.
+Proof. 
+  induction ws; intros.
+  - destruct b. 
+Admitted.  
+
+Lemma testbit_tobitv : forall len ws l1 l2 v (bv : BitV ws), 
   len = length l1 -> 
     @to_bitv ws (l2 ++ v :: l1) = Some bv -> 
     bit (testbit bv (Z.of_nat len)) = v. 
 Proof. 
-  induction ws; intros. 
-  - inversion H0. destruct (l2++v::l1); try congruence. 
-    + inversion H2. unfold testbit. simpl. unfold Z.testbit. simpl. destruct (Z.of_nat len); simpl.     
+  induction ws; intros.  
+  - inversion H0. destruct l2; simpl in *; try congruence. destruct v; inversion H2. destruct v0; try congruence.
+  - simpl in H0. destruct l2 eqn:?; simpl in *; try congruence. destruct v eqn:?; simpl in *; try congruence. destruct (to_bitv l1) eqn:?. inversion H0. clear H0. f_equal. eapply testbit_single. 
+    + instantiate (1:=l1). assumption.  
+    + instantiate (1:=b0). assumption. 
+    + reflexivity. 
+    + inversion H0. 
+    + destruct v0 eqn:?; try congruence. destruct (to_bitv (l++v::l1)) eqn :?. eapply IHws in H; eauto.
+(* H0 and H should get us close. Perhaps a lemma about increasing the width not changing the testbit result if we know something like H0 *)
+
+Admitted.
+
    
-Admitted.  
+
 
 Lemma list_helper : forall {A : Type} (l1 : list A) (l2 : list A) (v v0 : A), 
    (l2 ++ v :: nil) ++ v0 :: l1 = l2 ++ (v :: v0 :: l1). 
@@ -142,6 +160,8 @@ Proof.
   - simpl. rewrite IHl2. reflexivity. 
 Qed.   
 
+
+(* Main theorem, can produce a simplified corollary *)
 Theorem tobit_frombit :
   forall len v l1 l2 width (bv : BitV width),
     (width >= len)%nat -> 
@@ -173,6 +193,7 @@ Qed.
      
     destruct length. 
     + simpl. exfalso. *) 
+Admitted. 
 (*
   simpl in H. destruct a; try congruence. destruct (to_bitv l). 
   - inversion H. destruct b. 
