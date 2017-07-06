@@ -2,6 +2,9 @@ Require Import AST.
 Require Import String.
 Require Import Coqlib.
 Require Import Bitvectors.
+Require Import Utils. 
+Require Import Omega. 
+
 
 (* Now mutually defined with Expr in AST.v *)
 (* Inductive val := *)
@@ -63,14 +66,20 @@ Fixpoint to_bitv {ws : nat} (l : list val) : option (BitV ws) :=
   | _,_ => None
   end.
 
-Fixpoint from_bitv' {ws : nat} (n : nat) (bv : BitV ws) : list val :=
+
+
+Fixpoint from_bitv' (ws : nat) (n : nat) (bv : BitV ws) : list val :=
   match n with
   | O => nil
-  | S n' => (bit (testbit bv (Z.of_nat n')) :: from_bitv' n' bv)
+  | S n' => (bit (testbit bv (Z.of_nat n')) :: from_bitv' ws n' bv)
   end.
 
 Definition from_bitv {ws : nat} (bv : BitV ws) : list val :=
-  from_bitv' ws bv.  
+  from_bitv' ws ws bv.  
+
+Definition three := @repr 3 3.
+Eval compute in from_bitv three.  
+Eval compute in three. 
 
 
 Lemma tobit_length :
@@ -104,16 +113,66 @@ Proof.
     admit. 
 Admitted.
   
-Lemma tobit_frombit :
-  forall l ws bv,
-    to_bitv l = Some bv ->
-    @from_bitv' ws ws bv = l.
+
+Lemma frombitv_cons : forall l width length (bv : BitV width), 
+  from_bitv' width length bv = l -> 
+    exists a, 
+    from_bitv' width (S length) bv = (a::l).
 Proof.
+  intros. simpl. rewrite H. eauto. 
+Qed.  
+
+(* Write this lemma properly to match what we need for the end of tobit_frombit *)
+Lemma testbit_tobitv : forall ws l1 l2 v len (bv : BitV ws), 
+  len = length l1 -> 
+    @to_bitv ws (l2 ++ v :: l1) = Some bv -> 
+    bit (testbit bv (Z.of_nat len)) = v. 
+Proof. 
+  induction ws; intros. 
+  - inversion H0. destruct (l2++v::l1); try congruence. 
+    + inversion H2. unfold testbit. simpl. unfold Z.testbit. simpl. destruct (Z.of_nat len); simpl.     
+   
+Admitted.  
+
+Lemma list_helper : forall {A : Type} (l1 : list A) (l2 : list A) (v v0 : A), 
+   (l2 ++ v :: nil) ++ v0 :: l1 = l2 ++ (v :: v0 :: l1). 
+Proof.
+  intros. induction l2. 
+  - simpl. reflexivity. 
+  - simpl. rewrite IHl2. reflexivity. 
+Qed.   
+
+Theorem tobit_frombit :
+  forall len v l1 l2 width (bv : BitV width),
+    (width >= len)%nat -> 
+    to_bitv (l2++v::l1) = Some bv ->
+    length l1 = len -> 
+    from_bitv' width len bv = l1.
+Proof.
+  induction len; intros. 
+  - simpl. apply length_zero_iff_nil in H1. auto. 
+  - destruct l1. inversion H1. simpl. f_equal. clear -H0 H1. destruct width.
+    + inversion H1. eapply testbit_tobitv. instantiate (1:=l1). reflexivity. instantiate (1:=(l2++(cons v nil))). rewrite list_helper. assumption. 
+    + inversion H1. eapply testbit_tobitv. instantiate (1:=l1). reflexivity. instantiate (1:=(l2++(cons v nil))). rewrite list_helper. assumption. 
+    + eapply IHlen. 
+      * omega. 
+      * instantiate (1:=v0). instantiate (1:=l2++(cons v nil)). rewrite list_helper. assumption. 
+      * inversion H1. reflexivity. 
+Qed. 
+  
+
+        
+
+(*
+
   induction l; intros.
-  - eapply tobit_length in H. subst. simpl. reflexivity.
-  - destruct ws. simpl in H. destruct a; congruence.
-    apply tobitv_cons in H. destruct H. apply IHl in H.
-    unfold from_bitv' in H.   
+  - unfold to_bitv in H0. destruct width; simpl in H0. 
+    + inversion H0. inversion H. simpl. reflexivity.
+    + inversion H0. 
+  - destruct width; simpl in H0; destruct a; try congruence.
+     
+    destruct length. 
+    + simpl. exfalso. *) 
 Admitted. 
 (*
   simpl in H. destruct a; try congruence. destruct (to_bitv l). 
