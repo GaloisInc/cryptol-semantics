@@ -20,3 +20,6 @@ This file is to document some of the dark corners of cryptol, especially those w
 
 10. While numeric comparisons bottom out at bitvectors, they are also supported over bits: True > False produces True.
 
+11. [ 1 ... ] means an infinite list starting at 1, and adding 1 every time. The expression [1,2 ... ] means an infinite list starting at 1, whose next element is 2, and always adding the difference between successive elements. While normal addition and subtraction in the language is polymorphic, the addition and subtraction used to make this infinite list is NOT polymorphic. You cannot write [ { x = (1,1) }, { x = (2,2) } ... ], even though one might think you could.
+
+
