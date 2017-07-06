@@ -36,11 +36,11 @@ Proof.
   repeat e. (* slow *)
   e. e. e. e. e. e. e. e. g.
   e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. e.
-  e. e. e. g.
+  e. e. e. e. e. e. 
+  instantiate (2 := O). reflexivity.
+  e. e. e. e. e. g.
   e. e. e. e. e. e. e. e. e. e.
-  e. eapply eval_at.
-  e. e. e. e.
+  repeat e.
   instantiate (2 := (S O)). reflexivity.
   e. e. e. e. e.
   

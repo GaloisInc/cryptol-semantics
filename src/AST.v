@@ -34,7 +34,7 @@ Inductive userType :=
 .
 
 Inductive TypeConstr :=
-| TCNum (n : nat)
+| TCNum (z : Z)
 | TCInf
 | TCBit
 | TCSeq
@@ -80,7 +80,7 @@ Inductive Tval :=
 | ttup (l : list Tval) (* tuple *)
 | tseq (len : Tval) (elem : Tval)
 | tfun (argt : Tval) (res : Tval)
-| tnum (n : nat)
+| tnum (z : Z)
 | tbit
 | tinf (* length of infinite streams *)
 .

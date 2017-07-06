@@ -61,51 +61,51 @@ Inductive eval_type (ge : genv) : env -> Typ -> Tval -> Prop :=
     forall E l r a b n,
       eval_type ge E l (tnum a) ->
       eval_type ge E r (tnum b) ->
-      n = (a + b)%nat ->
+      n = a + b ->
       eval_type ge E (TCon (TF TCAdd) (l :: r :: nil)) (tnum n)
 | eval_type_sub :
     forall E l r a b n,
       eval_type ge E l (tnum a) ->
       eval_type ge E r (tnum b) ->
-      n = (a - b)%nat ->
+      n = a - b ->
       eval_type ge E (TCon (TF TCSub) (l :: r :: nil)) (tnum n)
 | eval_type_mul :
     forall E l r a b n,
       eval_type ge E l (tnum a) ->
       eval_type ge E r (tnum b) ->
-      n = (a * b)%nat ->
+      n = a * b ->
       eval_type ge E (TCon (TF TCMul) (l :: r :: nil)) (tnum n)
 | eval_type_div :
     forall E l r a b n,
       eval_type ge E l (tnum a) ->
       eval_type ge E r (tnum b) ->
-      b <> O ->
-      n = (a / b)%nat ->
+      b <> 0 ->
+      n = a / b ->
       eval_type ge E (TCon (TF TCDiv) (l :: r :: nil)) (tnum n)
 | eval_type_mod :
     forall E l r a b n,
       eval_type ge E l (tnum a) ->
       eval_type ge E r (tnum b) ->
-      b <> O ->
-      n = (a mod b)%nat ->
+      b <> 0 ->
+      n = a mod b ->
       eval_type ge E (TCon (TF TCMod) (l :: r :: nil)) (tnum n)
 | eval_type_exp :
     forall E l r a b n,
       eval_type ge E l (tnum a) ->
       eval_type ge E r (tnum b) ->
-      n = Nat.pow a b ->
+      n = Z.pow a b ->
       eval_type ge E (TCon (TF TCExp) (l :: r :: nil)) (tnum n)
 | eval_type_min :
     forall E l r a b n,
       eval_type ge E l (tnum a) ->
       eval_type ge E r (tnum b) ->
-      n = min a b ->
+      n = Z.min a b ->
       eval_type ge E (TCon (TF TCMin) (l :: r :: nil)) (tnum n)
 | eval_type_max :
     forall E l r a b n,
       eval_type ge E l (tnum a) ->
       eval_type ge E r (tnum b) ->
-      n = max a b ->
+      n = Z.max a b ->
       eval_type ge E (TCon (TF TCMax) (l :: r :: nil)) (tnum n)
 
 (* | eval_type_len_from_then_to : *)
@@ -137,7 +137,7 @@ Inductive zero_val : Tval -> val -> Prop :=
 | zero_seq_fin :
     forall t v n vseq,
       zero_val t v ->
-      vseq = thunk_list (repeat v n) ->
+      vseq = thunk_list (repeat v (Z.to_nat n)) ->
       zero_val (tseq (tnum n) t) vseq
 | zero_seq_inf :
     forall t v,
@@ -438,7 +438,7 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
     forall E t1 value t2 width v,
       eval_expr ge E t1 (typ (tnum value)) ->
       eval_expr ge E t2 (typ (tnum width)) ->
-      v = thunk_list (from_bitv (@repr width (Z.of_nat value))) ->
+      v = thunk_list (from_bitv (@repr (Z.to_nat width) value)) ->
       eval_builtin ge E Demote (t1 :: t2 :: nil) v
 | eval_zero :
     forall E t tv zv,
@@ -449,16 +449,16 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
     forall args t1 t2 t3 le E n vfirst erest v,
       args = t1 :: t2 :: t3 :: le :: nil ->
       eval_expr ge E t1 (typ (tnum n)) ->
-      eval_expr ge E (ETake n le) vfirst ->
-      erest = EBuiltin split (t1 :: t2 :: t3 :: (EDrop n le) :: nil) ->
+      eval_expr ge E (ETake (Z.to_nat n) le) vfirst ->
+      erest = EBuiltin split (t1 :: t2 :: t3 :: (EDrop (Z.to_nat n) le) :: nil) ->
       v = vcons vfirst erest E ->
       eval_builtin ge E split args v
 | eval_split_at :
     forall t1 t2 t3 l args E n vfirst vrest,
       args = t1 :: t2 :: t3 :: l :: nil ->
       eval_expr ge E t1 (typ (tnum n)) ->
-      eval_expr ge E (ETake n l) vfirst ->
-      eval_expr ge E (EDrop n l) vrest ->
+      eval_expr ge E (ETake (Z.to_nat n) l) vfirst ->
+      eval_expr ge E (EDrop (Z.to_nat n) l) vrest ->
       eval_builtin ge E splitAt args (tuple (vfirst :: vrest :: nil))
 | eval_binary_over_bitv_to_bitv :
     forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args
