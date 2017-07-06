@@ -115,6 +115,80 @@ Inductive eval_type (ge : genv) : env -> Typ -> Tval -> Prop :=
 
 
 
+Fixpoint collect {A : Type} (l : list (option A)) : option (list A) :=
+  match l with
+  | nil => Some nil
+  | Some x :: r =>
+    match collect r with
+    | Some l' => Some (x :: l')
+    | _ => None
+    end
+  | _ => None
+  end.
+
+
+Inductive zero_val : Tval -> val -> Prop :=
+| zero_bit :
+    zero_val tbit (bit false)
+| zero_tup :
+    forall ts zvs,
+      Forall2 zero_val ts zvs ->
+      zero_val (ttup ts) (thunk_list zvs)
+| zero_seq_fin :
+    forall t v n vseq,
+      zero_val t v ->
+      vseq = thunk_list (repeat v n) ->
+      zero_val (tseq (tnum n) t) vseq
+| zero_seq_inf :
+    forall t v,
+      (* TODO *)
+      False ->
+      zero_val (tseq tinf t) v
+| zero_rec :
+    forall lidtv vs vrec,
+      Forall2 zero_val (map snd lidtv) vs ->
+      vrec = rec (combine (map fst lidtv) vs) ->
+      zero_val (trec lidtv) vrec
+| zero_fun :
+    forall argT resT v vfun,
+      zero_val resT v ->
+      vfun = close (0,"") (EValue v) empty ->
+      zero_val (tfun argT resT) vfun
+.
+
+(* given the type of a zero, fill it in *)
+(* Fixpoint zero_val (tv : Tval) : option val := *)
+(*   match tv with *)
+(*   | tbit => Some (bit false) *)
+(*   | ttup ts => *)
+(*     match collect (map zero_val ts) with *)
+(*     | Some l => Some (tuple l) *)
+(*     | _ => None *)
+(*     end *)
+(*   | tseq len t => *)
+(*     match len with *)
+(*     | tnum n => match zero_val t with *)
+(*                 | Some v => Some (thunk_list (repeat v n)) *)
+(*                 | None => None *)
+(*                 end *)
+(*     | tinf => None (* TODO *) *)
+(*     | _ => None *)
+(*     end *)
+(*   | trec lidtv => None (* TODO *) *)
+(*     (* match collect (map zero_val (map snd lidtv)) with *) *)
+(*     (* | Some lv => Some (rec (combine (map fst lidtv) lv)) *) *)
+(*     (* | None => None *) *)
+(*     (* end *) *)
+(*   | tfun argT resT => *)
+(*     match zero_val resT with *)
+(*     | Some v => Some (close (0,"") (EValue v) empty) *)
+(*     | None => None *)
+(*     end *)
+(*   | tnum n => None (* Doesn't make sense as a type *) *)
+(*   | tinf => None (* Doesn't make sense as a type *) *)
+(*   end. *)
+
+
 Fixpoint declare (l : list Declaration) (ge : genv) :=
   match l with
   | nil => ge
@@ -356,6 +430,11 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       eval_expr ge E t2 (typ (tnum width)) ->
       v = thunk_list (from_bitv (@repr width (Z.of_nat value))) ->
       eval_builtin ge E Demote (t1 :: t2 :: nil) v
+| eval_zero :
+    forall E t tv zv,
+      eval_expr ge E t (typ tv) ->
+      zero_val tv zv ->
+      eval_builtin ge E Zero (t :: nil) zv
 | eval_binary_over_bitv_to_bitv :
     forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args
            (pr : strict_total_binary_op_over_bitv_to_bitv bi),
