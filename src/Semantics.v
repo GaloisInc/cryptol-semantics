@@ -234,6 +234,7 @@ Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -
       TR x y z ->
       Forall3 TR lx ly lz ->
       Forall3 TR (x :: lx) (y :: ly) (z :: lz).
+
   
 
 Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
@@ -328,15 +329,22 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
     forall E e v e' E',
       eval_expr ge E e (vcons v e' E') ->
       eval_expr ge E (EHead e) v
-| eval_tail_zero :
-    forall E e v e' E',
-      eval_expr ge E e (vcons v e' E') ->
-      eval_expr ge E (ETail O e) v
-| eval_tail_succ :
+| eval_drop_zero :
+    forall E e v,
+      eval_expr ge E e v ->
+      eval_expr ge E (EDrop O e) v
+| eval_drop_succ :
     forall E e v e' E' n v',
       eval_expr ge E e (vcons v e' E') ->
-      eval_expr ge E' (ETail n e') v' ->
-      eval_expr ge E (ETail (S n) e) v'
+      eval_expr ge E' (EDrop n e') v' ->
+      eval_expr ge E (EDrop (S n) e) v'
+| eval_take_zero :
+    forall E e,
+      eval_expr ge E (ETake O e) vnil
+| eval_take_succ :
+    forall e v e' E' E n,
+      eval_expr ge E e (vcons v e' E') ->
+      eval_expr ge E (ETake (S n) e) (vcons v (ETake n e') E')
 | eval_value :
     forall E v,
       eval_expr ge E (EValue v) v
@@ -358,7 +366,7 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge E (ELiftBinary bi targs a b AE BE) (vcons v (ELiftBinary bi targs ae be aE' bE') empty)
 | eval_lift_binary_nil :
     forall E a b vnil bi targs AE BE,
-      (* both lists must be same length to add, so no extra eval rule is needed if only one list is nil *)
+      (* both lists must be same length to lift over, so no extra eval rule is needed if only one list is nil *)
       eval_expr ge AE a vnil ->
       eval_expr ge BE b vnil ->
       eval_expr ge E (ELiftBinary bi targs a b AE BE) vnil
@@ -435,6 +443,13 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       eval_expr ge E t (typ tv) ->
       zero_val tv zv ->
       eval_builtin ge E Zero (t :: nil) zv
+| eval_split_at :
+    forall t1 t2 t3 l args E n vfirst vrest,
+      args = t1 :: t2 :: t3 :: l :: nil ->
+      eval_expr ge E t1 (typ (tnum n)) ->
+      eval_expr ge E (ETake n l) vfirst ->
+      eval_expr ge E (EDrop n l) vrest ->
+      eval_builtin ge E splitAt args (tuple (vfirst :: vrest :: nil))
 | eval_binary_over_bitv_to_bitv :
     forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args
            (pr : strict_total_binary_op_over_bitv_to_bitv bi),
@@ -459,16 +474,6 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       to_bitv lr = Some br ->
       vres = bit ((binop_sem_bit bi) pr bl br) ->
       eval_builtin ge E bi args vres
-(* | eval_times_base : (* evaluate times over bitvectors *) *)
-(*     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2, *)
-(*       eval_expr ge E e1 v1 -> *)
-(*       eval_expr ge E e2 v2 -> *)
-(*       force_list ge E v1 l1 -> *)
-(*       force_list ge E v2 l2 -> *)
-(*       to_bitv l1 = Some b1 -> *)
-(*       to_bitv l2 = Some b2 -> *)
-(*       v3 = thunk_list (from_bitv (mul b1 b2)) -> *)
-(*       eval_builtin ge E Times (t :: e1 :: e2 :: nil) (v3) *)
 | eval_div_base : (* evaluate div over bitvectors *)
     (* different from other binary operators since can't divide by 0 *)
     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
@@ -481,26 +486,6 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       unsigned b2 <> 0 ->
       v3 = thunk_list (from_bitv (divu b1 b2)) ->
       eval_builtin ge E Div (t :: e1 :: e2 :: nil) (v3)
-(* | eval_minus_base : (* evaluate minus over bitvectors *) *)
-(*     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2, *)
-(*       eval_expr ge E e1 v1 -> *)
-(*       eval_expr ge E e2 v2 -> *)
-(*       force_list ge E v1 l1 -> *)
-(*       force_list ge E v2 l2 -> *)
-(*       to_bitv l1 = Some b1 -> *)
-(*       to_bitv l2 = Some b2 -> *)
-(*       v3 = thunk_list (from_bitv (sub b1 b2)) -> *)
-(*       eval_builtin ge E Minus (t :: e1 :: e2 :: nil) (v3) *)
-(* | eval_plus_base : (* evaluate plus over bitvectors *) *)
-(*     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2, *)
-(*       eval_expr ge E e1 v1 -> *)
-(*       eval_expr ge E e2 v2 -> *)
-(*       force_list ge E v1 l1 -> *)
-(*       force_list ge E v2 l2 -> *)
-(*       to_bitv l1 = Some b1 -> *)
-(*       to_bitv l2 = Some b2 -> *)
-(*       v3 = thunk_list (from_bitv (add b1 b2)) -> *)
-(*       eval_builtin ge E Plus (t :: e1 :: e2 :: nil) (v3) *)
 | eval_lift_unary_builtin :
     forall largs targs a E bi v,
       is_pointwise_liftable_unary bi -> 
