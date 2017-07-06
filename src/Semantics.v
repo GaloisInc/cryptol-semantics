@@ -421,10 +421,12 @@ with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
            select_list ge rE n re v ->
            select_list ge E (S n) e v
 with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
-| eval_at_vnil : (* This case seems weird, but it's necessary (cryptol does this) *)
-    forall E l v t1 t2 t3 idx,
-      select_list ge E O l v ->
-      eval_expr ge E idx vnil ->
+| eval_at :
+    forall {w} E idx vidx vl l v t1 t2 t3 (bv : BitV w),
+      eval_expr ge E idx vidx ->
+      force_list ge E vidx vl ->
+      to_bitv vl = Some bv ->
+      select_list ge E (Z.to_nat (unsigned bv)) l v ->
       eval_builtin ge E At (t1 :: t2 :: t3 :: l :: idx :: nil) v
 | eval_true :
     forall E,
@@ -443,6 +445,14 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       eval_expr ge E t (typ tv) ->
       zero_val tv zv ->
       eval_builtin ge E Zero (t :: nil) zv
+| eval_split :
+    forall args t1 t2 t3 le E n vfirst erest v,
+      args = t1 :: t2 :: t3 :: le :: nil ->
+      eval_expr ge E t1 (typ (tnum n)) ->
+      eval_expr ge E (ETake n le) vfirst ->
+      erest = EBuiltin split (t1 :: t2 :: t3 :: (EDrop n le) :: nil) ->
+      v = vcons vfirst erest E ->
+      eval_builtin ge E split args v
 | eval_split_at :
     forall t1 t2 t3 l args E n vfirst vrest,
       args = t1 :: t2 :: t3 :: l :: nil ->

@@ -20,23 +20,24 @@ Open Scope string.
 
 Require Import SplitAt.
 
-Lemma eval_a :
+Lemma eval_d :
   exists v,
-    eval_expr ge empty (EVar a) v /\ force_list ge empty v (@from_bitv 8 (@repr 8 1)).
+    eval_expr ge empty (EVar d) v /\ force_list ge empty v (@from_bitv 8 (@repr 8 4)).
 Proof.
-  eexists; split.
-  e. e. e. e. e. e. e.
-  e. e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e. e. g.
-  repeat e.
-  e. (* TODO: implement splitAt semantics *)
-  e. repeat e.
-  e. e. e. e.
-  e. e. e. e.
+  eexists. split.
+  e. e. e. e. e. e. g.
+  e. e. e. e. e. e. e. e. e. e. e. e. e. g.
   e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. unfold to_bitv. instantiate (2 := O). simpl. reflexivity.
-  e. e.
+  e. e. e. e. e. e.
+  e. e. e. e. e. e. g.
+  repeat e. e. e. e. e. e. e. e.
+  e. e. e. e. reflexivity.
+
+  e. e. e. g.
+  e. e. e. e. e. e. e.
+  e. e. e. e. e. e.
+  e. e. e.
+  instantiate (2 := S O). reflexivity.
+  repeat e.
   repeat e.
 Qed.
