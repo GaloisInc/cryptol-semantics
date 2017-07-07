@@ -24,24 +24,14 @@ Lemma eval_b :
   exists v,
     eval_expr ge empty (EVar b) v /\ force_list ge empty v (@from_bitv 8 (@repr 8 2)).
 Proof.
-Admitted.
-
-(*   eexists. split. *)
-(*   e. e. e. e. e. e. g. *)
-(*   e. e. e. e. e. e. e. e. e. e. e. e. e. g. *)
-(*   e. e. e. e. g. *)
-(*   e. e. e. e. e. e. *)
-(*   e. e. e. e. e. e. g. *)
-(*   repeat e. e. e. e. e. e. e. e. *)
-(*   e. e. e. e. reflexivity. *)
-
-(*   e. e. e. g. *)
-(*   e. e. e. e. e. e. e. *)
-(*   e. e. e. e. *)
-(*   eapply eval_at. e. repeat e. unfold to_bitv. simpl. instantiate (2 := (S O)). simpl. reflexivity. *)
-(*   e. e. e. e. e. *)
-(*   repeat e. *)
-(* Qed. *)
-  
-  
+  init_globals ge.
+  eexists; split.
+  g.
+  repeat e. g.
+  e. repeat e. g.
+  repeat e. repeat e. repeat e.
+  instantiate (2 := S O). reflexivity.
+  repeat e.
+  repeat e.
+Qed.
   
