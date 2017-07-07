@@ -113,6 +113,8 @@ Definition binop_sem_bitv_to_bitv (b : builtin) {w : nat} (pr : strict_total_bin
   | _,False => @mul w (* unreachable, but whatever *)
   end.
                   
+(* lifted over structures, but mapped then folded *)
+(* TODO *)
 Definition binop_sem_bitv_to_bit (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bit b) :
   BitV w -> BitV w -> bool :=
   match b,pr with
@@ -136,6 +138,7 @@ Definition strict_total_unary_op_over_bitv (b : builtin) : Prop :=
   | _ => False
   end.
 
+(* When lifted over structures only mapped, not folded *)
 Definition binary_op_over_bit_to_bit (b : builtin) : Prop :=
   match b with
   | And => True

@@ -24,28 +24,29 @@ Lemma eval_c :
   exists v,
     eval_expr ge empty (EVar c) v /\ force_list ge empty v (@from_bitv 8 (@repr 8 3)).
 Proof.
-  eexists; split.
-  e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. g.
-  e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e.
-  e. g.
-  repeat e. (* slow *)
-  e. e. e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. e.
-  e. instantiate (2 := (S O)). reflexivity.
+Admitted.
+(* eexists; split. *)
+(*   e. e. e. e. e. e. g. *)
+(*   e. e. e. e. e. e. e. e. e. e. e. *)
+(*   e. e. e. e. e. e. g. *)
+(*   e. e. e. e. e. e. e. e. e. e. *)
+(*   e. e. e. e. g. *)
+(*   e. e. e. e. g. *)
+(*   e. e. e. e. e. e. e. e. e. e. e. *)
+(*   e. g. *)
+(*   repeat e. (* slow *) *)
+(*   e. e. e. e. e. e. e. e. g. *)
+(*   e. e. e. e. e. e. e. e. *)
+(*   e. e. e. e. e. e. e. *)
+(*   e. instantiate (2 := (S O)). reflexivity. *)
   
-  e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e.
-  instantiate (2 := O). reflexivity.
-  e. e.
+(*   e. e. e. e. e. e. e. e. e. e. *)
+(*   e. e. e. e. e. e. g. *)
+(*   e. e. e. e. e. e. e. e. e. e. *)
+(*   e. e. e. e. *)
+(*   instantiate (2 := O). reflexivity. *)
+(*   e. e. *)
   
   
-  repeat e.
-Qed.
+(*   repeat e. *)
+(* Qed. *)

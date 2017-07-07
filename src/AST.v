@@ -137,6 +137,8 @@ Inductive Expr :=
 | ELiftUnary (b : builtin) (targs : list Expr) (e : Expr)
 (* Lifted evaluation of binary builtin *)             
 | ELiftBinary (b : builtin) (targs : list Expr) (e1 e2 : Expr) (env1 env2 : ident -> option val)
+(* List Comprehension Implementation: keep track of where you are with a nat *)
+| ECompImp (e : Expr) (n : nat) (llm : list (list Match))
 with Match :=
      | From (id : ident) (e : Expr)
      | MLet (d : Declaration)

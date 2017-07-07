@@ -235,7 +235,6 @@ Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -
       Forall3 TR lx ly lz ->
       Forall3 TR (x :: lx) (y :: ly) (z :: lz).
 
-  
 
 Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_builtin_sem :
@@ -397,12 +396,75 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       map fst lidvl = map fst lidvr ->
       lidv' = combine (map fst lidvl) vs ->
       eval_expr ge E (ELiftBinary bi targs el er EL ER) (rec lidv')
-(*| eval_comp :
-    forall _,
-      (* list comprehensions *)
-      eval_expr ge E (EComp e llm) v*)
+| eval_comp_imp_cons :
+    forall E n llm E' e v vres,
+      par_match ge E n llm E' ->
+      eval_expr ge E' e v ->
+      vres = vcons v (ECompImp e (S n) llm) E ->
+      eval_expr ge E (ECompImp e n llm) vres
+| eval_comp_imp_nil :
+    forall E e llm s n,
+      totalmatchsize ge E llm s ->
+      (n > s)%nat -> (* prove we've gone out of bounds *)
+      eval_expr ge E (ECompImp e n llm) vnil
+| eval_comp :
+    forall E e llm v,
+      eval_expr ge E (ECompImp e O llm) v ->
+      eval_expr ge E (EComp e llm) v
+with totalmatchsize (ge : genv) : env -> list (list Match) -> nat -> Prop :=
+     | size_one :
+         forall E lm n,
+           matchlength ge E lm n ->
+           totalmatchsize ge E (lm :: nil) n
+     | size_cons :
+         forall E lm n lms,
+           matchlength ge E lm n ->
+           totalmatchsize ge E lms n ->
+           totalmatchsize ge E (lm :: lms) n
 (* Force complete evaluation of a lazy list *)
 (* Used for converting a list of bits into a number to evaluate arithmetic *)
+with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
+     | par_one :
+         forall E n,
+           par_match ge E n nil E
+     | par_more :
+         forall E n lm E' lr E'',
+           index_match ge E n lm E' ->
+           par_match ge E' n lr E'' ->
+           par_match ge E n (lm :: lr) E''
+(* provide the nth bound environment for one part of a list comprehension *)
+with index_match (ge : genv) : env -> nat -> list Match -> env -> Prop :=
+     | idx_last : (* take the nth element from the last list *)
+         forall E n id e v,
+           select_list ge E n e v ->
+           index_match ge E n ((From id e) :: nil) (extend E id v)
+     | idx_mid : (* take the mid element from *)
+         forall E E' n r v id e m t len,
+           index_match ge E n r E' ->
+           select_list ge E (S m) e v ->
+           matchlength ge E r len ->
+           (* m * matchlength r  + n *)
+           t = (((S m) * len) + n)%nat ->
+           index_match ge E t ((From id e) :: r) (extend E' id v)
+     | idx_first :
+         forall E n r E' v id e,
+           index_match ge E n r E' ->
+           select_list ge E O e v ->
+           index_match ge E n ((From id e) :: r) (extend E' id v)
+with matchlength (ge : genv) : env -> list Match -> nat -> Prop :=
+     | len_one :
+         forall E id e n l v,
+           eval_expr ge E e v ->
+           force_list ge E v l ->
+           n = length l ->
+           matchlength ge E ((From id e) :: nil) n
+     | len_more :
+         forall E id e r n l m v,
+           matchlength ge E r n ->
+           eval_expr ge E e v ->
+           force_list ge E v m ->
+           l = ((length m) * n)%nat ->
+           matchlength ge E ((From id e) :: r) l
 with force_list (ge : genv) : env -> val -> list val -> Prop :=
      | force_nil :
          forall E,
@@ -432,6 +494,11 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       to_bitv vl = Some bv ->
       select_list ge E (Z.to_nat (unsigned bv)) l v ->
       eval_builtin ge E At (t1 :: t2 :: t3 :: l :: idx :: nil) v
+| eval_eq_true : (* SUPER BIG HACK TODO TAKE OUT *)
+    forall E e1 e2 v t,
+      eval_expr ge E e1 v ->
+      eval_expr ge E e2 v ->
+      eval_builtin ge E Eq (t :: e1 :: e2 :: nil) (bit true)
 | eval_true :
     forall E,
       eval_builtin ge E true_builtin nil (bit true)
@@ -700,45 +767,6 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
 (* Produces the one dimensional cartesian product of a 2 dimensional sequence *)
 (* sorta like a list comprehension *)
 (*
-with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
-     | par_one :
-         forall E n,
-           par_match ge E n nil E
-     | par_more :
-         forall E n lm E' lr E'',
-           index_match ge E n lm E' ->
-           par_match ge E' n lr E'' ->
-           par_match ge E n (lm :: lr) E''
-(* provide the nth bound environment for one part of a list comprehension *)
-with index_match (ge : genv) : env -> nat -> list Match -> env -> Prop :=
-     | idx_last : (* take the nth element from the last list *)
-         forall E n id e v,
-           select_list ge E n e v ->
-           index_match ge E n ((From id e) :: nil) (extend E id v)
-     | idx_mid : (* take the mid element from *)
-         forall E E' n r v id e m t len,
-           index_match ge E n r E' ->
-           select_list ge E (S m) e v ->
-           matchlength ge E r len ->
-           (* m * matchlength r  + n *)
-           t = (((S m) * len) + n)%nat ->
-           index_match ge E t ((From id e) :: r) (extend E' id v)
-     | idx_first :
-         forall E n r E' v id e,
-           index_match ge E n r E' ->
-           select_list ge E O e v ->
-           index_match ge E n ((From id e) :: r) (extend E' id v)
-with matchlength (ge : genv) : env -> list Match -> nat -> Prop :=
-     | len_one :
-         forall E id e n,
-           length ge E e n ->
-           matchlength ge E ((From id e) :: nil) n
-     | len_more :
-         forall E id e r n l m,
-           matchlength ge E r n ->
-           length ge E e m ->
-           l = (m * n)%nat ->
-           matchlength ge E ((From id e) :: r) l
 with length (ge : genv) : env -> Expr -> nat -> Prop :=
      | len_nil :
          forall E e,
