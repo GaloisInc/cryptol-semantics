@@ -113,6 +113,19 @@ Proof.
     admit. 
 Admitted.*)
   
+Lemma to_bitv_width_zero : forall l (bv : BitV 0), 
+  to_bitv l = Some bv -> l = nil. 
+Proof. 
+  induction l; intros. 
+  - reflexivity. 
+  - exfalso. inversion H. destruct a; try congruence. 
+Qed. 
+
+Lemma intval_width_zero : forall (bv : BitV 0), 
+  intval bv = 0.
+Proof. 
+  intros. unfold intval. destruct bv. unfold two_power_nat in intrange. simpl in intrange. omega. 
+Qed. 
 
 Lemma frombitv_cons : forall l width length (bv : BitV width), 
   from_bitv' width length bv = l -> 
@@ -129,8 +142,15 @@ Lemma testbit_single : forall ws l1 (b0 : BitV ws) (b : bool) len (bv : BitV (S 
    testbit bv (Z.of_nat len) = b.
 Proof. 
   induction ws; intros.
-  - destruct b. 
+  - unfold two_power_nat in H1. simpl in H1. rewrite <- H1. apply to_bitv_width_zero in H0. subst. simpl. unfold unsigned. 
+    assert (intval b0 = 0). { apply intval_width_zero. }
+    rewrite H. simpl. destruct b; auto. 
+  - admit. 
+
 Admitted.  
+
+ 
+
 
 Lemma testbit_tobitv : forall len ws l1 l2 v (bv : BitV ws), 
   len = length l1 -> 
