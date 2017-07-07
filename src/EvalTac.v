@@ -29,6 +29,7 @@ Ltac init_globals global_env :=
   assert (Hsplit : global_env (37,"split") = Some (mb 3 1 split)) by reflexivity;
   assert (HsplitAt : global_env (35,"splitAt") = Some (mb 3 1 splitAt)) by reflexivity;
   assert (HAppend : global_env (34,"#") = Some (mb 3 2 Append)) by reflexivity.
+
   
   
 
