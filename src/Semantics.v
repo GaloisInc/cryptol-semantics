@@ -15,6 +15,11 @@ Require Import BuiltinSem.
 
 Open Scope list_scope.
 
+(* Number of bits it takes to represent number n *)
+Definition calc_width (n : Z) : Z :=
+  if Z_eq_dec n 0 then 0 else
+    1 + Z.log2 n.
+
 Inductive eval_type (ge : genv) : env -> Typ -> Tval -> Prop :=
 | eval_tvar_bound :
     forall E uid t k,
@@ -107,10 +112,12 @@ Inductive eval_type (ge : genv) : env -> Typ -> Tval -> Prop :=
       eval_type ge E r (tnum b) ->
       n = Z.max a b ->
       eval_type ge E (TCon (TF TCMax) (l :: r :: nil)) (tnum n)
-
+| eval_type_width :
+    forall E e n,
+      eval_type ge E e (tnum n) ->
+      eval_type ge E (TCon (TF TCWidth) (e :: nil)) (tnum (calc_width n))
 (* | eval_type_len_from_then_to : *)
 (* | eval_type_len_from_then : *)
-(* | eval_type_width : *)
 .
 
 

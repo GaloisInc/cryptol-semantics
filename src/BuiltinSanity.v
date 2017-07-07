@@ -9,12 +9,14 @@ Lemma id_for_all_prims :
 Proof.
   intros. 
   unfold table.
+
   destruct p;
     unfold lookup;
     do 3 eexists;
   match goal with
-  | [ |- context[if string_dec ?X ?Y then _ else _] ] => instantiate (3 := X); simpl; reflexivity
+  | [ |- context[if string_dec ?X ?Y then _ else _] ] => instantiate (3 := X); reflexivity
   end.
-  
+
+
 Qed.
 

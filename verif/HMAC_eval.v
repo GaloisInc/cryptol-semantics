@@ -92,6 +92,7 @@ Lemma eval_at_zero :
   exists v,
     eval_expr ge empty (EApp (EApp (ETApp (ETApp (EVar hmacSHA256) t) t) z) z) v /\ (force_list ge empty v result).
 Proof.
+  init_globals ge.
   eexists; split.
   e.
   e. e. e. g.
@@ -111,6 +112,28 @@ Proof.
   e. g. e. e. e.
   e. e. e. e. e.
   e. e. e. e. e.
+  g. e. e. e. e. e.
+  g. e. e. e. e. e. g.
+  e. e. e. e.
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  e. e. e. e. g.
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).
+  repeat (progress e).  
+  
+  
+  
+
   
 Admitted.
   
