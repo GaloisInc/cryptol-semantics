@@ -24,20 +24,21 @@ Lemma eval_d :
   exists v,
     eval_expr ge empty (EVar d) v /\ force_list ge empty v (@from_bitv 8 (@repr 8 4)).
 Proof.
-  eexists. split.
-  e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e. e. e. g.
-  e. e. e. e. g.
-  e. e. e. e. e. e.
-  e. e. e. e. e. e. g.
-  repeat e. e. e. e. e. e. e. e.
-  e. e. e. e. reflexivity.
+Admitted.
+(*   eexists. split. *)
+(*   e. e. e. e. e. e. g. *)
+(*   e. e. e. e. e. e. e. e. e. e. e. e. e. g. *)
+(*   e. e. e. e. g. *)
+(*   e. e. e. e. e. e. *)
+(*   e. e. e. e. e. e. g. *)
+(*   repeat e. e. e. e. e. e. e. e. *)
+(*   e. e. e. e. reflexivity. *)
 
-  e. e. e. g.
-  e. e. e. e. e. e. e.
-  e. e. e. e. e. e.
-  e. e. e.
-  instantiate (2 := S O). reflexivity.
-  repeat e.
-  repeat e.
-Qed.
+(*   e. e. e. g. *)
+(*   e. e. e. e. e. e. e. *)
+(*   e. e. e. e. e. e. *)
+(*   e. e. e. *)
+(*   instantiate (2 := S O). reflexivity. *)
+(*   repeat e. *)
+(*   repeat e. *)
+(* Qed. *)
