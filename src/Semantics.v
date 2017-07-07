@@ -397,6 +397,10 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       map fst lidvl = map fst lidvr ->
       lidv' = combine (map fst lidvl) vs ->
       eval_expr ge E (ELiftBinary bi targs el er EL ER) (rec lidv')
+(*| eval_comp :
+    forall _,
+      (* list comprehensions *)
+      eval_expr ge E (EComp e llm) v*)
 (* Force complete evaluation of a lazy list *)
 (* Used for converting a list of bits into a number to evaluate arithmetic *)
 with force_list (ge : genv) : env -> val -> list val -> Prop :=
@@ -470,7 +474,7 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       force_list ge E vr lr ->
       to_bitv ll = Some bl ->
       to_bitv lr = Some br ->
-      vres = thunk_list (from_bitv ((binop_sem_bitv bi) pr bl br)) ->
+      vres = thunk_list (from_bitv ((binop_sem_bitv_to_bitv bi) pr bl br)) ->
       eval_builtin ge E bi args vres
 | eval_binary_over_bitv_to_bit :
     forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args 
@@ -482,8 +486,14 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       force_list ge E vr lr ->
       to_bitv ll = Some bl ->
       to_bitv lr = Some br ->
-      vres = bit ((binop_sem_bit bi) pr bl br) ->
+      vres = bit ((binop_sem_bitv_to_bit bi) pr bl br) ->
       eval_builtin ge E bi args vres
+| eval_binary_over_bit_to_bit :
+    forall bi targ args E el er vl vr (pr : binary_op_over_bit_to_bit bi),
+      args = targ :: el :: er :: nil ->
+      eval_expr ge E el (bit vl) ->
+      eval_expr ge E er (bit vr) ->
+      eval_builtin ge E bi args (bit (binop_sem_bit_to_bit bi pr vl vr))
 | eval_div_base : (* evaluate div over bitvectors *)
     (* different from other binary operators since can't divide by 0 *)
     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,

@@ -103,7 +103,7 @@ Definition strict_total_binary_op_over_bitv_to_bit (b : builtin) : Prop :=
   | _ => False
   end.
 
-Definition binop_sem_bitv (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bitv b) :
+Definition binop_sem_bitv_to_bitv (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bitv b) :
   BitV w -> BitV w -> BitV w :=
   match b,pr with
   | Plus,_ => @add w
@@ -113,7 +113,7 @@ Definition binop_sem_bitv (b : builtin) {w : nat} (pr : strict_total_binary_op_o
   | _,False => @mul w (* unreachable, but whatever *)
   end.
                   
-Definition binop_sem_bit (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bit b) :
+Definition binop_sem_bitv_to_bit (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bit b) :
   BitV w -> BitV w -> bool :=
   match b,pr with
   | Lt,_ => @ltu w
@@ -134,6 +134,23 @@ Definition strict_total_unary_op_over_bitv (b : builtin) : Prop :=
   | Neg => True
   | lg2 => True
   | _ => False
+  end.
+
+Definition binary_op_over_bit_to_bit (b : builtin) : Prop :=
+  match b with
+  | And => True
+  | Or => True
+  | Xor => True
+  | _ => False
+  end.
+
+Definition binop_sem_bit_to_bit (b : builtin) (pr : binary_op_over_bit_to_bit b) :
+  bool -> bool -> bool :=
+  match b,pr with
+  | And,_ => fun x => fun y => if x then y else false
+  | Or,_ => fun x => fun y => if x then true else y
+  | Xor,_ => fun x => fun y => if x then (if y then false else true) else y
+  | _,False => fun x => fun y => true (* unreachable *)
   end.
 
 (* table of builtins, along with their arity *)
