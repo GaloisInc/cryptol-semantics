@@ -744,24 +744,23 @@ Section Bits.
     case (zlt y half_modulus); intro.
     apply eqmod_refl. red; exists (-1); ring.
   Qed.
-
+*)
   Theorem unsigned_range:
-    forall i, 0 <= unsigned i < modulus.
+    forall {ws} (i : @Int ws), 0 <= unsigned i < @modulus ws.
   Proof.
     destruct i. simpl.
-    unfold modulus. unfold wordsize.
-    omega.
+    unfold modulus. omega.
   Qed.
   Hint Resolve unsigned_range: ints.
 
   Theorem unsigned_range_2:
-    forall i, 0 <= unsigned i <= max_unsigned.
+    forall {ws} (i : @Int ws), 0 <= unsigned i <= @max_unsigned ws.
   Proof.
-    intro; unfold max_unsigned.
+    intros; unfold max_unsigned.
     generalize (unsigned_range i). omega.
   Qed.
   Hint Resolve unsigned_range_2: ints.
-
+(*
   Theorem signed_range:
     forall i, min_signed <= signed i <= max_signed.
   Proof.

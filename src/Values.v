@@ -123,14 +123,55 @@ Proof.
 
 Admitted. 
 
- 
+Lemma z_two_power_nat :
+  forall x,
+    2 ^ Z.of_nat x = two_power_nat x.
+Proof.
+  intros. 
+  rewrite two_power_nat_correct.
+  rewrite Zpower_nat_Z.
+  reflexivity.
+Qed.
 
+Lemma testbit_widen :
+  forall wsbig wssmall zidx bv_z,
+    0 <= bv_z <= @max_unsigned wsbig ->
+    (wsbig > wssmall)%nat ->
+    Z.of_nat wssmall > zidx ->
+    testbit (@repr wsbig bv_z) zidx = testbit (@repr wssmall bv_z) zidx.
+Proof.
+  intros. unfold testbit.
+  rewrite unsigned_repr_eq. rewrite unsigned_repr_eq.
+  unfold modulus.
+  replace (two_power_nat wsbig) with (2 ^ (Z.of_nat wsbig)).
+  
+  rewrite Z.mod_pow2_bits_low.
+  replace (two_power_nat wssmall) with (2 ^ (Z.of_nat wssmall)).
+  rewrite Z.mod_pow2_bits_low.
+  reflexivity.
+  omega.
+  eapply z_two_power_nat; eauto.
+  omega.
+  eapply z_two_power_nat; eauto.
+Qed.
+
+Lemma repr_mod :
+  forall {ws} z,
+    ws <> O ->
+    @repr ws z = @repr ws (z mod (@modulus ws)).
+Proof.
+  intros. unfold repr.
+  eapply unsigned_eq. simpl.
+  repeat rewrite Z_mod_modulus_eq by auto.
+  rewrite Z.mod_mod. reflexivity. unfold modulus.
+  generalize (two_power_nat_pos ws). intros. omega.
+Qed.
 
 Lemma testbit_tobitv : forall len ws l1 l2 v (bv : BitV ws), 
   len = length l1 -> 
     @to_bitv ws (l2 ++ v :: l1) = Some bv -> 
     bit (testbit bv (Z.of_nat len)) = v. 
-Proof. 
+Proof.
   induction ws; intros.  
   - inversion H0. destruct l2; simpl in *; try congruence. destruct v; inversion H2. destruct v0; try congruence.
   - simpl in H0. destruct l2 eqn:?; simpl in *; try congruence. destruct v eqn:?; simpl in *; try congruence. destruct (to_bitv l1) eqn:?. inversion H0. f_equal. eapply testbit_single. 
@@ -138,8 +179,35 @@ Proof.
     + eauto. 
     + reflexivity. 
     + inversion H0. 
-    + destruct v0 eqn:?; try congruence. destruct (to_bitv (l++v::l1)) eqn :?. eapply IHws in H; eauto. 
-       *   
+    + remember H as Hlen. clear HeqHlen. destruct v0 eqn:?; try congruence. destruct (to_bitv (l++v::l1)) eqn :?. eapply IHws in H; eauto. 
+      * subst. inversion H0. subst.
+        clear H0. f_equal.
+        erewrite testbit_widen.
+        instantiate (1 := ws).
+        Focus 4.
+        eapply tobit_length in Heqo. rewrite Heqo.
+        destruct l; simpl; auto. rewrite Zpos_P_of_succ_nat. omega.
+        rewrite Zpos_P_of_succ_nat. rewrite app_length.
+        simpl.
+
+        admit. (* this is true *)
+
+        Focus 3. omega.
+        Focus 2. unfold max_unsigned. unfold modulus.
+        generalize (unsigned_range b0). intros.
+        unfold modulus in H.
+        destruct b. 
+        rewrite two_power_nat_S.
+        omega. rewrite two_power_nat_S.
+        omega.
+        rewrite repr_mod.
+        replace ((unsigned b0 + (if b then two_power_nat ws else 0)) mod modulus) with (unsigned b0).
+        rewrite repr_unsigned. reflexivity.
+        unfold modulus. destruct b.
+        admit. admit. admit.
+
+      * congruence.
+        
 (* H0 and H should get us close. Perhaps a lemma about increasing the width not changing the testbit result if we know something like Heqo (H0?) *)
 (* Note: this is only true because two_power_nat ws will "append" a 1 to the beginning of b0 and 0 won't change b0 at all *)
 
