@@ -213,6 +213,7 @@ Proof.
 
 Admitted.
 
+(*
 Lemma testbit_widen : forall ws l l' v (bv : BitV ws) (bv' : BitV (S ws)) len,
   to_bitv (l'++v::l) = Some bv -> 
   len = length l -> 
@@ -247,7 +248,7 @@ Proof.
   Eval compute in (@Z_mod_modulus 3 8). 
 
 
-
+*)
 (* Main theorem, can produce a simplified corollary *)
 Theorem tobit_frombit :
   forall len v l1 l2 width (bv : BitV width),
