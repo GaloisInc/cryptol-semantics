@@ -164,8 +164,10 @@ Proof.
       * reflexivity. 
       * split. 
          -- generalize (intrange b0). intros. omega. 
-         -- generalize (intrange b0). intros. rewrite 3 two_power_nat_S. rewrite two_power_nat_S in H2. inversion H2. eapply lt_rewrite_larger in H4. omega. instantiate (1:=(2*(2*(2*two_power_nat ws)))). omega. 
-Qed.     
+         -- generalize (intrange b0). intros. rewrite 3 two_power_nat_S. rewrite two_power_nat_S in H2. inversion H2. eapply lt_rewrite_larger in H4. omega. instantiate (1:=(2*(2*(2*two_power_nat ws)))). omega.
+
+            
+Admitted.
 
 Lemma z_two_power_nat :
   forall x,
