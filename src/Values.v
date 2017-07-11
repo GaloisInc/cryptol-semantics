@@ -165,9 +165,16 @@ Proof.
       * split. 
          -- generalize (intrange b0). intros. omega. 
          -- generalize (intrange b0). intros. rewrite 3 two_power_nat_S. rewrite two_power_nat_S in H2. inversion H2. eapply lt_rewrite_larger in H4. omega. instantiate (1:=(2*(2*(2*two_power_nat ws)))). omega.
+    + apply tobit_length in H0. rewrite <- H0 in H. rewrite H. Search Z.testbit. rewrite Zsign_bit. destruct (zlt (intval b0 + two_power_nat (S ws)) (two_power_nat (S ws))) eqn :?. 
+      * exfalso. clear Heqs. generalize (intrange b0). intros. omega. 
+      * clear Heqs. generalize (intrange b0). intros. destruct (zlt (intval b0 + 0) (two_power_nat (S ws))) eqn:?. 
+         -- reflexivity. 
+         -- exfalso. replace (intval b0 + 0) with (intval b0) by omega. omega.   
+      * split. 
+         -- generalize (intrange b0). intros. omega. 
+         -- generalize (intrange b0). intros. replace (intval b0 + 0) with (intval b0) by omega. rewrite two_power_nat_S. omega. 
+Qed. 
 
-            
-Admitted.
 
 Lemma z_two_power_nat :
   forall x,
