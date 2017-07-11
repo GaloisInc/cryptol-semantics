@@ -109,20 +109,40 @@ Proof.
   - simpl. rewrite IHl2. reflexivity. 
 Qed.   
 
+(*
 Lemma testbit_small_large : forall sml lrg z, 
-  two_power_nat sml < two_power_nat lrg -> 
-  z <= two_power_nat sml -> 
+  two_power_nat sml <= two_power_nat lrg -> 
+  z < two_power_nat sml -> 
     Z.testbit (z + two_power_nat lrg) (Z.of_nat lrg) 
     = Z.testbit (two_power_nat lrg) (Z.of_nat lrg).
 Proof. 
   intros. 
-Admitted.  
+Admitted. *)  
+
+Lemma lt_irrefl : forall n, 
+  ~(two_power_nat n < two_power_nat n). 
+Proof. 
+  intros. omega.  
+Qed. 
 
 Lemma testbit_power_two : forall n, 
   Z.testbit (two_power_nat n) (Z.of_nat n) = true. 
+Proof.
+  intros. rewrite Zsign_bit.
+  destruct (zlt (two_power_nat n) (two_power_nat n)) eqn:?. 
+   - exfalso. clear Heqs.  apply lt_irrefl in l. exact l.  
+   - reflexivity. 
+   - generalize (two_power_nat_pos n). intros. split; try omega. 
+     rewrite two_power_nat_S. omega.
+Qed.
+
+Lemma lt_rewrite_larger : forall a b c, 
+  a < b -> 
+    b + b < c -> 
+    a + b < c. 
 Proof. 
-  Search Z.testbit. unfold two_power_nat. intros. rewrite shift_nat_correct. replace (Zpower_nat 2 n * 1) with (Zpower_nat 2 n) by omega. Search (Z.testbit). 
-Admitted.  
+  intros. omega. 
+Qed.  
 
 Lemma testbit_single : forall ws l1 (b0 : BitV ws) (b : bool) len (bv : BitV (S ws)), 
   len = length l1 -> 
@@ -139,20 +159,13 @@ Proof.
     apply Nat2Z.inj_lt. apply tobit_length in H0. omega.
 
     unfold unsigned. destruct b. 
-    + apply tobit_length in H0. rewrite <- H0 in H. rewrite H. Search Z.testbit. Search Z.testbit.  erewrite testbit_small_large. 
-      Focus 2. instantiate (1:=ws). Search two_power_nat. rewrite two_power_nat_S. generalize (two_power_nat_pos ws). intros. omega. 
-      apply testbit_power_two. 
-      generalize (intrange b0). intros. 
-    
-
-
-
-
-    
-
-Admitted. 
-
- 
+    + apply tobit_length in H0. rewrite <- H0 in H. rewrite H. Search Z.testbit. rewrite Zsign_bit. destruct (zlt (intval b0 + two_power_nat (S ws)) (two_power_nat (S ws))) eqn :?. 
+      * exfalso. clear Heqs. generalize (intrange b0). intros. omega. 
+      * reflexivity. 
+      * split. 
+         -- generalize (intrange b0). intros. omega. 
+         -- generalize (intrange b0). intros. rewrite 3 two_power_nat_S. rewrite two_power_nat_S in H2. inversion H2. eapply lt_rewrite_larger in H4. omega. instantiate (1:=(2*(2*(2*two_power_nat ws)))). omega. 
+Qed.     
 
 Lemma z_two_power_nat :
   forall x,
