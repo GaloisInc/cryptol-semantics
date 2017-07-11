@@ -122,18 +122,6 @@ Inductive eval_type (ge : genv) : env -> Typ -> Tval -> Prop :=
 
 
 
-Fixpoint collect {A : Type} (l : list (option A)) : option (list A) :=
-  match l with
-  | nil => Some nil
-  | Some x :: r =>
-    match collect r with
-    | Some l' => Some (x :: l')
-    | _ => None
-    end
-  | _ => None
-  end.
-
-
 Inductive zero_val : Tval -> val -> Prop :=
 | zero_bit :
     zero_val tbit (bit false)
@@ -412,7 +400,7 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_comp_imp_nil :
     forall E e llm s n,
       totalmatchsize ge E llm s ->
-      (n > s)%nat -> (* prove we've gone out of bounds *)
+      (n >= s)%nat -> (* prove we've gone out of bounds *)
       eval_expr ge E (ECompImp e n llm) vnil
 | eval_comp :
     forall E e llm v,

@@ -11,3 +11,15 @@ End HaskellListNotations.
 
 Import HaskellListNotations.
 
+
+Fixpoint collect {A : Type} (l : list (option A)) : option (list A) :=
+  match l with
+  | nil => Some nil
+  | Some x :: r =>
+    match collect r with
+    | Some l' => Some (x :: l')
+    | _ => None
+    end
+  | _ => None
+  end.
+
