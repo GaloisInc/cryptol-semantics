@@ -154,18 +154,18 @@ Proof.
   - unfold two_power_nat in H1. simpl in H1. rewrite <- H1. apply to_bitv_width_zero in H0. subst. simpl. unfold unsigned. 
     assert (intval b0 = 0). { apply intval_width_zero. }
     rewrite H. simpl. destruct b; auto. 
-  - SearchAbout repr. rewrite <- H1. rewrite testbit_repr.
+  - rewrite <- H1. rewrite testbit_repr.
     Focus 2. unfold zwordsize. split. omega. 
     apply Nat2Z.inj_lt. apply tobit_length in H0. omega.
 
     unfold unsigned. destruct b. 
-    + apply tobit_length in H0. rewrite <- H0 in H. rewrite H. Search Z.testbit. rewrite Zsign_bit. destruct (zlt (intval b0 + two_power_nat (S ws)) (two_power_nat (S ws))) eqn :?. 
+    + apply tobit_length in H0. rewrite <- H0 in H. rewrite H. rewrite Zsign_bit. destruct (zlt (intval b0 + two_power_nat (S ws)) (two_power_nat (S ws))) eqn :?. 
       * exfalso. clear Heqs. generalize (intrange b0). intros. omega. 
       * reflexivity. 
       * split. 
          -- generalize (intrange b0). intros. omega. 
          -- generalize (intrange b0). intros. rewrite 3 two_power_nat_S. rewrite two_power_nat_S in H2. inversion H2. eapply lt_rewrite_larger in H4. omega. instantiate (1:=(2*(2*(2*two_power_nat ws)))). omega.
-    + apply tobit_length in H0. rewrite <- H0 in H. rewrite H. Search Z.testbit. rewrite Zsign_bit. destruct (zlt (intval b0 + two_power_nat (S ws)) (two_power_nat (S ws))) eqn :?. 
+    + apply tobit_length in H0. rewrite <- H0 in H. rewrite H. rewrite Zsign_bit. destruct (zlt (intval b0 + two_power_nat (S ws)) (two_power_nat (S ws))) eqn :?. 
       * exfalso. clear Heqs. generalize (intrange b0). intros. omega. 
       * clear Heqs. generalize (intrange b0). intros. destruct (zlt (intval b0 + 0) (two_power_nat (S ws))) eqn:?. 
          -- reflexivity. 
@@ -260,7 +260,7 @@ Proof.
         rewrite repr_unsigned. reflexivity.
         unfold modulus. destruct b.
         
-        Search Z.modulo. Search (?a mod ?a = _). rewrite Zplus_mod. rewrite Z_mod_same_full. rewrite Zmod_small. rewrite Zmod_small. omega. 
+        rewrite Zplus_mod. rewrite Z_mod_same_full. rewrite Zmod_small. rewrite Zmod_small. omega. 
        
         unfold unsigned. generalize (intrange b0). intros. omega.
         rewrite Zmod_small. generalize (intrange b0). intros. 
