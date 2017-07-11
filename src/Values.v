@@ -109,6 +109,21 @@ Proof.
   - simpl. rewrite IHl2. reflexivity. 
 Qed.   
 
+Lemma testbit_small_large : forall sml lrg z, 
+  two_power_nat sml < two_power_nat lrg -> 
+  z <= two_power_nat sml -> 
+    Z.testbit (z + two_power_nat lrg) (Z.of_nat lrg) 
+    = Z.testbit (two_power_nat lrg) (Z.of_nat lrg).
+Proof. 
+  intros. 
+Admitted.  
+
+Lemma testbit_power_two : forall n, 
+  Z.testbit (two_power_nat n) (Z.of_nat n) = true. 
+Proof. 
+  Search Z.testbit. unfold two_power_nat. intros. rewrite shift_nat_correct. replace (Zpower_nat 2 n * 1) with (Zpower_nat 2 n) by omega. Search (Z.testbit). 
+Admitted.  
+
 Lemma testbit_single : forall ws l1 (b0 : BitV ws) (b : bool) len (bv : BitV (S ws)), 
   len = length l1 -> 
   to_bitv l1 = Some b0 -> 
@@ -119,9 +134,25 @@ Proof.
   - unfold two_power_nat in H1. simpl in H1. rewrite <- H1. apply to_bitv_width_zero in H0. subst. simpl. unfold unsigned. 
     assert (intval b0 = 0). { apply intval_width_zero. }
     rewrite H. simpl. destruct b; auto. 
-  - admit. 
+  - SearchAbout repr. rewrite <- H1. rewrite testbit_repr.
+    Focus 2. unfold zwordsize. split. omega. 
+    apply Nat2Z.inj_lt. apply tobit_length in H0. omega.
+
+    unfold unsigned. destruct b. 
+    + apply tobit_length in H0. rewrite <- H0 in H. rewrite H. Search Z.testbit. Search Z.testbit.  erewrite testbit_small_large. 
+      Focus 2. instantiate (1:=ws). Search two_power_nat. rewrite two_power_nat_S. generalize (two_power_nat_pos ws). intros. omega. 
+      apply testbit_power_two. 
+      generalize (intrange b0). intros. 
+    
+
+
+
+
+    
 
 Admitted. 
+
+ 
 
 Lemma z_two_power_nat :
   forall x,
@@ -184,14 +215,16 @@ Proof.
         clear H0. f_equal.
         erewrite testbit_widen.
         instantiate (1 := ws).
+
         Focus 4.
         eapply tobit_length in Heqo. rewrite Heqo.
         destruct l; simpl; auto. rewrite Zpos_P_of_succ_nat. omega.
         rewrite Zpos_P_of_succ_nat. rewrite app_length.
         simpl.
-
-        admit. (* this is true *)
-
+        unfold Z.of_nat. destruct (length l + S (length l1))%nat eqn :?. simpl. omega. destruct (length l1) eqn:?. simpl. 
+        apply Zgt_pos_0.
+        rewrite Zpos_P_of_succ_nat. rewrite Zpos_P_of_succ_nat.  omega. 
+          
         Focus 3. omega.
         Focus 2. unfold max_unsigned. unfold modulus.
         generalize (unsigned_range b0). intros.
@@ -204,14 +237,24 @@ Proof.
         replace ((unsigned b0 + (if b then two_power_nat ws else 0)) mod modulus) with (unsigned b0).
         rewrite repr_unsigned. reflexivity.
         unfold modulus. destruct b.
-        admit. admit. admit.
+        
+        Search Z.modulo. Search (?a mod ?a = _). rewrite Zplus_mod. rewrite Z_mod_same_full. rewrite Zmod_small. rewrite Zmod_small. omega. 
+       
+        unfold unsigned. generalize (intrange b0). intros. omega.
+        rewrite Zmod_small. generalize (intrange b0). intros. 
+        assert (unsigned b0 + 0 = unsigned b0) by omega. rewrite H0.  
+        unfold unsigned. omega. 
+        unfold unsigned. generalize (intrange b0). intros. omega. 
+        assert (unsigned b0 + 0 = unsigned b0) by omega. rewrite H. rewrite Zmod_small. reflexivity. 
+        generalize (intrange b0). unfold unsigned. intros. omega. 
+        
+        destruct ws. 
+        apply tobit_length in Heqo. symmetry in Heqo. rewrite length_zero_iff_nil in Heqo. destruct l. simpl in Heqo. inversion Heqo. inversion Heqo. 
+  
+        auto.  
 
       * congruence.
-        
-(* H0 and H should get us close. Perhaps a lemma about increasing the width not changing the testbit result if we know something like Heqo (H0?) *)
-(* Note: this is only true because two_power_nat ws will "append" a 1 to the beginning of b0 and 0 won't change b0 at all *)
-
-Admitted.
+Qed. 
 
 (*
 Lemma testbit_widen : forall ws l l' v (bv : BitV ws) (bv' : BitV (S ws)) len,
