@@ -259,7 +259,7 @@ Proof.
 Qed. 
     
 (* Main theorem, can produce a simplified corollary *) 
-Theorem tobit_frombit :
+Theorem tobit_frombit' :
   forall len v l1 l2 width (bv : BitV width),
     (width >= len)%nat -> 
     to_bitv (l2++v::l1) = Some bv ->
@@ -277,12 +277,19 @@ Proof.
       * inversion H1. reflexivity. 
 Qed. 
 
-Theorem tobit_frombit : 
-  forall l bv ws, 
-   to_bitv l = Some bv -> 
-     from_bitv ws bv = l. 
+Theorem tobit_frombit : forall l ws (bv : BitV ws), 
+  to_bitv l = Some bv -> from_bitv bv = l. 
 Proof. 
+  intros. induction l. 
+  - apply tobit_length in H. simpl in H. destruct ws. 
+     + unfold from_bitv. simpl. reflexivity. 
+     + inversion H. 
+  - unfold from_bitv. destruct ws. 
+     + inversion H. destruct a; congruence.
+     + simpl. simpl in H. destruct a; try congruence. destruct (to_bitv l) eqn:?; try congruence.
+       Set Printing All.  
 Admitted. 
+
 
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
