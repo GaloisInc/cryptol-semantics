@@ -4,6 +4,7 @@
 *.aux
 *.v.d
 Makefile.coq
+Makefile.coq.test
 _CoqProject
 .DS_Store
 *~

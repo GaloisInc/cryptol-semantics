@@ -1,3 +1,11 @@
 DIRS=(src verif)
 CANARIES=()
 source script/coqproject.sh
+
+make Makefile.coq 2> /dev/null 
+mv Makefile.coq Makefile.coq.test
+
+DIRS=(src)
+source script/coqproject.sh
+make Makefile.coq 2> /dev/null
+
