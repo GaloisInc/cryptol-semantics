@@ -277,6 +277,13 @@ Proof.
       * inversion H1. reflexivity. 
 Qed. 
 
+Theorem tobit_frombit : 
+  forall l bv ws, 
+   to_bitv l = Some bv -> 
+     from_bitv ws bv = l. 
+Proof. 
+Admitted. 
+
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
 
