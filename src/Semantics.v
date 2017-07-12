@@ -398,9 +398,8 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       vres = vcons v (ECompImp e (S n) llm) E ->
       eval_expr ge E (ECompImp e n llm) vres
 | eval_comp_imp_nil :
-    forall E e llm s n,
-      totalmatchsize ge E llm s ->
-      (n >= s)%nat -> (* prove we've gone out of bounds *)
+    forall E e llm n,
+      totalmatchsize ge E llm n ->
       eval_expr ge E (ECompImp e n llm) vnil
 | eval_comp :
     forall E e llm v,
@@ -580,7 +579,57 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       largs = targs ++ (a :: b :: nil) ->
       eval_expr ge E (ELiftBinary bi targs a b E E) v ->
       eval_builtin ge E bi largs v
-                   
+.
+
+
+
+
+Inductive strict_eval_val (ge : genv) : val -> strictval -> Prop :=
+| eval_sbit :
+    forall b,
+      strict_eval_val ge (bit b) (sbit b)
+| eval_styp :
+    forall t,
+      strict_eval_val ge (typ t) (styp t)
+| eval_srec :
+    forall lide svals,
+      Forall2 (strict_eval_val ge) (map snd lide) svals ->
+      strict_eval_val ge (rec lide) (srec (combine (map fst lide) svals))
+| eval_tup :
+    forall lexp svals,
+      Forall2 (strict_eval_val ge) lexp svals ->
+      strict_eval_val ge (tuple lexp) (stuple svals)
+| eval_nil :
+    strict_eval_val ge vnil svnil
+| eval_cons :
+    forall E' e vrest r v f,
+      eval_expr ge E' e vrest ->
+      strict_eval_val ge vrest r ->
+      strict_eval_val ge v f ->
+      strict_eval_val ge (vcons v e E') (svcons f r)
+| eval_close :
+    forall id exp E SE,
+      (forall id, option_rel (strict_eval_val ge) (E id) (SE id)) ->
+      strict_eval_val ge (close id exp E) (sclose id exp SE)
+| eval_tclose :
+    forall id exp E SE,
+      (forall id, option_rel (strict_eval_val ge) (E id) (SE id)) ->
+      strict_eval_val ge (tclose id exp E) (stclose id exp SE)
+.
+
+
+Inductive strict_eval_expr (ge : genv) : env -> Expr -> strictval -> Prop :=
+| eval_everything :
+    forall E e v sv,
+      eval_expr ge E e v ->
+      strict_eval_val ge v sv ->
+      strict_eval_expr ge E e sv.
+    
+
+
+
+
+
 (* Below are 6 rules for lifting evaluation of builtins over records, tuples, and lists *)
 (* The list rules look different because lists are lazy *)
 (* | eval_lift_over_record_unary : *)
@@ -805,6 +854,6 @@ with length (ge : genv) : env -> Expr -> nat -> Prop :=
            select_list ge E n e (vslice lo hi lexp AE)
 *)
     
-.
+
 
 

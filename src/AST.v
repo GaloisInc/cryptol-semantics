@@ -156,7 +156,6 @@ with Selector :=
      | RecordSel (s : string)
 with val :=
      | bit (b : bool) (* Can we ever get this now? *)
-     (*| bits {n} (b : BitV n) (* bitvector *)*)
      | close (id : ident) (e : Expr) (E : ident -> option val)  (* closure *)
      | tclose (id : ident) (e : Expr) (E : ident -> option val) (* type closure *)
      | tuple (l : list val) (* heterogeneous tuples *)
@@ -164,7 +163,23 @@ with val :=
      | typ (t : Tval) (* type value, used to fill in type variables *)
      | vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
      | vnil (* empty list *)
+with strictval :=
+     | sbit (b : bool)
+     | stuple (l : list strictval) (* heterogeneous tuples *)
+     | srec (l : list (string * strictval)) (* records *)
+     | styp (t : Tval) (* type value, used to fill in type variables *)
+     | sclose (id : ident) (e : Expr) (E : ident -> option strictval)
+     | stclose (id : ident) (e : Expr) (E : ident -> option strictval)
+     | svcons (f r : strictval) 
+     | svnil (* empty list *)
 .
+
+Fixpoint strict_list (lv : list strictval) : strictval :=
+  match lv with
+  | nil => svnil
+  | f :: r => svcons f (strict_list r)
+  end.
+
 
 Definition extend { vtype : Type } (E : ident -> option vtype) (id : ident) (v : vtype) :=
   fun x => if ident_eq x id then Some v else E x.
