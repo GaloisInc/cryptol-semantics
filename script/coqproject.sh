@@ -28,6 +28,7 @@ function dep_dirs_lines(){
       echo $LINE >> $COQPROJECT_TMP
   done
 }
+
 for dep in ${DEPS[@]}; do
     path_var="$dep"_PATH
     path=${!path_var:="../$dep"}
@@ -64,7 +65,7 @@ for dir in ${DIRS[@]}; do
     namespace_var=${namespace_var//-/_}
     namespace_var=${namespace_var//./_}
     namespace=${!namespace_var:="\"\""}
-    LINE="-Q $dir/ $namespace"
+    LINE="-Q $dir $namespace"
     echo $LINE >> $COQPROJECT_TMP
 done
 
