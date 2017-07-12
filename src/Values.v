@@ -8,8 +8,6 @@ Require Import Omega.
 Import HaskellListNotations. 
 
 (* STATUS. only things left to do:
-      - inductive case of testbit_single
-      - inductive case of testbit_tobitv 
    OPTIONAL. 
       - Cleaner corollary from theorem 
   (using from_bitv instead of from_bitv')
@@ -53,14 +51,6 @@ Fixpoint from_bitv' (ws : nat) (n : nat) (bv : BitV ws) : list val :=
 
 Definition from_bitv {ws : nat} (bv : BitV ws) : list val :=
   from_bitv' ws ws bv.  
-
-(*
-Definition three := @repr 3 3.
-Eval compute in from_bitv three.  
-Eval compute in three. 
-*)
-
-
 
 (**************** Results ****************)
 
@@ -109,16 +99,6 @@ Proof.
   - simpl. rewrite IHl2. reflexivity. 
 Qed.   
 
-(*
-Lemma testbit_small_large : forall sml lrg z, 
-  two_power_nat sml <= two_power_nat lrg -> 
-  z < two_power_nat sml -> 
-    Z.testbit (z + two_power_nat lrg) (Z.of_nat lrg) 
-    = Z.testbit (two_power_nat lrg) (Z.of_nat lrg).
-Proof. 
-  intros. 
-Admitted. *)  
-
 Lemma lt_irrefl : forall n, 
   ~(two_power_nat n < two_power_nat n). 
 Proof. 
@@ -136,7 +116,7 @@ Proof.
      rewrite two_power_nat_S. omega.
 Qed.
 
-Lemma lt_rewrite_larger : forall a b c, 
+Lemma lt_rewrite_larger : forall a b c,  
   a < b -> 
     b + b < c -> 
     a + b < c. 
@@ -277,44 +257,8 @@ Proof.
 
       * congruence.
 Qed. 
-
-(*
-Lemma testbit_widen : forall ws l l' v (bv : BitV ws) (bv' : BitV (S ws)) len,
-  to_bitv (l'++v::l) = Some bv -> 
-  len = length l -> 
-  Some (repr (unsigned bv + two_power_nat ws)) = Some bv' -> 
-  bit (testbit bv (Z.of_nat len)) = v ->
-    bit (testbit bv' (Z.of_nat len)) = v.
-Proof.
-  induction ws; intros.
-  - apply tobit_length in H. symmetry in H. rewrite length_zero_iff_nil in H. destruct l'; inversion H.
-  - apply tobit_length in H. Print testbit. Print Z.testbit. Print Pos.testbit. Search testbit.     
-
-unfold two_power_nat in H1. simpl in H1. inversion H1. rewrite <- H2. f_equal. unfold unsigned. assert (intval bv = 0) by apply intval_width_zero. rewrite H3. simpl. inversion H. destruct (l'++v::l); try congruence. 
-     * 
-
-
-Admitted. 
-
-
-Lemma testbit_widen' : forall ws (bv : BitV ws) (bv' : BitV (S ws)) b i v, 
-  @repr (S ws) (unsigned bv + b) = bv' -> 
-  bit (testbit bv i) = v -> 
-    bit (testbit bv' i) = v.
-Proof. 
-  induction ws; intros. 
-  - unfold testbit. unfold unsigned. unfold unsigned in H. unfold repr in H. destruct b eqn:?. 
-    + assert (intval bv + 0 = intval bv) by omega. unfold testbit in H0. unfold unsigned in H0. rewrite H1 in H. rewrite <- H0. f_equal. f_equal. assert (intval bv = 0) by apply intval_width_zero. rewrite H2 in H0. rewrite H2 in H. simpl in H. rewrite H2. admit. 
-    + assert (intval bv = 0) by apply intval_width_zero. rewrite <- H0. f_equal. unfold testbit. f_equal. unfold unsigned. rewrite H1. unfold testbit in H0. unfold unsigned in H0. rewrite H1 in H0. unfold Z.testbit in H0. destruct i; simpl in H0.
-       * fold (@repr 1) in H. 
-
-  
-  Print Z_mod_modulus.  
-  Eval compute in (@Z_mod_modulus 3 8). 
-
-
-*)
-(* Main theorem, can produce a simplified corollary *)
+    
+(* Main theorem, can produce a simplified corollary *) 
 Theorem tobit_frombit :
   forall len v l1 l2 width (bv : BitV width),
     (width >= len)%nat -> 
@@ -332,66 +276,6 @@ Proof.
       * instantiate (1:=v0). instantiate (1:=l2++(cons v nil)). rewrite list_helper. assumption. 
       * inversion H1. reflexivity. 
 Qed. 
-  
-        
-
-(*
-
-  induction l; intros.
-  - unfold to_bitv in H0. destruct width; simpl in H0. 
-    + inversion H0. inversion H. simpl. reflexivity.
-    + inversion H0. 
-  - destruct width; simpl in H0; destruct a; try congruence.
-     
-    destruct length. 
-    + simpl. exfalso. *) 
-
-(*
-  simpl in H. destruct a; try congruence. destruct (to_bitv l). 
-  - inversion H. destruct b. 
-    + simpl. f_equal. 
-      * f_equal. destruct (repr (unsigned b0 + two_power_nat ws)). 
-        destruct (Z.of_nat ws). 
-        
-  - inversion H.
-*)  
-     
-
-(* @NATE: This lemma, or something like it, is what we want proven about to_bitv and from_bitv *)
-(*Lemma tobit_frombit :
-  forall l ws bv,
-    to_bitv l = Some bv ->
-    @from_bitv' ws ws bv = l.
-Proof.
-  induction l; intros.
-  eapply tobit_length in H. subst. simpl. reflexivity.
-  destruct ws. simpl in H. destruct a; congruence.
-  simpl. 
-  simpl in H. destruct a; try congruence.
-  match goal with
-  | [ H : context[ match ?X with _ => _ end ] |- _ ] => destruct X eqn:?
-  end; inv H.
-  eapply IHl in Heqo.
-  f_equal. f_equal.
-Admitted.
-*)
-
-(*
-Lemma tobitv_cons : forall a l ws (bv : BitV (S ws)),
-  to_bitv (a :: l) = Some bv -> 
-    exists (bv' : BitV ws),
-    to_bitv l = Some bv'.
-Proof. 
-  (* Need to find the right induction *)
-  (*intro a. intro l. revert a. *)induction l; intros.    
-  - inversion H. eapply tobit_length in H. inversion H. simpl. eauto.
-  - destruct ws.   
-    + eapply tobit_length in H. inversion H. 
-    + (* This looks right *)inversion H. destruct a; try congruence. destruct a0; try congruence. destruct l; try congruence. 
-      * eapply tobit_length in H. inversion H. simpl. eauto. 
-      * clear H1. (* I believe this (?) *) 
-    admit. 
-Admitted.*)
 
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
