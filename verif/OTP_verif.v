@@ -1,3 +1,4 @@
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -27,10 +28,10 @@ Require Import OTP.
 Function otp_encrypt (k : BitV 8) (msg : BitV 8) : BitV 8 :=
   xor k msg.
 
-Eval compute in (otp_encrypt (@repr 8 8) (@repr 8 5)). 
+(* Eval compute in (otp_encrypt (@repr 8 8) (@repr 8 5)). 
 Eval compute in (otp_encrypt (@repr 8 8) (@repr 8 13)). 
+*)
 
-Print strictval. 
 
 (*Lemma otp_equiv : forall k msg bvk bvm, 
   to_bitv k = Some bvk -> 
