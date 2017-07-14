@@ -8,36 +8,63 @@ Require Import Builtins.
 Require Import Values.
 Require Import Bitvectors.
 
+Require Import BuiltinSyntax.
+
 Open Scope string.
 
-Fixpoint make_arg_list (n : nat) : list Expr :=
-  match n with
-  | O => nil
-  | S n' => (EVar (Z.of_nat n, "")) :: make_arg_list n'
-  end.
 
-Fixpoint iter {A : Type} (n : nat) (f : nat -> A -> A) (b : A) : A :=
-  match n with
-  | O => b
-  | S n' => f n (iter n' f b)
-  end.
-
-Definition mb (num_type_args : nat) (num_args : nat) (b : builtin) : Expr :=
-  let l := make_arg_list (num_args + num_type_args) in 
-  let raw_e := iter num_args (fun n => fun x => EAbs (Z.of_nat n, "") x) (EBuiltin b l) in
-  let t_e := iter num_type_args (fun n => fun x => ETAbs ((Z.of_nat (n + num_args )), "") x) raw_e in
-  t_e.
-
-(* Used in semantics to lift operations over lists, records, tuples *)
-Definition is_pointwise_liftable_unary (b : builtin) : Prop :=
+(* It is safe to force evaluation of all the arguments to this builtin *)
+Definition strict_builtin (b : builtin) : Prop :=
   match b with
-  | Neg => True
-  | Compl => True
-  | lg2 => True
-  | _ => False
+  | Demote => True (* purely type leve computation *)
+  | Plus => False (* lazily lifts pointwise over streams *)
+  | Minus => False (* lazily lifts pointwise over streams *)
+  | Times => False (* lazily lifts pointwise over streams *)
+  | Div => False (* lazily lifts pointwise over streams *)
+  | Mod => False (* lazily lifts pointwise over streams *)
+  | Exp => False (* lazily lifts pointwise over streams *)
+  | lg2 => False (* lazily lifts pointwise over streams *)
+  | true_builtin => True (* no arguments to be lazy/strict *)
+  | false_builtin => True (* no arguments to be lazy/strict *)
+  | Neg => False (* lazily lifts pointwise over streams *)
+  | Compl => False (* lazily lifts pointwise over streams *)
+  | Lt => True (* Lexicographically lifts, thus forces everything *)
+  | Gt => True (* Lexicographically lifts, thus forces everything *)
+  | Le => True (* Lexicographically lifts, thus forces everything *)
+  | Ge => True (* Lexicographically lifts, thus forces everything *)
+  | Eq => True (* Lexicographically lifts, thus forces everything *)
+  | Neq => True (* Lexicographically lifts, thus forces everything *)
+  | And => False (* lazily lifts pointwise over streams *)
+  | Or => False (* lazily lifts pointwise over streams *)
+  | Xor => False (* lazily lifts pointwise over streams *)
+  | Zero => True (* only one argument, that is the result type *)
+  | Shiftl => False (* can shift infinite streams, s << 2 is just (rest (rest s)) *)
+  | Shiftr => False (* can shift infinite streams, just inserts 0 at beginning *)
+  | Rotl => True (* can't lazily rotate in either direction *)
+  | Rotr => True (* can't lazily rotate in either direction *)
+  | Append => False (* a # b works as long as a is finite (though why both can't be infinite I don't know)*)
+  | splitAt => False (* You can split a stream into some elements and another stream *)
+  | join => False (* Input can't be infinite in both dimensions, but can be in one *)
+  | split => False (* You can split an infinite stream into a stream of lists of elements *)
+  | reverse => False (* You can reverse a finite list of infinite streams *)
+  | transpose => False (* I don't know how to build [inf][inf]a, but you could transpose it *)
+  | At => False (* just take the 3rd element of a stream *)
+  | AtAt => False (* same argument for At. Why is this a primitive at all? *)
+  | Bang => False (* subtle one: you can reverse index into a finite list of streams *)
+  | BangBang => False (* same as for Bang *)
+  | update => False (* again, like At or Bang, polymorphic over the contained type, which could be a stream *)
+  | updateEnd => False (* same as update *)
+  | fromThen => True (* I'm not sure about this, but probably *)
+  | fromTo => True
+  | fromThenTo => True
+  | infFrom => True
+  | infFromThen => True
+  | pmult => True (* according to the types, must be finite *)
+  | pdiv => True (* according to the types, must be finite *)
+  | pmod => True (* according to the types, must be finite *)
   end.
 
-Definition is_pointwise_liftable_binary (b : builtin) : Prop :=
+Definition binary (b : builtin) : Prop :=
   match b with
   | Plus => True
   | Minus => True
@@ -45,181 +72,108 @@ Definition is_pointwise_liftable_binary (b : builtin) : Prop :=
   | Div => True
   | Mod => True
   | Exp => True
-  | Lt => True
-  | Gt => True
-  | Le => True
-  | Ge => True
-  | Eq => True
+  | Lt => True 
+  | Gt => True 
+  | Le => True 
+  | Ge => True 
+  | Eq => True 
   | Neq => True
   | And => True
   | Or => True
   | Xor => True
+  | Shiftl => True
+  | Shiftr => True
+  | Rotl => True (* can't lazily rotate in either direction *)
+  | Rotr => True (* can't lazily rotate in either direction *)
+  | Append => True
+  | At => True
+  | AtAt => True
+  | Bang => True
+  | BangBang => True
+  | pmult => True
+  | pdiv => True
+  | pmod => True
   | _ => False
   end.
 
-
-(* binary operations over individual bits *)
-(* mutually exclusive of operators over bitvectors *)
-Definition strict_total_binary_op_over_bit (b : builtin) : Prop :=
-  match b with
-  | And => True
-  | Or => True
-  | Xor => True
-  | _ => False
-  end.
-
-(* total binary operators which operate over bitvectors *)
-(* i.e. operators which are total and strict over bitvectors *)
-Definition strict_total_binary_op_over_bitv_to_bitv (b : builtin) : Prop :=
-  match b with
-  | Plus => True
-  | Minus => True
-  | Times => True
-  | Div => False (* can't divide by 0, not total *)
-  | Mod => False (* can't mod by 0, not total *)
-  | Exp => True
-  | Lt => False (* produces a bit, not a bitvector *)
-  | Gt => False
-  | Le => False
-  | Ge => False
-  | Eq => False
-  | Neq => False
-  | Shiftl => False (* Shifts are strict in 2nd arg, work over infinite sequences in 1st, 1st doesn't have to be a bitvector *)
-  | Shiftr => False
-  | Rotl => False (* Rotates are strict in both args, but 1st arg doesn't have to be a bitvector *)
-  | Rotr => False
-  | _ => False
-  end.
-
-
-Definition strict_total_binary_op_over_bitv_to_bit (b : builtin) : Prop :=
-  match b with
-  | Lt => True
-  | Gt => True
-  | Le => True
-  | Ge => True
-  | Eq => False (* over bit *)
-  | Neq => False
-  | _ => False
-  end.
-
-Definition binop_sem_bitv_to_bitv (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bitv b) :
-  BitV w -> BitV w -> BitV w :=
-  match b,pr with
-  | Plus,_ => @add w
-  | Minus,_ => @sub w
-  | Times,_ => @mul w
-  | Exp,_ => @mul w (* Placeholder: TODO implement exp *)
-  | _,False => @mul w (* unreachable, but whatever *)
-  end.
-                  
-(* lifted over structures, but mapped then folded *)
-(* TODO *)
-Definition binop_sem_bitv_to_bit (b : builtin) {w : nat} (pr : strict_total_binary_op_over_bitv_to_bit b) :
-  BitV w -> BitV w -> bool :=
-  match b,pr with
-  | Lt,_ => @ltu w
-  | Gt,_ => @gtu w
-  | Le,_ => @leu w
-  | Ge,_ => @geu w
-  | _,False => @geu w (* Unreachable *)
-  end.
-
-Definition strict_total_unary_op_over_bit (b : builtin) : Prop :=
-  match b with
-  | Compl => True
-  | _ => False
-  end.
-
-Definition strict_total_unary_op_over_bitv (b : builtin) : Prop :=
+Definition unary (b : builtin) : Prop :=
   match b with
   | Neg => True
+  | Compl => True
   | lg2 => True
   | _ => False
   end.
 
-(* When lifted over structures only mapped, not folded *)
-Definition binary_op_over_bit_to_bit (b : builtin) : Prop :=
+Definition other_arity (b : builtin) : Prop :=
   match b with
-  | And => True
-  | Or => True
-  | Xor => True
+  | Demote => True
+  | true_builtin => True
+  | false_builtin => True
+  | Zero => True
+  | splitAt => True
+  | join => True
+  | split => True
+  | reverse => True
+  | transpose => True
+  | update => True
+  | updateEnd => True
+  | fromThen => True
+  | fromTo => True
+  | fromThenTo => True
+  | infFrom => True
+  | infFromThen => True
   | _ => False
   end.
 
-Definition binop_sem_bit_to_bit (b : builtin) (pr : binary_op_over_bit_to_bit b) :
-  bool -> bool -> bool :=
-  match b,pr with
-  | And,_ => fun x => fun y => if x then y else false
-  | Or,_ => fun x => fun y => if x then true else y
-  | Xor,_ => fun x => fun y => if x then (if y then false else true) else y
-  | _,False => fun x => fun y => true (* unreachable *)
-  end.
+Lemma binary_dec (b : builtin) :
+  { binary b } + { ~ binary b }.
+Proof.
+  destruct b; simpl; auto.
+Defined.
 
-(* table of builtins, along with their arity *)
-(* mb 9 9 _ indicates hasn't been implemented, will break when tested *)
-Definition table : list (string * Expr) :=
-  ("demote", mb 2 0 Demote) :: 
-  ("+", mb 1 2 Plus) :: (* TESTED *)
-  ("-", mb 1 2 Minus) :: 
-  ("*", mb 1 2 Times) :: 
-  ("/", mb 1 2 Div) :: 
-  ("%", mb 1 2 Mod) :: 
-  ("^^", mb 1 2 Exp) :: (* Underlying op not implemented *)
-  ("lg2", mb 1 2 lg2) :: (* Underlying op not implemented *)
-  ("True", mb 0 0 true_builtin) :: (* TESTED *)
-  ("False", mb 0 0 false_builtin) :: (* TESTED *)
-  ("negate", mb 1 1 Neg) :: 
-  ("complement", mb 1 1 Compl) :: 
-  ("<", mb 1 2 Lt) :: 
-  (">", mb 1 2 Gt) :: 
-  ("<=", mb 1 2 Le) ::
-  (">=", mb 1 2 Ge) ::
-  ("==", mb 1 2 Eq) ::
-  ("!=", mb 1 2 Neq) ::
-  ("&&", mb 1 2 And) ::
-  ("||", mb 1 2 Or) :: 
-  ("^", mb 1 2 Xor) :: 
-  ("zero", mb 1 0 Zero) :: 
-  ("<<", mb 1 2 Shiftl) :: 
-  (">>", mb 1 2 Shiftr) :: 
-  ("<<<", mb 1 2 Rotl) :: 
-  (">>>", mb 1 2 Rotr) :: 
-  ("#", mb 3 2 Append) :: 
-  ("splitAt", mb 3 1 splitAt) :: 
-  ("join", mb 9 9 join) :: (* Not yet implemented *)
-  ("split", mb 3 1 split) :: 
-  ("reverse", mb 9 9 reverse) :: (* Not yet implemented *)
-  ("transpose", mb 9 9 transpose) :: (* Not yet implemented *)
-  ("@", mb 3 2 At) :: 
-  ("@@", mb 9 9 AtAt) :: (* Not yet implemented *)
-  ("!", mb 9 9 Bang) :: (* Not yet implemented *)
-  ("!!", mb 9 9 BangBang) :: (* Not yet implemented *)
-  ("update", mb 9 9 update) ::(* Not yet implemented *)
-  ("updateEnd", mb 9 9 updateEnd) :: (* Not yet implemented *)
-  ("fromThen", mb 9 9 fromThen) :: (* Not yet implemented *)
-  ("fromTo", mb 9 9 fromTo) :: (* Not yet implemented *)
-  ("fromThenTo", mb 9 9 fromThenTo) :: (* Not yet implemented *)
-  ("infFrom", mb 9 9 infFrom) :: (* Not yet implemented *)
-  ("infFromThen", mb 9 9 infFromThen) :: (* Not yet implemented *)
-  ("error", mb 9 9 error) :: (* Not yet implemented *)
-  ("pmult", mb 9 9 pmult) :: (* Not yet implemented *)
-  ("pdiv", mb 9 9 pdiv) :: (* Not yet implemented *)
-  ("pmod", mb 9 9 pmod) :: (* Not yet implemented *)
-  ("random", mb 9 9 random) :: (* Not going to be implemented *)
-  ("trace", mb 9 9 trace) :: (* Not going to be implemented *)
-  nil.
+Lemma unary_dec (b : builtin) :
+  { unary b } + { ~ unary b }.
+Proof.
+  destruct b; simpl; auto.
+Defined.
 
-Fixpoint lookup {A : Type} (s : string) (t : list (string * A)) : option A :=
-  match t with
+Lemma arity_complete ( b : builtin) :
+  { binary b } + { unary b } + { other_arity b }.
+Proof.
+  destruct b; simpl; try solve [left; auto]; right; auto.
+Defined.
+
+Fixpoint last_two {A : Type} (l : list A) : option (A * A) :=
+  match l with
   | nil => None
-  | (n,a) :: r => if string_dec n s then Some a else lookup s r
+  | f :: nil => None
+  | a :: b :: nil => Some (a,b)
+  | a :: b => last_two b
   end.
 
-Definition find_builtin (s : string) : option Expr :=
-  lookup s table.
+Fixpoint last_one {A : Type} (l : list A) : option A :=
+  match l with
+  | nil => None
+  | f :: nil => Some f
+  | f :: r => last_one r
+  end.
 
-Definition lookup_prim (id : ident) : option Expr :=
-  let (_,n) := id in
-  find_builtin n.
+(* TODO: This might be a good way to define the correct lifting of binary operations over values *)
+Definition evaluate_binary (bi : builtin) (a b : val) : option val := None.
+  
+Definition evaluate_unary (bi : builtin) (a : val) : option val := None.
 
+Definition evaluate_builtin (bi : builtin) (lv : list val) : option val :=
+  if binary_dec bi then
+    match last_two lv with
+    | Some (a,b) => evaluate_binary bi a b
+    | None => None
+    end
+  else if unary_dec bi then
+         match last_one lv with
+         | Some a => evaluate_unary bi a
+         | None => None
+         end
+       else None
+.
+                    

@@ -1,4 +1,4 @@
-Require Import BuiltinSem.
+Require Import BuiltinSyntax.
 Require Import String.
 
 (* Sanity check to make sure all the prims are in the table above *)
@@ -16,7 +16,6 @@ Proof.
   match goal with
   | [ |- context[if string_dec ?X ?Y then _ else _] ] => instantiate (3 := X); reflexivity
   end.
-
 
 Qed.
 

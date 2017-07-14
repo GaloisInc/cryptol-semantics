@@ -1,5 +1,5 @@
 Require Import Semantics.
-Require Import BuiltinSem.
+Require Import BuiltinSyntax.
 
 Require Import AST.
 

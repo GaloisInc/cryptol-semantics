@@ -180,6 +180,24 @@ Fixpoint strict_list (lv : list strictval) : strictval :=
   | f :: r => svcons f (strict_list r)
   end.
 
+Fixpoint list_of_strictval (v : strictval) : option (list strictval) :=
+  match v with
+  | svnil => Some nil
+  | svcons f r =>
+    match list_of_strictval r with
+    | Some lvr => Some (f :: lvr)
+    | _ => None
+    end
+  | _ => None
+  end.
+
+Lemma list_of_strictval_of_strictlist :
+  forall l,
+    list_of_strictval (strict_list l) = Some l.
+Proof.
+  induction l; intros; simpl; auto.
+  rewrite IHl. reflexivity.
+Qed.
 
 Definition extend { vtype : Type } (E : ident -> option vtype) (id : ident) (v : vtype) :=
   fun x => if ident_eq x id then Some v else E x.
@@ -187,8 +205,8 @@ Definition extend { vtype : Type } (E : ident -> option vtype) (id : ident) (v :
 Definition genv := ident -> option Expr.
 Definition gempty : genv := fun _ => None.
 
-
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
 
-
+Definition senv := ident -> option strictval.
+Definition sempty : senv := fun _ => None.

@@ -30,7 +30,7 @@ Definition t : Expr := ETyp (TCon (TC (TCNum 1)) nil).
 Definition result_hex := "0x6620b31f2924b8c01547745f41825d322336f83ebb13d723678789d554d8a3ef".
 
 Definition result : list val := val_of_hex_lit result_hex.
-
+(*
 Lemma eval_at_zero :
   exists v,
     eval_expr ge empty (EApp (EApp (ETApp (ETApp (EVar hmacSHA256) t) t) z) z) v /\ (force_list ge empty v result).
@@ -79,4 +79,4 @@ Proof.
 
   
 Admitted.
-  
+  *)

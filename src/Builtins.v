@@ -45,10 +45,10 @@ Inductive builtin :=
 | fromThenTo (* (NonRecursive (Decl (50,"fromThenTo") DPrim)), *)
 | infFrom (* (NonRecursive (Decl (51,"infFrom") DPrim)), *)
 | infFromThen (* (NonRecursive (Decl (52,"infFromThen") DPrim)), *)
-| error (* (NonRecursive (Decl (53,"error") DPrim)), *)
+(* | error (* (NonRecursive (Decl (53,"error") DPrim)), *) *)
 | pmult (* (NonRecursive (Decl (54,"pmult") DPrim)), *)
 | pdiv (* (NonRecursive (Decl (55,"pdiv") DPrim)), *)
 | pmod (* (NonRecursive (Decl (56,"pmod") DPrim)), *)
-| random (* (NonRecursive (Decl (57,"random") DPrim)) *)
-| trace (* (NonRecursive (Decl (68,"trace") DPrim)), *)
+(* | random (* (NonRecursive (Decl (57,"random") DPrim)) *) *)
+(* | trace (* (NonRecursive (Decl (68,"trace") DPrim)), *) *)
 .

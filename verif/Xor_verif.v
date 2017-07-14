@@ -11,6 +11,7 @@ Require Import Semantics.
 Require Import Utils.
 Require Import Builtins.
 Require Import BuiltinSem.
+Require Import BuiltinSyntax.
 Require Import Values.        
 Require Import Bitstream.
 
@@ -64,25 +65,6 @@ Ltac nb_destr :=
       | [ H : n_bits O _ |- _ ] => inversion H; clear H
       end.
          
-Definition sempty : ident -> option strictval := fun x => None.
-
-
-
-Lemma n_bits_eval :
-  forall n x,
-    n_bits n x ->
-    exists v,
-      eager_eval_expr ge sempty (EList (map EValue x)) v.
-Proof.
-  induction 1; intros.
-  eexists. econstructor; eauto. simpl. econstructor.
-  destruct IHn_bits.
-  inversion H0.
-  eexists. simpl. econstructor. simpl. econstructor. econstructor. econstructor.
-  eauto. reflexivity.
-Qed.
-
-
 Lemma xor_bits_roundtrip :
   forall n x y,
     n <> O ->

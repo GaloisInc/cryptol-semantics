@@ -20,7 +20,6 @@ Definition match_env (ge : genv) (E : ident -> option val) (SE : ident -> option
   forall id,
     option_rel (strict_eval_val ge) (E id) (SE id).
 
-
 Inductive eager_eval_type (ge : genv) : (ident -> option strictval) -> Typ -> Tval -> Prop :=
 | eager_eval_tvar_bound :
     forall E uid t k,
@@ -122,19 +121,6 @@ Inductive eager_eval_type (ge : genv) : (ident -> option strictval) -> Typ -> Tv
 .
 
 
-Fixpoint list_of_strictval (v : strictval) : option (list strictval) :=
-  match v with
-  | svnil => Some nil
-  | svcons f r =>
-    match list_of_strictval r with
-    | Some lvr => Some (f :: lvr)
-    | _ => None
-    end
-  | _ => None
-  end.
-
-Definition senv := ident -> option strictval.
-
 Fixpoint zipwith {A B C : Type} (f : A -> B -> C) (lA : list A) (lB : list B) : list C :=
   match lA,lB with
   | a :: aa, b :: bb => (f a b) :: zipwith f aa bb
@@ -157,6 +143,17 @@ Fixpoint product {A : Type} (lA : list A) (lB : list (list A)) : list (list A) :
 Definition bind_senvs (E : senv) : list (list (ident * strictval)) -> list senv :=
   map (fun lidv => fold_left (fun senv => fun idv => extend senv (fst idv) (snd idv)) lidv E).
 
+Fixpoint eq_sem (a b : strictval) : option strictval :=
+  match a,b with
+  | (sbit a),(sbit b) => Some (sbit (if a then (if b then true else false) else (if b then false else true)))
+  | svnil, svnil => Some (sbit true)
+  | svcons fa ra, svcons fb rb =>
+    match eq_sem fa fb, eq_sem ra rb with
+    | Some (sbit rf), Some (sbit rr) => Some (sbit (if rf then rr else false))
+    | _,_ => None
+    end
+  | _,_ => None
+  end.
 
 Fixpoint xor_sem (a b : strictval) : option strictval :=
   match a,b with
@@ -169,15 +166,110 @@ Fixpoint xor_sem (a b : strictval) : option strictval :=
   | svnil,svnil => Some svnil
   | _,_ => None
   end.
-    
-Definition strict_builtin_sem (bi : builtin) (l : list strictval) : option strictval :=
-  match bi,l with
-  | Xor,(t :: a :: b :: nil) => xor_sem a b
+
+Fixpoint lt_sem (a b : strictval) : option strictval :=
+  match a,b with
+  | (sbit a),(sbit b) => Some (sbit (if b then (if a then false else true) else false))
+  | (svcons fa ra), (svcons fb rb) =>
+    match eq_sem fa fb, lt_sem fa fb, lt_sem ra rb with
+    | Some (sbit false), Some (sbit b), Some _ => Some (sbit b)
+    | Some (sbit true), Some _, Some (sbit b) => Some (sbit b)
+    | _,_,_ => None
+    end
+  | svnil,svnil => Some (sbit false)
   | _,_ => None
   end.
 
+Fixpoint gt_sem (a b : strictval) : option strictval :=
+  match lt_sem a b, eq_sem a b with
+  | Some (sbit x), Some (sbit y) => Some (sbit (if x then false else if y then false else true))
+  | _,_ => None
+  end.
+  
+Fixpoint strictval_from_bitv' (ws n : nat) (bv : BitV ws) : list strictval :=
+  match n with
+  | O => nil
+  | S n' => sbit (testbit bv (Z.of_nat n')) :: strictval_from_bitv' ws n' bv
+  end.
+
+Definition strictval_from_bitv {ws : nat} (bv : BitV ws) : list strictval := strictval_from_bitv' ws ws bv.
+
+Definition strictnum (value width : Z) : strictval :=
+  let bv := @repr (Z.to_nat width) value in
+  strict_list (strictval_from_bitv bv).
+
+Fixpoint demote_sem (tv twidth : strictval) : option strictval :=
+  match tv,twidth with
+  | styp (tnum v), styp (tnum w) => Some (strictnum v w)
+  | _,_ => None
+  end.
+
+Fixpoint zero_sem (t : Tval) : option strictval :=
+  match t with
+  | trec lst => None
+  (*srec (combine (map fst lst) (map zero_sem (map snd lst)))*)
+  | ttup l => None
+  (*stuple (map zero_sem l)*)
+  | tseq (tnum n) t' =>
+    match zero_sem t' with
+    | Some sv => Some (strict_list (repeat sv (Z.to_nat n)))
+    | None => None
+    end
+  | tseq _ _ => None
+  | tfun _ _ => None
+  | tnum _ => None
+  | tbit => Some (sbit false)
+  | tinf => None
+  end.
+
+Fixpoint append_sem (l1 l2 : strictval) : option strictval :=
+  match l1 with
+  | svnil => Some l2
+  | svcons f r =>
+    match append_sem r l2 with
+    | Some sv => Some (svcons f sv)
+    | None => None
+    end
+  | _ => None
+  end.
+
+Definition strict_builtin_sem (bi : builtin) (l : list strictval) : option strictval :=
+  match bi,l with
+  | Xor,(t :: a :: b :: nil) => xor_sem a b
+  | Lt,(t :: a :: b :: nil) => lt_sem a b
+  | Gt,(t :: a :: b :: nil) => gt_sem a b
+  | Eq,(t :: a :: b :: nil) => eq_sem a b
+  | Demote,(tv :: twidth :: nil) => demote_sem tv twidth
+  | Zero,((styp t) :: nil) => zero_sem t
+  | Append,(t1 :: t2 :: t3 :: l1 :: l2 :: nil) => append_sem l1 l2
+  | _,_ => None
+  end.
 
 Inductive eager_eval_expr (ge : genv) : senv -> Expr -> strictval -> Prop :=
+
+(* Definitely needed: *)
+(* ETuple *)
+(* TupleSel *)
+(* ERec *)
+(* RecordSel *)
+(* ListSel *)
+(* EWhere *)
+(* ELiftUnary *)
+(* ELiftBinary *)
+
+  
+(* Maybe needed? *)
+(* Append *)
+(* Head *)
+(* Drop *)
+(* Take *)
+
+  
+| eager_eval_if :
+    forall E c t f v b,
+      eager_eval_expr ge E c (sbit b) ->
+      eager_eval_expr ge E (if b then t else f) v ->
+      eager_eval_expr ge E (EIf c t f) v
 | eager_eval_local_var :
     forall E id v,
       E id = Some v ->
@@ -287,6 +379,14 @@ Lemma eager_to_strict_lazy :
       strict_eval_expr ge E exp sv.
 Proof.
   induction 1; intros.
+  - specialize (IHeager_eval_expr1 _ H1).
+    specialize (IHeager_eval_expr2 _ H1).
+    inversion IHeager_eval_expr1.
+    inversion IHeager_eval_expr2.
+    subst.
+    inversion H3. subst.
+    econstructor. econstructor. eassumption.
+    eassumption. eassumption.
   - unfold match_env in *.
     specialize (H0 id). rewrite H in H0. inv H0.
     econstructor.
@@ -335,13 +435,6 @@ Proof.
 Admitted.
 
 
-Lemma list_of_strictval_of_strictlist :
-  forall l,
-    list_of_strictval (strict_list l) = Some l.
-Proof.
-  induction l; intros; simpl; auto.
-  rewrite IHl. reflexivity.
-Qed.
 
 Lemma eager_eval_other_envs :
   forall ge Es vs exp,

@@ -11,6 +11,7 @@ Require Import Semantics.
 Require Import Utils.
 Require Import Builtins.
 Require Import BuiltinSem.
+Require Import BuiltinSyntax.
 Require Import Values.        
 
 Require Import EvalTac.
@@ -20,7 +21,7 @@ Open Scope string.
 
 
 Require Import Demote.
-
+(*
 Lemma eval_y :
   exists v,
     eval_expr ge empty (EVar y) v /\ force_list ge empty v (@from_bitv 9 (@repr 9 1)).
@@ -50,3 +51,4 @@ Proof.
   Unshelve.
   simpl; reflexivity.
 Qed.
+*)

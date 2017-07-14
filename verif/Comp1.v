@@ -11,6 +11,7 @@ Require Import Semantics.
 Require Import Utils.
 Require Import Builtins.
 Require Import BuiltinSem.
+Require Import BuiltinSyntax.
 Require Import Values.        
 
 Require Import EvalTac.
@@ -19,7 +20,7 @@ Import HaskellListNotations.
 Open Scope string.
 
 Require Import Comp.
-
+(*
 Lemma eval_t1 :
   eval_expr ge empty (EVar t1) (bit true).
 Proof.
@@ -55,3 +56,4 @@ Proof.
   repeat e.
   repeat e.
 Qed.  
+*)

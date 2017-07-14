@@ -24,3 +24,6 @@ Definition whole_prog := [(NonRecursive (Decl (0,"demote") DPrim)),(NonRecursive
 Definition ge := bind_decl_groups whole_prog gempty.
 
 Definition hmacSHA256 : ident := (352,"hmacSHA256").
+
+Definition hmac : ident := (354,"hmac").
+Definition kinit : ident := (353,"kinit").

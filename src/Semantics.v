@@ -11,6 +11,7 @@ Require Import Bitvectors.
 Require Import AST.
 Require Import Builtins.
 Require Import Values.
+Require Import BuiltinSyntax.
 Require Import BuiltinSem.
 
 Open Scope list_scope.
@@ -342,55 +343,7 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
 | eval_value :
     forall E v,
       eval_expr ge E (EValue v) v
-(* lifting operations over lists lazily *)
-| eval_lift_unary_cons :
-    forall E a vinit e E' bi targs v,
-      eval_expr ge E a (vcons vinit e E') ->
-      eval_builtin ge E bi (targs ++ (EValue vinit) :: nil) v ->
-      eval_expr ge E (ELiftUnary bi targs a) (vcons v (ELiftUnary bi targs e) E')
-| eval_lift_unary_nil :
-    forall E a vnil bi targs,
-      eval_expr ge E a vnil ->
-      eval_expr ge E (ELiftUnary bi targs a) vnil
-| eval_lift_binary_cons :
-    forall E a b AE BE v bi targs ae be aE' bE' va vb,
-      eval_expr ge AE a (vcons va ae aE') ->
-      eval_expr ge BE b (vcons vb be bE') ->
-      eval_builtin ge E bi (targs ++ (EValue va) :: (EValue vb) :: nil) v ->
-      eval_expr ge E (ELiftBinary bi targs a b AE BE) (vcons v (ELiftBinary bi targs ae be aE' bE') empty)
-| eval_lift_binary_nil :
-    forall E a b vnil bi targs AE BE,
-      (* both lists must be same length to lift over, so no extra eval rule is needed if only one list is nil *)
-      eval_expr ge AE a vnil ->
-      eval_expr ge BE b vnil ->
-      eval_expr ge E (ELiftBinary bi targs a b AE BE) vnil
-(* lift operators over tuples *)
-| eval_lift_unary_tuple :
-    forall E e vs vs' bi targs,
-      eval_expr ge E e (tuple vs) ->
-      Forall2 (fun vx => eval_builtin ge E bi (targs ++ (EValue vx) :: nil)) vs vs' ->
-      eval_expr ge E (ELiftUnary bi targs e) (tuple vs')
-| eval_lift_binary_tuple :
-    forall el er EL ER vsl vsr vs bi targs E,
-      eval_expr ge EL el (tuple vsl) ->
-      eval_expr ge ER er (tuple vsr) ->
-      Forall3 (fun vl => fun vr => eval_builtin ge E bi (targs ++ (EValue vl) :: (EValue vr) :: nil)) vsl vsr vs ->
-      eval_expr ge E (ELiftBinary bi targs el er EL ER) (tuple vs)
-(* lift operators over records *)
-| eval_lift_unary_record :
-    forall E e lidv vs lidv' bi targs,
-      eval_expr ge E e (rec lidv) ->
-      Forall2 (fun vx => eval_builtin ge E bi (targs ++ (EValue vx) :: nil)) (map snd lidv) vs ->
-      lidv' = combine (map fst lidv) vs ->
-      eval_expr ge E (ELiftUnary bi targs e) (rec lidv')
-| eval_lift_binary_record :
-    forall el er EL ER lidvl lidvr vs lidv' bi targs E,
-      eval_expr ge EL el (rec lidvl) ->
-      eval_expr ge ER er (rec lidvr) ->
-      Forall3 (fun vl => fun vr => eval_builtin ge E bi (targs ++ (EValue vl) :: (EValue vr) :: nil)) (map snd lidvl) (map snd lidvr) vs ->
-      map fst lidvl = map fst lidvr ->
-      lidv' = combine (map fst lidvl) vs ->
-      eval_expr ge E (ELiftBinary bi targs el er EL ER) (rec lidv')
+
 | eval_comp_imp_cons :
     forall E n llm E' e v vres,
       par_match ge E n llm E' ->
@@ -488,11 +441,6 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       to_bitv vl = Some bv ->
       select_list ge E (Z.to_nat (unsigned bv)) l v ->
       eval_builtin ge E At (t1 :: t2 :: t3 :: l :: idx :: nil) v
-| eval_eq_true : (* SUPER BIG HACK TODO TAKE OUT *)
-    forall E e1 e2 v t,
-      eval_expr ge E e1 v ->
-      eval_expr ge E e2 v ->
-      eval_builtin ge E Eq (t :: e1 :: e2 :: nil) (bit true)
 | eval_true :
     forall E,
       eval_builtin ge E true_builtin nil (bit true)
@@ -525,36 +473,6 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       eval_expr ge E (ETake (Z.to_nat n) l) vfirst ->
       eval_expr ge E (EDrop (Z.to_nat n) l) vrest ->
       eval_builtin ge E splitAt args (tuple (vfirst :: vrest :: nil))
-| eval_binary_over_bitv_to_bitv :
-    forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args
-           (pr : strict_total_binary_op_over_bitv_to_bitv bi),
-      args = targ :: el :: er :: nil -> (* TODO: will there ever be more than one targ? *)
-      eval_expr ge E el vl ->
-      eval_expr ge E er vr ->
-      force_list ge E vl ll ->
-      force_list ge E vr lr ->
-      to_bitv ll = Some bl ->
-      to_bitv lr = Some br ->
-      vres = thunk_list (from_bitv ((binop_sem_bitv_to_bitv bi) pr bl br)) ->
-      eval_builtin ge E bi args vres
-| eval_binary_over_bitv_to_bit :
-    forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args 
-           (pr : strict_total_binary_op_over_bitv_to_bit bi),
-      args = targ :: el :: er :: nil -> (* TODO: will there ever be more than one targ? *)
-      eval_expr ge E el vl ->
-      eval_expr ge E er vr ->
-      force_list ge E vl ll ->
-      force_list ge E vr lr ->
-      to_bitv ll = Some bl ->
-      to_bitv lr = Some br ->
-      vres = bit ((binop_sem_bitv_to_bit bi) pr bl br) ->
-      eval_builtin ge E bi args vres
-| eval_binary_over_bit_to_bit :
-    forall bi targ args E el er vl vr (pr : binary_op_over_bit_to_bit bi),
-      args = targ :: el :: er :: nil ->
-      eval_expr ge E el (bit vl) ->
-      eval_expr ge E er (bit vr) ->
-      eval_builtin ge E bi args (bit (binop_sem_bit_to_bit bi pr vl vr))
 | eval_div_base : (* evaluate div over bitvectors *)
     (* different from other binary operators since can't divide by 0 *)
     forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
@@ -567,20 +485,8 @@ with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
       unsigned b2 <> 0 ->
       v3 = thunk_list (from_bitv (divu b1 b2)) ->
       eval_builtin ge E Div (t :: e1 :: e2 :: nil) (v3)
-| eval_lift_unary_builtin :
-    forall largs targs a E bi v,
-      is_pointwise_liftable_unary bi -> 
-      largs = targs ++ (a :: nil) ->
-      eval_expr ge E (ELiftUnary bi targs a) v ->
-      eval_builtin ge E bi largs v
-| eval_lift_binary_builtin :
-    forall largs targs a b E bi v,
-      is_pointwise_liftable_binary bi -> 
-      largs = targs ++ (a :: b :: nil) ->
-      eval_expr ge E (ELiftBinary bi targs a b E E) v ->
-      eval_builtin ge E bi largs v
-.
 
+.
 
 
 
@@ -626,7 +532,75 @@ Inductive strict_eval_expr (ge : genv) : env -> Expr -> strictval -> Prop :=
       strict_eval_expr ge E e sv.
     
 
+(* | eval_eq_true : (* SUPER BIG HACK TODO TAKE OUT *) *)
+(*     forall E e1 e2 v t, *)
+(*       eval_expr ge E e1 v -> *)
+(*       eval_expr ge E e2 v -> *)
+(*       eval_builtin ge E Eq (t :: e1 :: e2 :: nil) (bit true) *)
 
+(*
+| eval_lift_unary_builtin :
+    forall largs targs a E bi v,
+      is_pointwise_liftable_unary bi -> 
+      largs = targs ++ (a :: nil) ->
+      eval_expr ge E (ELiftUnary bi targs a) v ->
+      eval_builtin ge E bi largs v
+| eval_lift_binary_builtin :
+    forall largs targs a b E bi v,
+      is_pointwise_liftable_binary bi -> 
+      largs = targs ++ (a :: b :: nil) ->
+      eval_expr ge E (ELiftBinary bi targs a b E E) v ->
+      eval_builtin ge E bi largs v
+(* lifting operations over lists lazily *)
+| eval_lift_unary_cons :
+    forall E a vinit e E' bi targs v,
+      eval_expr ge E a (vcons vinit e E') ->
+      eval_builtin ge E bi (targs ++ (EValue vinit) :: nil) v ->
+      eval_expr ge E (ELiftUnary bi targs a) (vcons v (ELiftUnary bi targs e) E')
+| eval_lift_unary_nil :
+    forall E a vnil bi targs,
+      eval_expr ge E a vnil ->
+      eval_expr ge E (ELiftUnary bi targs a) vnil
+| eval_lift_binary_cons :
+    forall E a b AE BE v bi targs ae be aE' bE' va vb,
+      eval_expr ge AE a (vcons va ae aE') ->
+      eval_expr ge BE b (vcons vb be bE') ->
+      eval_builtin ge E bi (targs ++ (EValue va) :: (EValue vb) :: nil) v ->
+      eval_expr ge E (ELiftBinary bi targs a b AE BE) (vcons v (ELiftBinary bi targs ae be aE' bE') empty)
+| eval_lift_binary_nil :
+    forall E a b vnil bi targs AE BE,
+      (* both lists must be same length to lift over, so no extra eval rule is needed if only one list is nil *)
+      eval_expr ge AE a vnil ->
+      eval_expr ge BE b vnil ->
+      eval_expr ge E (ELiftBinary bi targs a b AE BE) vnil
+(* lift operators over tuples *)
+| eval_lift_unary_tuple :
+    forall E e vs vs' bi targs,
+      eval_expr ge E e (tuple vs) ->
+      Forall2 (fun vx => eval_builtin ge E bi (targs ++ (EValue vx) :: nil)) vs vs' ->
+      eval_expr ge E (ELiftUnary bi targs e) (tuple vs')
+| eval_lift_binary_tuple :
+    forall el er EL ER vsl vsr vs bi targs E,
+      eval_expr ge EL el (tuple vsl) ->
+      eval_expr ge ER er (tuple vsr) ->
+      Forall3 (fun vl => fun vr => eval_builtin ge E bi (targs ++ (EValue vl) :: (EValue vr) :: nil)) vsl vsr vs ->
+      eval_expr ge E (ELiftBinary bi targs el er EL ER) (tuple vs)
+(* lift operators over records *)
+| eval_lift_unary_record :
+    forall E e lidv vs lidv' bi targs,
+      eval_expr ge E e (rec lidv) ->
+      Forall2 (fun vx => eval_builtin ge E bi (targs ++ (EValue vx) :: nil)) (map snd lidv) vs ->
+      lidv' = combine (map fst lidv) vs ->
+      eval_expr ge E (ELiftUnary bi targs e) (rec lidv')
+| eval_lift_binary_record :
+    forall el er EL ER lidvl lidvr vs lidv' bi targs E,
+      eval_expr ge EL el (rec lidvl) ->
+      eval_expr ge ER er (rec lidvr) ->
+      Forall3 (fun vl => fun vr => eval_builtin ge E bi (targs ++ (EValue vl) :: (EValue vr) :: nil)) (map snd lidvl) (map snd lidvr) vs ->
+      map fst lidvl = map fst lidvr ->
+      lidv' = combine (map fst lidvl) vs ->
+      eval_expr ge E (ELiftBinary bi targs el er EL ER) (rec lidv')
+ *)
 
 
 
@@ -852,6 +826,36 @@ with length (ge : genv) : env -> Expr -> nat -> Prop :=
            lo = (n * (Z.to_nat j))%nat ->
            hi = (lo + (Z.to_nat j))%nat ->
            select_list ge E n e (vslice lo hi lexp AE)
+| eval_binary_over_bitv_to_bitv :
+    forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args
+           (pr : strict_total_binary_op_over_bitv_to_bitv bi),
+      args = targ :: el :: er :: nil -> (* TODO: will there ever be more than one targ? *)
+      eval_expr ge E el vl ->
+      eval_expr ge E er vr ->
+      force_list ge E vl ll ->
+      force_list ge E vr lr ->
+      to_bitv ll = Some bl ->
+      to_bitv lr = Some br ->
+      vres = thunk_list (from_bitv ((binop_sem_bitv_to_bitv bi) pr bl br)) ->
+      eval_builtin ge E bi args vres
+| eval_binary_over_bitv_to_bit :
+    forall {w} bi E el vl er vr ll lr (bl : BitV w) br vres targ args 
+           (pr : strict_total_binary_op_over_bitv_to_bit bi),
+      args = targ :: el :: er :: nil -> (* TODO: will there ever be more than one targ? *)
+      eval_expr ge E el vl ->
+      eval_expr ge E er vr ->
+      force_list ge E vl ll ->
+      force_list ge E vr lr ->
+      to_bitv ll = Some bl ->
+      to_bitv lr = Some br ->
+      vres = bit ((binop_sem_bitv_to_bit bi) pr bl br) ->
+      eval_builtin ge E bi args vres
+| eval_binary_over_bit_to_bit :
+    forall bi targ args E el er vl vr (pr : binary_op_over_bit_to_bit bi),
+      args = targ :: el :: er :: nil ->
+      eval_expr ge E el (bit vl) ->
+      eval_expr ge E er (bit vr) ->
+      eval_builtin ge E bi args (bit (binop_sem_bit_to_bit bi pr vl vr))
 *)
     
 

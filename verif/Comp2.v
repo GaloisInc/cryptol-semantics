@@ -11,6 +11,7 @@ Require Import Semantics.
 Require Import Utils.
 Require Import Builtins.
 Require Import BuiltinSem.
+Require Import BuiltinSyntax.
 Require Import Values.        
 
 Require Import EvalTac.
