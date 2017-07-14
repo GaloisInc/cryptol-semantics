@@ -16,14 +16,14 @@ Require Import Semantics.
 
 Open Scope list_scope.
 
-Definition match_env (ge : genv) (E : ident -> option val) (SE : ident -> option strictval) : Prop :=
+Definition match_env (ge : genv) (E : env) (SE : senv) : Prop :=
   forall id,
     option_rel (strict_eval_val ge) (E id) (SE id).
 
-Inductive eager_eval_type (ge : genv) : (ident -> option strictval) -> Typ -> Tval -> Prop :=
+Inductive eager_eval_type (ge : genv) : tenv -> Typ -> Tval -> Prop :=
 | eager_eval_tvar_bound :
     forall E uid t k,
-      E (uid,""%string) = Some (styp t) -> (* this lookup can be done with any string, as ident_eq only uses uid *)
+      E (uid,""%string) = Some t -> (* this lookup can be done with any string, as ident_eq only uses uid *)
       eager_eval_type ge E (TVar (TVBound uid k)) t
 (* | eager_eval_tvar_free : *)
 (* TODO: not sure what to do with free type variables...*)
@@ -198,9 +198,9 @@ Definition strictnum (value width : Z) : strictval :=
   let bv := @repr (Z.to_nat width) value in
   strict_list (strictval_from_bitv bv).
 
-Fixpoint demote_sem (tv twidth : strictval) : option strictval :=
+Fixpoint demote_sem (tv twidth : Tval) : option strictval :=
   match tv,twidth with
-  | styp (tnum v), styp (tnum w) => Some (strictnum v w)
+  | tnum v, tnum w => Some (strictnum v w)
   | _,_ => None
   end.
 
@@ -233,26 +233,37 @@ Fixpoint append_sem (l1 l2 : strictval) : option strictval :=
   | _ => None
   end.
 
-Definition strict_builtin_sem (bi : builtin) (l : list strictval) : option strictval :=
-  match bi,l with
-  | Xor,(t :: a :: b :: nil) => xor_sem a b
-  | Lt,(t :: a :: b :: nil) => lt_sem a b
-  | Gt,(t :: a :: b :: nil) => gt_sem a b
-  | Eq,(t :: a :: b :: nil) => eq_sem a b
-  | Demote,(tv :: twidth :: nil) => demote_sem tv twidth
-  | Zero,((styp t) :: nil) => zero_sem t
-  | Append,(t1 :: t2 :: t3 :: l1 :: l2 :: nil) => append_sem l1 l2
-  | _,_ => None
+(* need to be able to give all args as one giant list *)
+Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval) : option strictval :=
+  match bi,t,l with
+  | Xor,t::nil,(a :: b :: nil) => xor_sem a b
+  | Lt,t::nil,(a :: b :: nil) => lt_sem a b
+  | Gt,t::nil,(a :: b :: nil) => gt_sem a b
+  | Eq,t::nil,(a :: b :: nil) => eq_sem a b
+  | Demote,(tv :: twidth :: nil),nil => demote_sem tv twidth
+  | Zero,(t :: nil),nil => zero_sem t
+  | Append,(t1 :: t2 :: t3 ::nil), (l1 :: l2 :: nil) => append_sem l1 l2
+  | _,_,_ => None
   end.
 
 
-Inductive eager_eval_expr (ge : genv) : senv -> Expr -> strictval -> Prop :=
+Fixpoint get_types (l : list Expr) : list Typ :=
+  match l with
+  | ETyp t :: r => t :: get_types r
+  | f :: r => nil
+  | nil => nil
+  end.
+
+Fixpoint not_types (l : list Expr) : list Expr :=
+  match l with
+  | ETyp t :: r => not_types r
+  | f :: r => f :: not_types r
+  | nil => nil
+  end.
+
+Inductive eager_eval_expr (ge : genv) : tenv -> senv -> Expr -> strictval -> Prop :=
 
 (* Definitely needed: *)
-(* ETuple *)
-(* TupleSel *)
-(* ERec *)
-(* RecordSel *)
 (* ListSel *)
 (* ELiftUnary *)
 (* ELiftBinary *)
@@ -265,110 +276,107 @@ Inductive eager_eval_expr (ge : genv) : senv -> Expr -> strictval -> Prop :=
 (* Take *)
 
 | eager_eval_tuple :
-    forall E l vs,
-      Forall2 (eager_eval_expr ge E) l vs ->
-      eager_eval_expr ge E (ETuple l) (stuple vs)
+    forall TE E l vs,
+      Forall2 (eager_eval_expr ge TE E) l vs ->
+      eager_eval_expr ge TE E (ETuple l) (stuple vs)
 | eval_tuple_sel :
-    forall E e l n v,
-      eager_eval_expr ge E e (stuple l) ->
+    forall TE E e l n v,
+      eager_eval_expr ge TE E e (stuple l) ->
       nth_error l n = Some v ->
-      eager_eval_expr ge E (ESel e (TupleSel n)) v
+      eager_eval_expr ge TE E (ESel e (TupleSel n)) v
 | eval_record :
-    forall E l vs,
-      Forall2 (eager_eval_expr ge E) (map snd l) vs ->
-      eager_eval_expr ge E (ERec l) (srec (combine (map fst l) vs))
+    forall TE E l vs,
+      Forall2 (eager_eval_expr ge TE E) (map snd l) vs ->
+      eager_eval_expr ge TE E (ERec l) (srec (combine (map fst l) vs))
 | eval_record_sel :
-    forall E l str v e,
-      eager_eval_expr ge E e (srec l) ->
+    forall TE E l str v e,
+      eager_eval_expr ge TE E e (srec l) ->
       lookup str l = Some v ->
-      eager_eval_expr ge E (ESel e (RecordSel str)) v
+      eager_eval_expr ge TE E (ESel e (RecordSel str)) v
 | eager_eval_where :
-    forall E expr decls v,
-      eager_eval_expr (bind_decl_groups decls ge) (erase_decl_groups decls E) expr v ->
-      eager_eval_expr ge E (EWhere expr decls) v
+    forall TE E expr decls v,
+      eager_eval_expr (bind_decl_groups decls ge) TE (erase_decl_groups decls E) expr v ->
+      eager_eval_expr ge TE E (EWhere expr decls) v
 | eager_eval_if :
-    forall E c t f v b,
-      eager_eval_expr ge E c (sbit b) ->
-      eager_eval_expr ge E (if b then t else f) v ->
-      eager_eval_expr ge E (EIf c t f) v
+    forall TE E c t f v b,
+      eager_eval_expr ge TE E c (sbit b) ->
+      eager_eval_expr ge TE E (if b then t else f) v ->
+      eager_eval_expr ge TE E (EIf c t f) v
 | eager_eval_local_var :
-    forall E id v,
+    forall TE E id v,
       E id = Some v ->
-      eager_eval_expr ge E (EVar id) v
+      eager_eval_expr ge TE E (EVar id) v
 | eager_eval_global_var :
-    forall E id v exp,
+    forall TE E id v exp,
       E id = None ->
       ge id = Some exp ->
-      eager_eval_expr ge E exp v ->
-      eager_eval_expr ge E (EVar id) v
+      eager_eval_expr ge TE E exp v ->
+      eager_eval_expr ge TE E (EVar id) v
 | eager_eval_abs :
-    forall E id exp,
-      eager_eval_expr ge E (EAbs id exp) (sclose id exp E)
+    forall TE E id exp,
+      eager_eval_expr ge TE E (EAbs id exp) (sclose id exp TE E)
 | eager_eval_tabs :
-    forall E e id,
-      eager_eval_expr ge E (ETAbs id e) (stclose id e E)
+    forall TE E e id,
+      eager_eval_expr ge TE E (ETAbs id e) (stclose id e TE E)
 | eager_eval_app :
-    forall E f id exp E' a av v,
-      eager_eval_expr ge E f (sclose id exp E') ->
-      eager_eval_expr ge E a av ->
-      eager_eval_expr ge (extend E' id av) exp v ->
-      eager_eval_expr ge E (EApp f a) v
+    forall TE E f id exp E' TE' a av v,
+      eager_eval_expr ge TE E f (sclose id exp TE' E') ->
+      eager_eval_expr ge TE E a av ->
+      eager_eval_expr ge TE' (extend E' id av) exp v ->
+      eager_eval_expr ge TE E (EApp f a) v
 | eager_eval_tapp :
-    forall E e id e' E' v t te,
-      eager_eval_expr ge E e (stclose id e' E') ->
-      eager_eval_expr ge E te (styp t) -> 
-      eager_eval_expr ge (extend E' id (styp t)) e' v ->
-      eager_eval_expr ge E (ETApp e te) v
-| eager_eval_typ :
-    forall E t tv,
-      eager_eval_type ge E t tv ->
-      eager_eval_expr ge E (ETyp t) (styp tv)
+    forall TE TE' E e id e' E' v t te,
+      eager_eval_expr ge TE E e (stclose id e' TE' E') ->
+      eager_eval_type ge TE te t -> 
+      eager_eval_expr ge (extend TE' id t) E e' v ->
+      eager_eval_expr ge TE E (ETApp e (ETyp te)) v
 | eager_eval_lazyval :
-    forall v sv E,      
+    forall v sv TE E,      
       strict_eval_val ge v sv ->
-      eager_eval_expr ge E (EValue v) sv
+      eager_eval_expr ge TE E (EValue v) sv
 | eager_eval_list :
-    forall E l vs v,
-      Forall2 (eager_eval_expr ge E) l vs ->
+    forall TE E l vs v,
+      Forall2 (eager_eval_expr ge TE E) l vs ->
       v = strict_list vs ->
-      eager_eval_expr ge E (EList l) v
+      eager_eval_expr ge TE E (EList l) v
 | eager_eval_comp :
-    forall E llm llidv vs v e,
-      eager_par_match ge E llm llidv ->
-      Forall2 (fun senv => eager_eval_expr ge senv e) (bind_senvs E llidv) vs ->
+    forall TE E llm llidv vs v e,
+      eager_par_match ge TE E llm llidv ->
+      Forall2 (fun senv => eager_eval_expr ge TE senv e) (bind_senvs E llidv) vs ->
       v = strict_list vs ->
-      eager_eval_expr ge E (EComp e llm) v
+      eager_eval_expr ge TE E (EComp e llm) v
 | eager_eval_builtin :
-    forall E l args bi v,
-      Forall2 (eager_eval_expr ge E) l args ->
-      strict_builtin_sem bi args = Some v ->
-      eager_eval_expr ge E (EBuiltin bi l) v
-with eager_par_match (ge : genv) : senv -> list (list Match) -> list (list (ident * strictval)) -> Prop :=
+    forall TE E l targs args bi v,
+      Forall2 (eager_eval_type ge TE) (get_types l) targs ->
+      Forall2 (eager_eval_expr ge TE E) (not_types l) args ->
+      strict_builtin_sem bi targs args = Some v ->
+      eager_eval_expr ge TE E (EBuiltin bi l) v
+with eager_par_match (ge : genv) : tenv -> senv -> list (list Match) -> list (list (ident * strictval)) -> Prop :=
      | eager_par_one :
-         forall E lm lidv,
-           eager_index_match ge E lm lidv ->
-           eager_par_match ge E (lm :: nil) lidv
+         forall TE E lm lidv,
+           eager_index_match ge TE E lm lidv ->
+           eager_par_match ge TE E (lm :: nil) lidv
      | eager_par_more :
-         forall E lm lidv lr llidv,
+         forall TE E lm lidv lr llidv,
            lr <> nil ->
-           eager_index_match ge E lm lidv ->
-           eager_par_match ge E lr llidv ->
-           eager_par_match ge E (lm :: lr) (zipwith (fun x => fun y => x ++ y) lidv llidv)
+           eager_index_match ge TE E lm lidv ->
+           eager_par_match ge TE E lr llidv ->
+           eager_par_match ge TE E (lm :: lr) (zipwith (fun x => fun y => x ++ y) lidv llidv)
 
 (* provide the bound environments for one part of a list comprehension *)
-with eager_index_match (ge : genv) : senv -> list Match -> list (list (ident * strictval)) -> Prop :=
+with eager_index_match (ge : genv) : tenv -> senv -> list Match -> list (list (ident * strictval)) -> Prop :=
      | eager_idx_last :
-         forall E e vs lv id,
-           eager_eval_expr ge E e vs ->
+         forall TE E e vs lv id,
+           eager_eval_expr ge TE E e vs ->
            list_of_strictval vs = Some lv ->
-           eager_index_match ge E ((From id e) :: nil) (map (fun sv => (id,sv) :: nil) lv)
+           eager_index_match ge TE E ((From id e) :: nil) (map (fun sv => (id,sv) :: nil) lv)
      | eager_idx_mid :
-         forall E e vs lv llidv id r,
+         forall TE E e vs lv llidv id r,
            r <> nil ->
-           eager_eval_expr ge E e vs ->
+           eager_eval_expr ge TE E e vs ->
            list_of_strictval vs = Some lv ->
-           eager_index_match ge E r llidv ->
-           eager_index_match ge E ((From id e) :: r) (product (map (fun sv => (id,sv)) lv) llidv)
+           eager_index_match ge TE E r llidv ->
+           eager_index_match ge TE E ((From id e) :: r) (product (map (fun sv => (id,sv)) lv) llidv)
 .  
 
 Lemma match_env_none :
@@ -383,21 +391,19 @@ Proof.
 Qed.
 
 Lemma eager_to_strict_lazy_type :
-  forall t ge SE tv,
-    eager_eval_type ge SE t tv ->
-    forall E,
-      match_env ge E SE ->
-      eval_type ge E t tv.
+  forall t ge TE tv,
+    eager_eval_type ge TE t tv ->
+    eval_type ge TE t tv.
 Proof.
   (* weird Forall2 induction needed *)
 Admitted.
 
 Lemma eager_to_strict_lazy :
-  forall ge SE exp sv,
-    eager_eval_expr ge SE exp sv ->
+  forall ge TE SE exp sv,
+    eager_eval_expr ge TE SE exp sv ->
     forall E,
       match_env ge E SE ->
-      strict_eval_expr ge E exp sv.
+      strict_eval_expr ge TE E exp sv.
 Proof.
   induction 1; intros.
   - admit. (* needs Forall2 induction *)
@@ -439,35 +445,32 @@ Proof.
     eapply IHeager_eval_expr3 in H9.
     inversion H9. subst.
     repeat (econstructor; eauto).
-  - specialize (IHeager_eval_expr1 E0 H2).
+  - remember IHeager_eval_expr1 as He1. clear HeqHe1.
+    remember IHeager_eval_expr2 as He2. clear HeqHe2.
+    specialize (IHeager_eval_expr1 E0 H2).
     specialize (IHeager_eval_expr2 E0 H2).
+    eapply eager_to_strict_lazy_type in H0.
     inversion IHeager_eval_expr1. subst. inversion H4. subst.
-    assert (match_env ge E1 E'). unfold match_env. intros. apply H7.
     inversion IHeager_eval_expr2. subst.
-    assert (match_env ge (extend E1 id v0) (extend E' id (styp t))). {
-      unfold extend. unfold match_env. intros.
-      destruct (ident_eq id0 id). econstructor. assumption.
-      eapply H5.
+    assert (match_env ge E1 E'). {
+      unfold match_env. intros. eapply H7.
     } idtac.
-    inversion H8. subst.
-    eapply IHeager_eval_expr3 in H9.
-    inversion H9. subst.
-    repeat (econstructor; eauto).
-  - eapply eager_to_strict_lazy_type in H; eauto.
+
+    admit. (* idk *)
+  - econstructor; eauto.
     econstructor; eauto.
-    econstructor; eauto. econstructor; eauto.
-  - econstructor; eauto. econstructor; eauto.
   - admit. (* weird forall2 induction needed *)
+  - admit. (* weird forall2 induction needed *)
+  - admit.
+    all: fail. (* make sure we have enough bullets *)
 Admitted.
 
-
-
 Lemma eager_eval_other_envs :
-  forall ge Es vs exp,
-    Forall2 (fun s => eager_eval_expr ge s exp) Es vs ->
+  forall ge TE Es vs exp,
+    Forall2 (fun s => eager_eval_expr ge TE s exp) Es vs ->
     forall Es',
-      Forall2 (fun E => fun E' => (forall v, eager_eval_expr ge E exp v <-> eager_eval_expr ge E' exp v)) Es Es' ->
-      Forall2 (fun s => eager_eval_expr ge s exp) Es' vs.
+      Forall2 (fun E => fun E' => (forall v, eager_eval_expr ge TE E exp v <-> eager_eval_expr ge TE E' exp v)) Es Es' ->
+      Forall2 (fun s => eager_eval_expr ge TE s exp) Es' vs.
 Proof.
   induction 1; intros. inversion H. subst. econstructor.
   inversion H1. subst. econstructor; eauto.
@@ -489,7 +492,7 @@ Fixpoint tapply (e : Expr) (l : list Expr) : Expr :=
 
 Lemma append_strict_list :
   forall t1 t2 t3 a b,
-    strict_builtin_sem Append (t1 :: t2 :: t3 :: (strict_list a) :: (strict_list b) :: nil) = Some (strict_list (a ++ b)).
+    strict_builtin_sem Append (t1 :: t2 :: t3 :: nil) ((strict_list a) :: (strict_list b) :: nil) = Some (strict_list (a ++ b)).
 Proof.
   induction a; intros; simpl; auto.
   specialize (IHa b). simpl in IHa. rewrite IHa.

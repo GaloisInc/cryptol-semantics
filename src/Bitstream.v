@@ -26,10 +26,10 @@ Require Import List.
 
 
 Lemma n_bits_eval :
-  forall n x ge,
+  forall n x ge TE E,
     n_bits n x ->
     exists v,
-      eager_eval_expr ge sempty (EList (map EValue x)) v.
+      eager_eval_expr ge TE E (EList (map EValue x)) v.
 Proof.
   induction 1; intros.
   eexists. econstructor; eauto. simpl. econstructor.

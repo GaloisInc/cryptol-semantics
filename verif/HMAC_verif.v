@@ -53,14 +53,16 @@ Lemma kinit_eval :
     n_bits 64 k ->
     forall h,
     exists v,
-      eager_eval_expr ge sempty (apply (tapply (EVar kinit) (pwBytes :: blockLength :: digest ::  nil)) (h :: (EList (map EValue k)) :: nil)) v.
+      eager_eval_expr ge tempty sempty (apply (tapply (EVar kinit) (pwBytes :: blockLength :: digest ::  nil)) (h :: (EList (map EValue k)) :: nil)) v.
 Proof.
   init_globals ge.
   intros.
   remember H as Hnb; clear HeqHnb.
   eapply n_bits_eval in H; eauto.
-  destruct H. instantiate (1 := ge) in H.
-  inversion H. subst.
+  destruct H. instantiate (3 := ge) in H.
+  instantiate (1 := sempty) in H.
+  instantiate (1 := tempty) in H.
+  
   
   eexists. unfold apply.
   e. e.
@@ -72,8 +74,13 @@ Proof.
   e. 
   eassumption.
   e. e. e. e. g. e. repeat e.
-  e. e. e. e. repeat e. repeat e.
-  simpl. repeat e. repeat e. repeat e.
+  e. e. e. g. e.
+  repeat e. repeat e.
+  simpl. repeat e.
+  simpl. e. repe
+  repeat e. repeat e. 
+  
+
   
   e. e. e. e. e. repeat e.
   e. repeat e. e. repeat e. simpl. reflexivity.
