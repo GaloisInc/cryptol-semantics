@@ -211,9 +211,22 @@ Fixpoint bind_decl_groups (lg : list DeclGroup) (ge : genv) : genv :=
     bind_decl_groups gs (bind_decl_group g ge)
   end.
 
+Fixpoint erase_decls {A : Type} (l : list Declaration) (E : ident -> option A) : ident -> option A :=
+  match l with
+  | nil => E
+  | (Decl id _) :: r => erase_decls r (fun x => if ident_eq x id then None else E x)
+  end.
+
+Fixpoint erase_decl_groups {A : Type} (l : list DeclGroup) (E : ident -> option A) : ident -> option A :=
+  match l with
+  | nil => E
+  | (NonRecursive (Decl id _)) :: r => erase_decl_groups r (fun x => if ident_eq x id then None else E x)
+  | (Recursive decls) :: r => erase_decl_groups r (erase_decls decls E)
+  end.
+
 
 (* record lookup *)
-Fixpoint lookup (str : string) (l : list (string * val)) : option val :=
+Fixpoint lookup {A : Type} (str : string) (l : list (string * A)) : option A :=
   match l with
   | nil => None
   | (s,v) :: r =>
@@ -286,7 +299,7 @@ Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
       eval_expr ge E (EApp f a) v
 | eval_where : (* TODO: this might not get scoping right, as decls might not shadow existing locals correctly *)
     forall E exp decls v, 
-      eval_expr (bind_decl_groups decls ge) E exp v ->
+      eval_expr (bind_decl_groups decls ge) (erase_decl_groups decls E) exp v ->
       eval_expr ge E (EWhere exp decls) v
 | eval_list_sel :
     forall E idx vidx {w : nat} (i : BitV w) e v vs,

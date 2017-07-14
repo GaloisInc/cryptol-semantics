@@ -7,7 +7,7 @@ Require Import Coqlib.
 Require Import Bitvectors.
 
 Require Import AST.
-(*Require Import Semantics.*)
+Require Import Semantics.
 Require Import Utils.
 Require Import Builtins.
 Require Import BuiltinSem.
@@ -47,18 +47,6 @@ Definition pwBytes := typenum 64.
 Definition blockLength := typenum 64.
 Definition digest := typenum 0.
 
-Fixpoint apply (e : Expr) (l : list Expr) : Expr :=
-  match l with
-  | nil => e
-  | f :: r => apply (EApp e f) r
-  end.
-
-Fixpoint tapply (e : Expr) (l : list Expr) : Expr :=
-  match l with
-  | nil => e
-  | f :: r => tapply (ETApp e f) r
-  end.
-
 
 Lemma kinit_eval :
   forall k,
@@ -72,6 +60,7 @@ Proof.
   remember H as Hnb; clear HeqHnb.
   eapply n_bits_eval in H; eauto.
   destruct H. instantiate (1 := ge) in H.
+  inversion H. subst.
   
   eexists. unfold apply.
   e. e.
@@ -91,15 +80,36 @@ Proof.
   e. repeat e.
   simpl. reflexivity.
   simpl. e.
-  e. e. e. g. e. repeat e.
+  e. e. e.
+
+  g. e. repeat e.
   e. repeat e.
   e. repeat e. e. e. e. repeat e.
   e. e. e. g. e. repeat e. repeat e.
   e. repeat e.
 
-
-  (* TODO: Prove that append works for x *)
-  (* TODO: add eager evaluation of where *)
+  rewrite append_strict_list. reflexivity.
   
+  e.
+  eapply eager_eval_global_var. simpl. reflexivity.
+  simpl. reflexivity.
+  e. eapply eager_eval_global_var. simpl. reflexivity.
+  simpl. reflexivity.
+
+
+  e. e. e. e. g. e.
+  
+  admit. (* type variable numbering *)
+  e. admit. (* type variable numbering *)
+  e. admit. (* type variable numbering *)
+
+  e. eapply eager_eval_local_var. reflexivity.
+  e. repeat e.
+
+  (* Now need a minor lemma about split_at giving back same thing, but that should be easy once we fix type variable numbering *)
   
 Admitted.
+
+
+
+

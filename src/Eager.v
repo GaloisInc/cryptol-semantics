@@ -245,6 +245,7 @@ Definition strict_builtin_sem (bi : builtin) (l : list strictval) : option stric
   | _,_ => None
   end.
 
+
 Inductive eager_eval_expr (ge : genv) : senv -> Expr -> strictval -> Prop :=
 
 (* Definitely needed: *)
@@ -253,7 +254,6 @@ Inductive eager_eval_expr (ge : genv) : senv -> Expr -> strictval -> Prop :=
 (* ERec *)
 (* RecordSel *)
 (* ListSel *)
-(* EWhere *)
 (* ELiftUnary *)
 (* ELiftBinary *)
 
@@ -264,7 +264,28 @@ Inductive eager_eval_expr (ge : genv) : senv -> Expr -> strictval -> Prop :=
 (* Drop *)
 (* Take *)
 
-  
+| eager_eval_tuple :
+    forall E l vs,
+      Forall2 (eager_eval_expr ge E) l vs ->
+      eager_eval_expr ge E (ETuple l) (stuple vs)
+| eval_tuple_sel :
+    forall E e l n v,
+      eager_eval_expr ge E e (stuple l) ->
+      nth_error l n = Some v ->
+      eager_eval_expr ge E (ESel e (TupleSel n)) v
+| eval_record :
+    forall E l vs,
+      Forall2 (eager_eval_expr ge E) (map snd l) vs ->
+      eager_eval_expr ge E (ERec l) (srec (combine (map fst l) vs))
+| eval_record_sel :
+    forall E l str v e,
+      eager_eval_expr ge E e (srec l) ->
+      lookup str l = Some v ->
+      eager_eval_expr ge E (ESel e (RecordSel str)) v
+| eager_eval_where :
+    forall E expr decls v,
+      eager_eval_expr (bind_decl_groups decls ge) (erase_decl_groups decls E) expr v ->
+      eager_eval_expr ge E (EWhere expr decls) v
 | eager_eval_if :
     forall E c t f v b,
       eager_eval_expr ge E c (sbit b) ->
@@ -379,6 +400,11 @@ Lemma eager_to_strict_lazy :
       strict_eval_expr ge E exp sv.
 Proof.
   induction 1; intros.
+  - admit. (* needs Forall2 induction *)
+  - admit.
+  - admit.
+  - admit.
+  - admit.
   - specialize (IHeager_eval_expr1 _ H1).
     specialize (IHeager_eval_expr2 _ H1).
     inversion IHeager_eval_expr1.
@@ -447,3 +473,25 @@ Proof.
   inversion H1. subst. econstructor; eauto.
   eapply H4; eauto.
 Qed.        
+
+Fixpoint apply (e : Expr) (l : list Expr) : Expr :=
+  match l with
+  | nil => e
+  | f :: r => apply (EApp e f) r
+  end.
+
+Fixpoint tapply (e : Expr) (l : list Expr) : Expr :=
+  match l with
+  | nil => e
+  | f :: r => tapply (ETApp e f) r
+  end.
+
+
+Lemma append_strict_list :
+  forall t1 t2 t3 a b,
+    strict_builtin_sem Append (t1 :: t2 :: t3 :: (strict_list a) :: (strict_list b) :: nil) = Some (strict_list (a ++ b)).
+Proof.
+  induction a; intros; simpl; auto.
+  specialize (IHa b). simpl in IHa. rewrite IHa.
+  reflexivity.
+Qed.
