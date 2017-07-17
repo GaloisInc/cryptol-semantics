@@ -9,9 +9,11 @@ Ltac g := eapply eval_global_var; try eassumption; try reflexivity.
 
 Ltac e :=
   match goal with
-  | [ |- eval_expr _ ?E (EVar ?id) _ ] =>
-    try fg; try reflexivity;
-    try solve [eapply eval_local_var; reflexivity]
+  | [ |- eval_expr _ _ ?E (EVar ?id) _ ] =>
+    first [solve [fg; try reflexivity];
+           solve [eapply eval_local_var; reflexivity];
+           solve [g]];
+           fail 1 "Couldn't figure out variable"
   | [ |- _ ] => ec
   end.
 

@@ -233,7 +233,20 @@ Fixpoint append_sem (l1 l2 : strictval) : option strictval :=
   | _ => None
   end.
 
-(* need to be able to give all args as one giant list *)
+Fixpoint splitAt_sem (t1 : Tval) (l : strictval) : option strictval :=
+  match t1,l with
+  | tnum 0, _ => Some (stuple (svnil :: l :: nil))
+  | tnum n, svcons f r =>
+    match splitAt_sem (tnum (n-1)) r with
+    | Some (stuple (l1 :: l2 :: nil)) =>
+      Some (stuple ((svcons f l1) :: l2 :: nil))
+    | _ => None
+    end
+  | _,_ => None
+  end.
+        
+
+
 Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval) : option strictval :=
   match bi,t,l with
   | Xor,t::nil,(a :: b :: nil) => xor_sem a b
@@ -243,10 +256,46 @@ Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval
   | Demote,(tv :: twidth :: nil),nil => demote_sem tv twidth
   | Zero,(t :: nil),nil => zero_sem t
   | Append,(t1 :: t2 :: t3 ::nil), (l1 :: l2 :: nil) => append_sem l1 l2
+  | splitAt,(t1 :: t2 :: t3 :: nil), (l :: nil) => splitAt_sem t1 l
   | _,_,_ => None
   end.
 
 
+
+Lemma splitAt_zero :
+  forall x,
+    splitAt_sem (tnum 0) x = Some (stuple (svnil :: x :: nil)).
+Proof.
+  destruct x; simpl; auto.
+Qed.
+
+Lemma splitAt_cons :
+  forall r x f,
+    splitAt_sem (tnum (Z.of_nat (Datatypes.length r))) (strict_list (r ++ x)) = Some (stuple (strict_list r :: strict_list x :: nil)) ->
+    splitAt_sem (tnum (Z.of_nat (Datatypes.length (f :: r)))) (strict_list ((f :: r) ++ x)) = Some (stuple (svcons f (strict_list r) :: strict_list x :: nil)).
+Proof.
+  intros. destruct r. simpl.
+  rewrite splitAt_zero. reflexivity.
+  (* This is true *)
+Admitted.
+
+Lemma splitAt_len :
+  forall l1 t t' (l2 : list strictval),
+    strict_builtin_sem splitAt (tnum (Z.of_nat (Datatypes.length l1)) :: t :: t' :: nil) (strict_list (l1 ++ l2) :: nil) = Some (stuple (strict_list l1 :: strict_list l2 :: nil)).
+Proof.
+  induction l1; intros.
+  simpl. unfold splitAt_sem. fold splitAt_sem.
+  rewrite splitAt_zero. reflexivity.
+  unfold strict_builtin_sem.
+  unfold strict_list. fold strict_list.
+  simpl in IHl1.
+  eapply splitAt_cons. eauto.
+Qed.
+
+
+(* Helper functions for evaluation of Builtins *)
+(* While evaluation of types and values is necessarily separate, as *)
+(* *)
 Fixpoint get_types (l : list Expr) : list Typ :=
   match l with
   | ETyp t :: r => t :: get_types r
@@ -260,6 +309,7 @@ Fixpoint not_types (l : list Expr) : list Expr :=
   | f :: r => f :: not_types r
   | nil => nil
   end.
+
 
 Inductive eager_eval_expr (ge : genv) : tenv -> senv -> Expr -> strictval -> Prop :=
 

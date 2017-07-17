@@ -245,6 +245,7 @@ Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -
       Forall3 TR (x :: lx) (y :: ly) (z :: lz).
 
 
+
 Inductive eval_expr (ge : genv) : tenv -> env -> Expr -> val -> Prop :=
 | eval_builtin_sem :
     forall TE E l b v,
@@ -457,27 +458,25 @@ with eval_builtin (ge : genv) : tenv -> env -> builtin -> list Expr -> val -> Pr
       eval_type ge TE t1 (tnum value) ->
       eval_type ge TE t2 (tnum width) ->
       v = thunk_list (from_bitv (@repr (Z.to_nat width) value)) ->
-      eval_builtin ge TE E Demote ((ETyp t1) :: (ETyp t2) :: nil) v
+      eval_builtin ge TE E Demote (ETyp t1 :: ETyp t2 :: nil) v
 | eval_zero :
     forall TE E t tv zv,
       eval_type ge TE t tv ->
       zero_val tv zv ->
-      eval_builtin ge TE E Zero ((ETyp t) :: nil) zv
+      eval_builtin ge TE E Zero (ETyp t :: nil) zv
 | eval_split :
-    forall args t1 t2 t3 le TE E n vfirst erest v,
-      args = (ETyp t1) :: (ETyp t2) :: (ETyp t3) :: le :: nil ->
+    forall t1 t2 t3 le TE E n vfirst erest v,
       eval_type ge TE t1 (tnum n) ->
       eval_expr ge TE E (ETake (Z.to_nat n) le) vfirst ->
-      erest = EBuiltin split ((ETyp t1) :: (ETyp t2) :: (ETyp t3) :: (EDrop (Z.to_nat n) le) :: nil) ->
+      erest = EBuiltin split (ETyp t1 :: t2 :: t3 :: (EDrop (Z.to_nat n) le) :: nil) ->
       v = vcons vfirst erest TE E ->
-      eval_builtin ge TE E split args v
+      eval_builtin ge TE E split (ETyp t1 :: t2 :: t3 :: le :: nil) v
 | eval_split_at :
-    forall t1 t2 t3 l args TE E n vfirst vrest,
-      args = (ETyp t1) :: (ETyp t2) :: (ETyp t3) :: l :: nil ->
+    forall t1 t2 t3 l TE E n vfirst vrest,
       eval_type ge TE t1 (tnum n) ->
       eval_expr ge TE E (ETake (Z.to_nat n) l) vfirst ->
       eval_expr ge TE E (EDrop (Z.to_nat n) l) vrest ->
-      eval_builtin ge TE E splitAt args (tuple (vfirst :: vrest :: nil))
+      eval_builtin ge TE E splitAt (ETyp t1 :: t2 :: t3 :: l :: nil) (tuple (vfirst :: vrest :: nil))
 | eval_div_base : (* evaluate div over bitvectors *)
     (* different from other binary operators since can't divide by 0 *)
     forall {w} (b1 b2 : BitV w) TE E v1 v2 v3 l1 l2 t e1 e2,
@@ -492,7 +491,6 @@ with eval_builtin (ge : genv) : tenv -> env -> builtin -> list Expr -> val -> Pr
       eval_builtin ge TE E Div (t :: e1 :: e2 :: nil) (v3)
 
 .
-
 
 
 Inductive strict_eval_val (ge : genv) : val -> strictval -> Prop :=

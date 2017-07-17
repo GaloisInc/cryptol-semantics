@@ -24,3 +24,5 @@ This file is to document some of the dark corners of cryptol, especially those w
 
 
 12. We (may) have found that eager semantics are easier to reason about than lazy semantics, and may have a program logic which is the eager version.
+
+13. Implementation dark corner: There are unique identifiers given to everything internally in the cryptol implementation. Our semantics uses them as the meaningful part of variables. However, these unique identifiers are not truly unique: a UID for a type variable may not be distinct from all UIDs for program variables, and it is necessary that they do not shadow. This is easily modeled by maintaining two different environments: one for types, and one for values. This may just be monday morning confusion, and not actually a dark corner. However, it leads to our need of "get_types" and "not_types" in Eager.v, which is an inconvenience.

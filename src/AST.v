@@ -87,8 +87,6 @@ Inductive Tval :=
 
 
 
-
-
 Inductive Expr :=
 (* builtin *)
 | EBuiltin (b : builtin) (l : list Expr)

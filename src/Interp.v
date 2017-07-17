@@ -110,7 +110,8 @@ Proof.
   intros. induction e. inversion H. destruct b in H1; try inversion H1; subst.
   (* EBuiltin true *)
   - econstructor.
-    destruct l. inv H1. destruct b; simpl in H; inv H.
+    destruct l. inv H1.
+    destruct b; simpl in H; inv H.
     econstructor; eauto. congruence.
  (* EBuiltin false *)
   - econstructor.
