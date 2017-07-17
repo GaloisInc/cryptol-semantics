@@ -24,6 +24,7 @@ Open Scope string.
 Require Import HMAC.
 
 Require Import HMAC_spec.
+Require Import Kinit_eval.
 
 (* Require Import Bvector.*)
 
@@ -35,21 +36,160 @@ Ltac fg := eapply eager_eval_global_var; [ reflexivity | eassumption | idtac].
 Ltac g := eapply eager_eval_global_var; try eassumption; try reflexivity.
 
 
+Ltac et :=
+  match goal with
+  | [ |- eager_eval_type _ _ _ _ ] => solve [repeat econstructor; eauto]
+  end.
+
 Ltac e :=
   match goal with
   | [ |- eager_eval_expr ?GE _ ?E (EVar ?id) _ ] =>
     (try fg); (try reflexivity);
     (try solve [eapply eager_eval_local_var; reflexivity]);
     fail 1 "couldn't figure out variable"
-  | [ |- _ ] => ec
+  | [ |- _ ] => ec; try solve [et]
   end.
 
 Definition typenum (n : Z) : Expr := ETyp (TCon (TC (TCNum n)) []).
 Definition pwBytes := typenum 64.
 Definition blockLength := typenum 64.
 Definition digest := typenum 0.
+Definition msgBytes := typenum 64.
 
+Lemma Hmac_eval :
+  forall k,
+    n_bits 64 k ->
+    forall h,
+      (exists id exp TE E,
+          eager_eval_expr ge tempty sempty h (sclose id exp TE E)) ->
+      forall m,
+        n_bits 64 m ->
+        exists v,
+          eager_eval_expr ge tempty sempty (apply (tapply (EVar hmac) (msgBytes :: pwBytes :: blockLength :: digest :: nil)) (h :: h :: h :: (EList (map EValue k)) :: (EList (map EValue m)) :: nil)) v.
+Proof.
+  intros. do 4 destruct H0.
+  remember H as Hnbk. clear HeqHnbk.
+  remember H1 as Hnbm. clear HeqHnbm.
+  eapply n_bits_eval with (ge := ge) (E := sempty) (TE := tempty) in H1. destruct H1. destruct H1.
+  eapply n_bits_eval with (ge := ge) (E := sempty) (TE := tempty) in H. destruct H. destruct H.
 
+  inversion H1. subst. inversion H. subst.
+  eapply strict_list_injective in H8. subst.
+  eapply strict_list_injective in H10. subst.
+
+  init_globals ge.
+  eexists.
+
+  unfold apply. unfold tapply. e. e. e. e. e. e. e. e. e.
+  g. e. e. e. e. e. eassumption.
+  e. eassumption.
+  e. eassumption.
+  e. e.
+  eassumption. e. eassumption.
+  e. e. e. e. e. e. e. e. g.
+  e. e. e. e. 
+  g. e. e. e. g.
+  (* TODO: apply kinit theorem here *)
+
+  e. e. e. e. e. g.
+  e. e. e. e. e. e. e. e. e. e. e. g.
+  e. e. e. e. g.
+  e. e. e. e. e. e. e. e. e. e. e. g.
+  e. e. e. e. e. e. e. e. e. e. e. e. e.
+  e. e. e. e. e. e. e. e. g.
+  e. e. e. e. e. e. e. e. e. g. e.
+  e. e. e. e. e. e. e. g. e. e. e. e.
+  e. e. e.
+  (* here we evaluate the hash to something *)
+  admit.
+  e. e. e. e. e. e. e. e.
+  (* what we got back from the hash splits *)
+  admit.
+  e. e. g. e. e. e. e. e. simpl. reflexivity.
+  e. e. e. e. e. e. e. e. e. e.
+
+  (* append nil to the end *)
+  admit.
+
+  e. g. e. g. e. e. e. e. g. e. e. e. e. e. e. e. e. e. e. e. e. e.
+
+  (* now we can split the thing *)
+  admit.
+
+  (* project the tuple *)
+  admit.
+
+  (* make a list of it *)
+  admit.
+
+  (* evaluate elements of that list *)
+  admit.
+
+  e. g. e. e. e. e. g.
+  e. e. e. e. e. e. e. e. e. e.
+  e. g. e. e. e. e. g. e. e. e. g.
+  e. e. e. e. e. g. e. e. e. e. e. e.
+  e. e. e. e. e. g. e. e. e. e. g.
+  e. e. e. e. e. e. e. e. e. e. e. g.
+  e. e. e. e. e. e. e. e. e. e. e. e.
+  e. e. e. e. simpl. reflexivity. e. e.
+  e. e. g. e. e. e. e. e. e. e. e. e. g.
+  e. e. e. e. e. e. e. e. g. e. e. e. e. e.
+  e. e.
+
+  (* evaluate the hash to something (again) *)
+  admit.
+
+  e. e. e. e. e. e. e. e. 
+  
+  (* what we got back from the hash splits *)
+  admit.
+  e. e. g. e. e. e. e. e. simpl. reflexivity.
+  e. e. e. e. e. e. e. e. e. e.
+
+  (* append nil to the end *)
+  admit.
+
+  e. g. e. g. e. e. e. e. g. e. e. e. e. e. e. e. e. e. e. e. e. e.
+
+  (* now we can split the thing *)
+  admit.
+
+  (* project the tuple *)
+  admit.
+
+  (* make a list of it *)
+  admit.
+
+  (* evaluate elements of that list *)
+  admit.
+  (* now we can split the thing *)
+  admit.
+
+  e. e. e. 
+
+  (* evaluate the hash to something (again) *)
+  admit.
+
+  e. e. e. e. e. e. e. e.
+
+  (* split something *)
+  admit.
+
+  e. e. e. e. e. e. e. e. e. e.
+
+  (* final append *)
+  admit.
+
+  (* evaluate the hash one final time *)
+  admit.
+
+  
+Admitted.  
+
+  
+
+  (*
 Lemma kinit_eval :
   forall k,
     n_bits 64 k ->
@@ -120,7 +260,7 @@ Proof.
   simpl. reflexivity.
 
 Qed.
+*)
 
-
-
+  
 
