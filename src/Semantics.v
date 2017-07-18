@@ -21,10 +21,10 @@ Definition calc_width (n : Z) : Z :=
   if Z_eq_dec n 0 then 0 else
     1 + Z.log2 n.
 
-Inductive eval_type (ge : genv) : env -> Typ -> Tval -> Prop :=
+Inductive eval_type (ge : genv) : tenv -> Typ -> Tval -> Prop :=
 | eval_tvar_bound :
     forall E uid t k,
-      E (uid,""%string) = Some (typ t) -> (* this lookup can be done with any string, as ident_eq only uses uid *)
+      E (uid,""%string) = Some t -> (* this lookup can be done with any string, as ident_eq only uses uid *)
       eval_type ge E (TVar (TVBound uid k)) t
 (* | eval_tvar_free : *)
 (* TODO: not sure what to do with free type variables...*)
@@ -148,7 +148,7 @@ Inductive zero_val : Tval -> val -> Prop :=
 | zero_fun :
     forall argT resT v vfun,
       zero_val resT v ->
-      vfun = close (0,"") (EValue v) empty ->
+      vfun = close (0,"") (EValue v) tempty empty ->
       zero_val (tfun argT resT) vfun
 .
 
@@ -245,271 +245,258 @@ Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -
       Forall3 TR (x :: lx) (y :: ly) (z :: lz).
 
 
-Inductive eval_expr (ge : genv) : env -> Expr -> val -> Prop :=
+
+Inductive eval_expr (ge : genv) : tenv -> env -> Expr -> val -> Prop :=
 | eval_builtin_sem :
-    forall E l b v,
-      eval_builtin ge E b l v ->
-      eval_expr ge E (EBuiltin b l) v
+    forall TE E l b v,
+      eval_builtin ge TE E b l v ->
+      eval_expr ge TE E (EBuiltin b l) v
 | eval_list :
-    forall E l vs vres,
-      Forall2 (eval_expr ge E) l vs ->
+    forall TE E l vs vres,
+      Forall2 (eval_expr ge TE E) l vs ->
       vres = thunk_list vs ->
-      eval_expr ge E (EList l) vres
+      eval_expr ge TE E (EList l) vres
 | eval_tuple :
-    forall E l vs,
-      Forall2 (eval_expr ge E) l vs ->
-      eval_expr ge E (ETuple l) (tuple vs)
+    forall TE E l vs,
+      Forall2 (eval_expr ge TE E) l vs ->
+      eval_expr ge TE E (ETuple l) (tuple vs)
 | eval_tuple_sel :
-    forall E e l n v,
-      eval_expr ge E e (tuple l) ->
+    forall TE E e l n v,
+      eval_expr ge TE E e (tuple l) ->
       nth_error l n = Some v ->
-      eval_expr ge E (ESel e (TupleSel n)) v
+      eval_expr ge TE E (ESel e (TupleSel n)) v
 | eval_record :
-    forall E l vs,
-      Forall2 (eval_expr ge E) (map snd l) vs ->
-      eval_expr ge E (ERec l) (rec (combine (map fst l) vs))
+    forall TE E l vs,
+      Forall2 (eval_expr ge TE E) (map snd l) vs ->
+      eval_expr ge TE E (ERec l) (rec (combine (map fst l) vs))
 | eval_record_sel :
-    forall E l str v e,
-      eval_expr ge E e (rec l) ->
+    forall TE E l str v e,
+      eval_expr ge TE E e (rec l) ->
       lookup str l = Some v ->
-      eval_expr ge E (ESel e (RecordSel str)) v
+      eval_expr ge TE E (ESel e (RecordSel str)) v
 | eval_if :
-    forall E c t f v b,
-      eval_expr ge E c (bit b) ->
-      eval_expr ge E (if b then t else f) v ->
-      eval_expr ge E (EIf c t f) v
+    forall TE E c t f v b,
+      eval_expr ge TE E c (bit b) ->
+      eval_expr ge TE E (if b then t else f) v ->
+      eval_expr ge TE E (EIf c t f) v
 | eval_local_var :
-    forall E id v,
+    forall TE E id v,
       E id = Some v ->
-      eval_expr ge E (EVar id) v
+      eval_expr ge TE E (EVar id) v
 | eval_global_var :
-    forall E id v exp,
+    forall TE E id v exp,
       E id = None ->
       ge id = Some exp ->
-      eval_expr ge E exp v ->
-      eval_expr ge E (EVar id) v
+      eval_expr ge TE E exp v ->
+      eval_expr ge TE E (EVar id) v
 | eval_abs :
-    forall E id exp,
-      eval_expr ge E (EAbs id exp) (close id exp E)
+    forall TE E id exp,
+      eval_expr ge TE E (EAbs id exp) (close id exp TE E)
 | eval_app :
-    forall E f id exp E' a av v,
-      eval_expr ge E f (close id exp E') ->
-      eval_expr ge E a av ->
-      eval_expr ge (extend E' id av) exp v ->
-      eval_expr ge E (EApp f a) v
-| eval_where : (* TODO: this might not get scoping right, as decls might not shadow existing locals correctly *)
-    forall E exp decls v, 
-      eval_expr (bind_decl_groups decls ge) (erase_decl_groups decls E) exp v ->
-      eval_expr ge E (EWhere exp decls) v
+    forall TE E f id exp TE' E' a av v,
+      eval_expr ge TE E f (close id exp TE' E') ->
+      eval_expr ge TE E a av ->
+      eval_expr ge TE' (extend E' id av) exp v ->
+      eval_expr ge TE E (EApp f a) v
+| eval_where : 
+    forall TE E exp decls v, 
+      eval_expr (bind_decl_groups decls ge) TE (erase_decl_groups decls E) exp v ->
+      eval_expr ge TE E (EWhere exp decls) v
 | eval_list_sel :
-    forall E idx vidx {w : nat} (i : BitV w) e v vs,
-      eval_expr ge E idx vidx ->
-      force_list ge E vidx vs ->
+    forall TE E idx vidx {w : nat} (i : BitV w) e v vs,
+      eval_expr ge TE E idx vidx ->
+      force_list ge TE E vidx vs ->
       to_bitv vs = Some i ->
-      select_list ge E (Z.to_nat (unsigned i)) e v ->
-      eval_expr ge E (ESel e (ListSel idx)) v
-| eval_tapp :
-    forall E e id e' E' v t te,
-      eval_expr ge E e (tclose id e' E') ->
-      eval_expr ge E te (typ t) -> 
-      eval_expr ge (extend E' id (typ t)) e' v ->
-      eval_expr ge E (ETApp e te) v
-| eval_typ :
-    forall E t tv,
-      eval_type ge E t tv ->
-      eval_expr ge E (ETyp t) (typ tv)
+      select_list ge TE E (Z.to_nat (unsigned i)) e v ->
+      eval_expr ge TE E (ESel e (ListSel idx)) v
+| eval_tapp : 
+    forall E e id e' E' v t te TE' TE,
+      eval_expr ge TE E e (tclose id e' TE' E') ->
+      eval_type ge TE te t ->
+      eval_expr ge (extend TE' id t) E' e' v ->
+      eval_expr ge TE E (ETApp e (ETyp te)) v
 | eval_tabs :
-    forall E e id,
-      eval_expr ge E (ETAbs id e) (tclose id e E)
+    forall TE E e id,
+      eval_expr ge TE E (ETAbs id e) (tclose id e TE E)
 | eval_append_nil :
-    forall E e1 e2 v,
-      eval_expr ge E e1 vnil ->
-      eval_expr ge E e2 v ->
-      eval_expr ge E (EAppend e1 e2) v
+    forall TE E e1 e2 v,
+      eval_expr ge TE E e1 vnil ->
+      eval_expr ge TE E e2 v ->
+      eval_expr ge TE E (EAppend e1 e2) v
 | eval_append_cons :
-    forall v eR ER E  vfirst vrest E' e1 e2,
-      eval_expr ge E e1 (vcons v eR ER) ->
-      eval_expr ge ER eR vfirst ->
-      eval_expr ge E e2 vrest ->
-      E' = extend (extend empty (1,"first") vfirst) (0,"rest") vrest ->
-      eval_expr ge E (EAppend e1 e2) (vcons v (EAppend (EVar (1,"first")) (EVar (0,"rest"))) E')
+    forall TE v eR ER E  e1 e2 TER,
+      eval_expr ge TE E e1 (vcons v eR TER ER) ->
+      eval_expr ge TE E (EAppend e1 e2) (vcons v (EAppend eR e2) TER ER)
 | eval_head :
-    forall E e v e' E',
-      eval_expr ge E e (vcons v e' E') ->
-      eval_expr ge E (EHead e) v
+    forall TE E e v e' TE' E',
+      eval_expr ge TE E e (vcons v e' TE' E') ->
+      eval_expr ge TE E (EHead e) v
 | eval_drop_zero :
-    forall E e v,
-      eval_expr ge E e v ->
-      eval_expr ge E (EDrop O e) v
+    forall TE E e v,
+      eval_expr ge TE E e v ->
+      eval_expr ge TE E (EDrop O e) v
 | eval_drop_succ :
-    forall E e v e' E' n v',
-      eval_expr ge E e (vcons v e' E') ->
-      eval_expr ge E' (EDrop n e') v' ->
-      eval_expr ge E (EDrop (S n) e) v'
+    forall TE E e v e' TE' E' n v',
+      eval_expr ge TE E e (vcons v e' TE' E') ->
+      eval_expr ge TE' E' (EDrop n e') v' ->
+      eval_expr ge TE E (EDrop (S n) e) v'
 | eval_take_zero :
-    forall E e,
-      eval_expr ge E (ETake O e) vnil
+    forall TE E e,
+      eval_expr ge TE E (ETake O e) vnil
 | eval_take_succ :
-    forall e v e' E' E n,
-      eval_expr ge E e (vcons v e' E') ->
-      eval_expr ge E (ETake (S n) e) (vcons v (ETake n e') E')
+    forall e v e' TE TE' E' E n,
+      eval_expr ge TE E e (vcons v e' TE' E') ->
+      eval_expr ge TE E (ETake (S n) e) (vcons v (ETake n e') TE' E')
 | eval_value :
-    forall E v,
-      eval_expr ge E (EValue v) v
-
+    forall TE E v,
+      eval_expr ge TE E (EValue v) v
 | eval_comp_imp_cons :
-    forall E n llm E' e v vres,
-      par_match ge E n llm E' ->
-      eval_expr ge E' e v ->
-      vres = vcons v (ECompImp e (S n) llm) E ->
-      eval_expr ge E (ECompImp e n llm) vres
+    forall TE E n llm E' e v vres,
+      par_match ge TE E n llm E' ->
+      eval_expr ge TE E' e v ->
+      vres = vcons v (ECompImp e (S n) llm) TE E ->
+      eval_expr ge TE E (ECompImp e n llm) vres
 | eval_comp_imp_nil :
-    forall E e llm n,
-      totalmatchsize ge E llm n ->
-      eval_expr ge E (ECompImp e n llm) vnil
+    forall TE E e llm n,
+      totalmatchsize ge TE E llm n ->
+      eval_expr ge TE E (ECompImp e n llm) vnil
 | eval_comp :
-    forall E e llm v,
-      eval_expr ge E (ECompImp e O llm) v ->
-      eval_expr ge E (EComp e llm) v
-with totalmatchsize (ge : genv) : env -> list (list Match) -> nat -> Prop :=
+    forall TE E e llm v,
+      eval_expr ge TE E (ECompImp e O llm) v ->
+      eval_expr ge TE E (EComp e llm) v
+with totalmatchsize (ge : genv) : tenv -> env -> list (list Match) -> nat -> Prop :=
      | size_one :
-         forall E lm n,
-           matchlength ge E lm n ->
-           totalmatchsize ge E (lm :: nil) n
+         forall TE E lm n,
+           matchlength ge TE E lm n ->
+           totalmatchsize ge TE E (lm :: nil) n
      | size_cons :
-         forall E lm n lms,
-           matchlength ge E lm n ->
-           totalmatchsize ge E lms n ->
-           totalmatchsize ge E (lm :: lms) n
+         forall TE E lm n lms,
+           matchlength ge TE E lm n ->
+           totalmatchsize ge TE E lms n ->
+           totalmatchsize ge TE E (lm :: lms) n
 (* Force complete evaluation of a lazy list *)
 (* Used for converting a list of bits into a number to evaluate arithmetic *)
-with par_match (ge : genv) : env -> nat -> list (list Match) -> env -> Prop :=
+with par_match (ge : genv) : tenv -> env -> nat -> list (list Match) -> env -> Prop :=
      | par_one :
-         forall E n,
-           par_match ge E n nil E
+         forall TE E n,
+           par_match ge TE E n nil E
      | par_more :
-         forall E n lm E' lr E'',
-           index_match ge E n lm E' ->
-           par_match ge E' n lr E'' ->
-           par_match ge E n (lm :: lr) E''
+         forall TE E n lm E' lr E'',
+           index_match ge TE E n lm E' ->
+           par_match ge TE E' n lr E'' ->
+           par_match ge TE E n (lm :: lr) E''
 (* provide the nth bound environment for one part of a list comprehension *)
-with index_match (ge : genv) : env -> nat -> list Match -> env -> Prop :=
+with index_match (ge : genv) : tenv -> env -> nat -> list Match -> env -> Prop :=
      | idx_last : (* take the nth element from the last list *)
-         forall E n id e v,
-           select_list ge E n e v ->
-           index_match ge E n ((From id e) :: nil) (extend E id v)
+         forall TE E n id e v,
+           select_list ge TE E n e v ->
+           index_match ge TE E n ((From id e) :: nil) (extend E id v)
      | idx_mid : (* take the mid element from *)
-         forall E E' n r v id e m t len,
-           index_match ge E n r E' ->
-           select_list ge E (S m) e v ->
-           matchlength ge E r len ->
+         forall TE E E' n r v id e m t len,
+           index_match ge TE E n r E' ->
+           select_list ge TE E (S m) e v ->
+           matchlength ge TE E r len ->
            (* m * matchlength r  + n *)
            t = (((S m) * len) + n)%nat ->
-           index_match ge E t ((From id e) :: r) (extend E' id v)
+           index_match ge TE E t ((From id e) :: r) (extend E' id v)
      | idx_first :
-         forall E n r E' v id e,
-           index_match ge E n r E' ->
-           select_list ge E O e v ->
-           index_match ge E n ((From id e) :: r) (extend E' id v)
-with matchlength (ge : genv) : env -> list Match -> nat -> Prop :=
+         forall TE E n r E' v id e,
+           index_match ge TE E n r E' ->
+           select_list ge TE E O e v ->
+           index_match ge TE E n ((From id e) :: r) (extend E' id v)
+with matchlength (ge : genv) : tenv -> env -> list Match -> nat -> Prop :=
      | len_one :
-         forall E id e n l v,
-           eval_expr ge E e v ->
-           force_list ge E v l ->
+         forall TE E id e n l v,
+           eval_expr ge TE E e v ->
+           force_list ge TE E v l ->
            n = length l ->
-           matchlength ge E ((From id e) :: nil) n
+           matchlength ge TE E ((From id e) :: nil) n
      | len_more :
-         forall E id e r n l m v,
-           matchlength ge E r n ->
-           eval_expr ge E e v ->
-           force_list ge E v m ->
+         forall TE E id e r n l m v,
+           matchlength ge TE E r n ->
+           eval_expr ge TE E e v ->
+           force_list ge TE E v m ->
            l = ((length m) * n)%nat ->
-           matchlength ge E ((From id e) :: r) l
-with force_list (ge : genv) : env -> val -> list val -> Prop :=
+           matchlength ge TE E ((From id e) :: r) l
+with force_list (ge : genv) : tenv -> env -> val -> list val -> Prop :=
      | force_nil :
-         forall E,
-           force_list ge E vnil nil
+         forall TE E,
+           force_list ge TE E vnil nil
      | force_cons :
-         forall E E' e v v' l,
-           eval_expr ge E' e v' ->
-           force_list ge E v' l ->
-           force_list ge E (vcons v e E') (v::l)
+         forall TE E TE' E' e v v' l,
+           eval_expr ge TE' E' e v' ->
+           force_list ge TE' E' v' l ->
+           force_list ge TE E (vcons v e TE' E') (v::l)
                 
 (* select the nth element from a lazy list *)
-with select_list (ge : genv) : env -> nat -> Expr -> val -> Prop :=
+with select_list (ge : genv) : tenv -> env -> nat -> Expr -> val -> Prop :=
      | select_zero :
-         forall E e v re rE,
-           eval_expr ge E e (vcons v re rE) ->
-           select_list ge E O e v
+         forall TE E e v re rTE rE,
+           eval_expr ge TE E e (vcons v re rTE rE) ->
+           select_list ge TE E O e v
      | select_succ :
-         forall E e v re rE n v',
-           eval_expr ge E e (vcons v' re rE) ->
-           select_list ge rE n re v ->
-           select_list ge E (S n) e v
-with eval_builtin (ge : genv) : env -> builtin -> list Expr -> val -> Prop :=
+         forall TE E e v re rTE rE n v',
+           eval_expr ge TE E e (vcons v' re rTE rE) ->
+           select_list ge rTE rE n re v ->
+           select_list ge TE E (S n) e v
+with eval_builtin (ge : genv) : tenv -> env -> builtin -> list Expr -> val -> Prop :=
 | eval_at :
-    forall {w} E idx vidx vl l v t1 t2 t3 (bv : BitV w),
-      eval_expr ge E idx vidx ->
-      force_list ge E vidx vl ->
+    forall {w} TE E idx vidx vl l v t1 t2 t3 (bv : BitV w),
+      eval_expr ge TE E idx vidx ->
+      force_list ge TE E vidx vl ->
       to_bitv vl = Some bv ->
-      select_list ge E (Z.to_nat (unsigned bv)) l v ->
-      eval_builtin ge E At (t1 :: t2 :: t3 :: l :: idx :: nil) v
+      select_list ge TE E (Z.to_nat (unsigned bv)) l v ->
+      eval_builtin ge TE E At (t1 :: t2 :: t3 :: l :: idx :: nil) v
 | eval_true :
-    forall E,
-      eval_builtin ge E true_builtin nil (bit true)
+    forall TE E,
+      eval_builtin ge TE E true_builtin nil (bit true)
 | eval_false :
-    forall E,
-      eval_builtin ge E false_builtin nil (bit false)
+    forall TE E,
+      eval_builtin ge TE E false_builtin nil (bit false)
 | eval_demote :
-    forall E t1 value t2 width v,
-      eval_expr ge E t1 (typ (tnum value)) ->
-      eval_expr ge E t2 (typ (tnum width)) ->
+    forall TE E t1 value t2 width v,
+      eval_type ge TE t1 (tnum value) ->
+      eval_type ge TE t2 (tnum width) ->
       v = thunk_list (from_bitv (@repr (Z.to_nat width) value)) ->
-      eval_builtin ge E Demote (t1 :: t2 :: nil) v
+      eval_builtin ge TE E Demote (ETyp t1 :: ETyp t2 :: nil) v
 | eval_zero :
-    forall E t tv zv,
-      eval_expr ge E t (typ tv) ->
+    forall TE E t tv zv,
+      eval_type ge TE t tv ->
       zero_val tv zv ->
-      eval_builtin ge E Zero (t :: nil) zv
+      eval_builtin ge TE E Zero (ETyp t :: nil) zv
 | eval_split :
-    forall args t1 t2 t3 le E n vfirst erest v,
-      args = t1 :: t2 :: t3 :: le :: nil ->
-      eval_expr ge E t1 (typ (tnum n)) ->
-      eval_expr ge E (ETake (Z.to_nat n) le) vfirst ->
-      erest = EBuiltin split (t1 :: t2 :: t3 :: (EDrop (Z.to_nat n) le) :: nil) ->
-      v = vcons vfirst erest E ->
-      eval_builtin ge E split args v
+    forall t1 t2 t3 le TE E n vfirst erest v,
+      eval_type ge TE t1 (tnum n) ->
+      eval_expr ge TE E (ETake (Z.to_nat n) le) vfirst ->
+      erest = EBuiltin split (ETyp t1 :: t2 :: t3 :: (EDrop (Z.to_nat n) le) :: nil) ->
+      v = vcons vfirst erest TE E ->
+      eval_builtin ge TE E split (ETyp t1 :: t2 :: t3 :: le :: nil) v
 | eval_split_at :
-    forall t1 t2 t3 l args E n vfirst vrest,
-      args = t1 :: t2 :: t3 :: l :: nil ->
-      eval_expr ge E t1 (typ (tnum n)) ->
-      eval_expr ge E (ETake (Z.to_nat n) l) vfirst ->
-      eval_expr ge E (EDrop (Z.to_nat n) l) vrest ->
-      eval_builtin ge E splitAt args (tuple (vfirst :: vrest :: nil))
+    forall t1 t2 t3 l TE E n vfirst vrest,
+      eval_type ge TE t1 (tnum n) ->
+      eval_expr ge TE E (ETake (Z.to_nat n) l) vfirst ->
+      eval_expr ge TE E (EDrop (Z.to_nat n) l) vrest ->
+      eval_builtin ge TE E splitAt (ETyp t1 :: t2 :: t3 :: l :: nil) (tuple (vfirst :: vrest :: nil))
 | eval_div_base : (* evaluate div over bitvectors *)
     (* different from other binary operators since can't divide by 0 *)
-    forall {w} (b1 b2 : BitV w) E v1 v2 v3 l1 l2 t e1 e2,
-      eval_expr ge E e1 v1 ->
-      eval_expr ge E e2 v2 ->
-      force_list ge E v1 l1 ->
-      force_list ge E v2 l2 ->
+    forall {w} (b1 b2 : BitV w) TE E v1 v2 v3 l1 l2 t e1 e2,
+      eval_expr ge TE E e1 v1 ->
+      eval_expr ge TE E e2 v2 ->
+      force_list ge TE E v1 l1 ->
+      force_list ge TE E v2 l2 ->
       to_bitv l1 = Some b1 ->
       to_bitv l2 = Some b2 ->
       unsigned b2 <> 0 ->
       v3 = thunk_list (from_bitv (divu b1 b2)) ->
-      eval_builtin ge E Div (t :: e1 :: e2 :: nil) (v3)
+      eval_builtin ge TE E Div (t :: e1 :: e2 :: nil) (v3)
 
 .
-
 
 
 Inductive strict_eval_val (ge : genv) : val -> strictval -> Prop :=
 | eval_sbit :
     forall b,
       strict_eval_val ge (bit b) (sbit b)
-| eval_styp :
-    forall t,
-      strict_eval_val ge (typ t) (styp t)
 | eval_srec :
     forall lide svals,
       Forall2 (strict_eval_val ge) (map snd lide) svals ->
@@ -521,28 +508,28 @@ Inductive strict_eval_val (ge : genv) : val -> strictval -> Prop :=
 | eval_nil :
     strict_eval_val ge vnil svnil
 | eval_cons :
-    forall E' e vrest r v f,
-      eval_expr ge E' e vrest ->
+    forall TE' E' e vrest r v f,
+      eval_expr ge TE' E' e vrest ->
       strict_eval_val ge vrest r ->
       strict_eval_val ge v f ->
-      strict_eval_val ge (vcons v e E') (svcons f r)
+      strict_eval_val ge (vcons v e TE' E') (svcons f r)
 | eval_close :
-    forall id exp E SE,
+    forall id exp TE E SE,
       (forall id, option_rel (strict_eval_val ge) (E id) (SE id)) ->
-      strict_eval_val ge (close id exp E) (sclose id exp SE)
+      strict_eval_val ge (close id exp TE E) (sclose id exp TE SE)
 | eval_tclose :
-    forall id exp E SE,
+    forall id exp TE E SE,
       (forall id, option_rel (strict_eval_val ge) (E id) (SE id)) ->
-      strict_eval_val ge (tclose id exp E) (stclose id exp SE)
+      strict_eval_val ge (tclose id exp TE E) (stclose id exp TE SE)
 .
 
 
-Inductive strict_eval_expr (ge : genv) : env -> Expr -> strictval -> Prop :=
+Inductive strict_eval_expr (ge : genv) : tenv -> env -> Expr -> strictval -> Prop :=
 | eval_everything :
-    forall E e v sv,
-      eval_expr ge E e v ->
+    forall TE E e v sv,
+      eval_expr ge TE E e v ->
       strict_eval_val ge v sv ->
-      strict_eval_expr ge E e sv.
+      strict_eval_expr ge TE E e sv.
     
 
 (* | eval_eq_true : (* SUPER BIG HACK TODO TAKE OUT *) *)

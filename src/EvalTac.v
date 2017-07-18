@@ -9,9 +9,11 @@ Ltac g := eapply eval_global_var; try eassumption; try reflexivity.
 
 Ltac e :=
   match goal with
-  | [ |- eval_expr _ ?E (EVar ?id) _ ] =>
-    try fg; try reflexivity;
-    try solve [eapply eval_local_var; reflexivity]
+  | [ |- eval_expr _ _ ?E (EVar ?id) _ ] =>
+    first [solve [fg; try reflexivity];
+           solve [eapply eval_local_var; reflexivity];
+           solve [g]];
+           fail 1 "Couldn't figure out variable"
   | [ |- _ ] => ec
   end.
 
@@ -29,6 +31,7 @@ Ltac init_globals global_env :=
   assert (Hat : global_env (40, "@") = Some (mb 3 2 At)) by reflexivity;
   assert (Hsplit : global_env (37,"split") = Some (mb 3 1 split)) by reflexivity;
   assert (HsplitAt : global_env (35,"splitAt") = Some (mb 3 1 splitAt)) by reflexivity;
+  assert (Hzero : global_env (29,"zero") = Some (mb 1 0 Zero)) by reflexivity;
   assert (HAppend : global_env (34,"#") = Some (mb 3 2 Append)) by reflexivity.
 
   

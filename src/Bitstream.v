@@ -25,16 +25,29 @@ Require Import Eager.
 Require Import List.
 
 
+Lemma strict_list_injective :
+  forall x y,
+    strict_list x = strict_list y ->
+    x = y.
+Proof.
+  induction x; intros. simpl in *.
+  destruct y; simpl in H; try congruence.
+  simpl in H. destruct y; simpl in H; try congruence.
+  inversion H. subst. eapply IHx in H2. congruence.
+Qed.
+
 Lemma n_bits_eval :
-  forall n x ge,
+  forall n x ge TE E,
     n_bits n x ->
-    exists v,
-      eager_eval_expr ge sempty (EList (map EValue x)) v.
+    exists vs,
+      eager_eval_expr ge TE E (EList (map EValue x)) (strict_list vs) /\ length vs = n.
 Proof.
   induction 1; intros.
-  eexists. econstructor; eauto. simpl. econstructor.
-  destruct IHn_bits.
+  eexists. split. econstructor; eauto. simpl. econstructor. reflexivity.
+  destruct IHn_bits. destruct H0.
   inversion H0.
-  eexists. simpl. econstructor. simpl. econstructor. econstructor. econstructor.
+  eexists. split. simpl. econstructor. simpl. econstructor. econstructor. econstructor.
   eauto. reflexivity.
+  simpl. subst.
+  eapply strict_list_injective in H6; eauto. congruence.
 Qed.

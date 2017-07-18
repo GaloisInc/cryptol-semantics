@@ -104,13 +104,14 @@ Eval compute in (eval gempty sample_env
 (************ Theorem ************)
 
 (* Interesting cases are currently admitted *)
-Theorem eval_expr_if_eval : forall gen en e v, 
-   eval gen en e = Some v -> eval_expr gen en e v.
+Theorem eval_expr_if_eval : forall gen en e v te, 
+   eval gen en e = Some v -> eval_expr gen te en e v.
 Proof. 
   intros. induction e. inversion H. destruct b in H1; try inversion H1; subst.
   (* EBuiltin true *)
   - econstructor.
-    destruct l. inv H1. destruct b; simpl in H; inv H.
+    destruct l. inv H1.
+    destruct b; simpl in H; inv H.
     econstructor; eauto. congruence.
  (* EBuiltin false *)
   - econstructor.

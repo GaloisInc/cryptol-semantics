@@ -13,6 +13,11 @@
 (*                                                                     *)
 (* *********************************************************************)
 
+(* This file is a copy of the Integers.v file from CompCert. *)
+
+(* It has been reworked significantly to support easier polymorphism *)
+(* over widths, and to support 0 width bitvectors *)
+
 (** Formalizations of machine integers modulo $2^N$ #2<sup>N</sup>#. *)
 
 Require Import Eqdep_dec Zquot Zwf.

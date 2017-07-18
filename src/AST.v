@@ -87,8 +87,6 @@ Inductive Tval :=
 
 
 
-
-
 Inductive Expr :=
 (* builtin *)
 | EBuiltin (b : builtin) (l : list Expr)
@@ -156,20 +154,18 @@ with Selector :=
      | RecordSel (s : string)
 with val :=
      | bit (b : bool) (* Can we ever get this now? *)
-     | close (id : ident) (e : Expr) (E : ident -> option val)  (* closure *)
-     | tclose (id : ident) (e : Expr) (E : ident -> option val) (* type closure *)
+     | close (id : ident) (e : Expr) (TE : ident -> option Tval) (E : ident -> option val)  (* closure *)
+     | tclose (id : ident) (e : Expr) (TE : ident -> option Tval) (E : ident -> option val) (* type closure *)
      | tuple (l : list val) (* heterogeneous tuples *)
      | rec (l : list (string * val)) (* records *)
-     | typ (t : Tval) (* type value, used to fill in type variables *)
-     | vcons (v : val) (e : Expr) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
+     | vcons (v : val) (e : Expr) (TE : ident -> option Tval) (E : ident -> option val) (* lazy list: first val computed, rest is thunked *)
      | vnil (* empty list *)
 with strictval :=
      | sbit (b : bool)
      | stuple (l : list strictval) (* heterogeneous tuples *)
      | srec (l : list (string * strictval)) (* records *)
-     | styp (t : Tval) (* type value, used to fill in type variables *)
-     | sclose (id : ident) (e : Expr) (E : ident -> option strictval)
-     | stclose (id : ident) (e : Expr) (E : ident -> option strictval)
+     | sclose (id : ident) (e : Expr) (TE : ident -> option Tval) (E : ident -> option strictval)
+     | stclose (id : ident) (e : Expr) (TE : ident -> option Tval) (E : ident -> option strictval)
      | svcons (f r : strictval) 
      | svnil (* empty list *)
 .
@@ -210,3 +206,6 @@ Definition empty : env := fun _ => None.
 
 Definition senv := ident -> option strictval.
 Definition sempty : senv := fun _ => None.
+
+Definition tenv := ident -> option Tval.
+Definition tempty : tenv := fun _ => None.

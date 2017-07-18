@@ -1,5 +1,5 @@
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
+(*Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -52,20 +52,19 @@ Proof.
     econstructor.    
  *) 
 
-
-
 Lemma otp_equiv : forall k msg l, 
 n_bits 8 k -> 
 n_bits 8 msg -> 
   strict_eval_val ge (thunk_list (otp_encrypt' k msg)) l ->
-  eager_eval_expr ge sempty (EApp (EApp (EVar encrypt) (EList (map EValue k))) (EList (map EValue msg))) l. 
+  eager_eval_expr ge tempty sempty (EApp (EApp (EVar encrypt) (EList (map EValue k))) (EList (map EValue msg))) l. 
 Proof. 
   intros. eapply n_bits_eval in H. destruct H. eapply n_bits_eval in H0. destruct H0.    
   econstructor. econstructor. eapply eager_eval_global_var. 
   unfold sempty. reflexivity.
-  unfold ge. econstructor. econstructor. 
-  eassumption.   
-  econstructor. eassumption. 
+  unfold ge. econstructor. econstructor.
+  admit. (*eassumption.   *)
+  econstructor. (*eassumption. *)
+  admit.
 
   econstructor.
   econstructor. econstructor. eapply eager_eval_global_var. unfold extend. simpl. unfold sempty. reflexivity.
@@ -90,10 +89,7 @@ Proof.
      
       
 
-
-Admitted. 
-
-
+Admitted.
 
 
 

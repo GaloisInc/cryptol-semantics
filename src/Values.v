@@ -299,5 +299,5 @@ Fixpoint thunk_list (l : list val) : val :=
   match l with
   | nil => vnil
   | f :: r =>
-    vcons f (EValue (thunk_list r)) empty
+    vcons f (EValue (thunk_list r)) tempty empty
   end.

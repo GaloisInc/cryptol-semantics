@@ -11,10 +11,16 @@ Require Import Bitvectors.
 Open Scope string.
 
 
-Fixpoint make_arg_list (n : nat) : list Expr :=
+Fixpoint make_type_arg_list (nt : nat) : list Typ :=
+  match nt with
+  | O => nil
+  | S n' => (TVar (TVBound (Z.of_nat nt) KNum)) :: make_type_arg_list n'
+  end.
+
+Fixpoint make_val_arg_list (n : nat) : list Expr :=
   match n with
   | O => nil
-  | S n' => (EVar (Z.of_nat n, "")) :: make_arg_list n'
+  | S n' => (EVar (Z.of_nat n, "")) :: make_val_arg_list n'
   end.
 
 Fixpoint iter {A : Type} (n : nat) (f : nat -> A -> A) (b : A) : A :=
@@ -24,9 +30,10 @@ Fixpoint iter {A : Type} (n : nat) (f : nat -> A -> A) (b : A) : A :=
   end.
 
 Definition mb (num_type_args : nat) (num_args : nat) (b : builtin) : Expr :=
-  let l := make_arg_list (num_args + num_type_args) in 
-  let raw_e := iter num_args (fun n => fun x => EAbs (Z.of_nat n, "") x) (EBuiltin b l) in
-  let t_e := iter num_type_args (fun n => fun x => ETAbs ((Z.of_nat (n + num_args )), "") x) raw_e in
+  let l := make_val_arg_list num_args in
+  let t := map ETyp (make_type_arg_list num_type_args) in
+  let raw_e := iter num_args (fun n => fun x => EAbs (Z.of_nat n, "") x) (EBuiltin b (t++l)) in
+  let t_e := iter num_type_args (fun n => fun x => ETAbs ((Z.of_nat n), "") x) raw_e in
   t_e.
 
 
