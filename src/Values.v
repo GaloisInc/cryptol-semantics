@@ -1,3 +1,4 @@
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
 Require Import AST.
 Require Import String.
 Require Import Coqlib.
@@ -258,8 +259,7 @@ Proof.
       * congruence.
 Qed. 
     
-(* Main theorem, can produce a simplified corollary *) 
-Theorem tobit_frombit' :
+Lemma tobit_frombit' :
   forall len v l1 l2 width (bv : BitV width),
     (width >= len)%nat -> 
     to_bitv (l2++v::l1) = Some bv ->
@@ -277,7 +277,7 @@ Proof.
       * inversion H1. reflexivity. 
 Qed. 
 
-Theorem tobit_frombit : forall l ws (bv : BitV ws), 
+Lemma tobit_frombit : forall l ws (bv : BitV ws), 
   to_bitv l = Some bv -> from_bitv bv = l. 
 Proof. 
   intros. destruct l.
@@ -299,6 +299,19 @@ Proof.
       eapply H.
 Qed.
 
+Lemma frombit_tobit : forall l ws (bv : BitV ws), 
+  from_bitv bv = l -> to_bitv l = Some bv. 
+Proof. 
+  Admitted. 
+
+(* Main theorem *)
+Theorem tobit_frombit_equiv : forall l ws (bv : BitV ws), 
+  to_bitv l = Some bv <-> from_bitv bv = l. 
+Proof. 
+  intros. split. 
+  apply tobit_frombit. 
+  apply frombit_tobit. 
+Admitted. 
 
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
