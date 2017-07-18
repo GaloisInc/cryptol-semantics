@@ -92,6 +92,13 @@ Proof.
   intros. simpl. rewrite H. eauto. 
 Qed. 
 
+Lemma frombit_nil : forall ws (bv : BitV ws), 
+  from_bitv bv = [] -> ws = 0%nat. 
+Proof. 
+  intros. unfold from_bitv in H. destruct ws eqn:?; try congruence.
+  inversion H.
+Qed. 
+
 Lemma list_helper : forall {A : Type} (l1 : list A) (l2 : list A) (v v0 : A), 
    (l2 ++ v :: nil) ++ v0 :: l1 = l2 ++ (v :: v0 :: l1). 
 Proof.
@@ -292,17 +299,27 @@ Proof.
         simpl in H. inversion H. auto.
       }
       erewrite tobit_frombit'; try solve [eauto].
-      f_equal.
+      f_equal. 
       eapply testbit_tobitv; eauto.
       instantiate (1 := nil). assumption.
       instantiate (2 := nil).
       eapply H.
 Qed.
+    
+  
 
 Lemma frombit_tobit : forall l ws (bv : BitV ws), 
   from_bitv bv = l -> to_bitv l = Some bv. 
 Proof. 
-  Admitted. 
+  induction l; intros.
+  - apply frombit_nil in H. subst. simpl. generalize (intval_width_zero).
+    intros. f_equal. eapply f_equal. apply unsigned_eq. simpl. unfold unsigned. rewrite H. reflexivity.
+  - unfold from_bitv in H. unfold from_bitv in IHl. destruct ws.
+    + inversion H.
+    + simpl in H. inversion H.  
+  (* Might need a more general, part-way lemma like tobit_frombit' *)
+
+Admitted. 
 
 (* Main theorem *)
 Theorem tobit_frombit_equiv : forall l ws (bv : BitV ws), 
