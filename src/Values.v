@@ -1,4 +1,4 @@
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
+(*Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
 Require Import AST.
 Require Import String.
 Require Import Coqlib.
