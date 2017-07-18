@@ -55,7 +55,7 @@ Ltac find_rw :=
   end.
 
 
-
+(* TODO: abstract over type arguments *)
 Lemma kinit_eval :
   forall k,
     n_bits 64 k ->

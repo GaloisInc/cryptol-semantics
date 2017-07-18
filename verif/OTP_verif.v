@@ -1,5 +1,5 @@
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
+(*Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -43,11 +43,9 @@ Definition sempty : senv := fun _ => None.
 
 
 
-
-
 Lemma otp_equiv : forall k msg l, 
   strict_eval_val ge (thunk_list (otp_encrypt' k msg)) l ->
-  eager_eval_expr ge sempty (EApp (EApp (EVar encrypt) (EList (map EValue k))) (EList (map EValue msg))) l. 
+  eager_eval_expr ge tempty sempty (EApp (EApp (EVar encrypt) (EList (map EValue k))) (EList (map EValue msg))) l. 
 Proof.
 Admitted. 
 

@@ -25,7 +25,8 @@ Lemma eval_a :
   exists v,
     eval_expr ge tempty empty (EVar a) v /\ force_list ge tempty empty v (@from_bitv 8 (@repr 8 1)).
 Proof.
-  init_globals ge.
+Admitted.
+(*  init_globals ge.
   eexists; split.
   g.
   repeat e. g.
@@ -37,3 +38,4 @@ Proof.
   repeat e.
   repeat e.
 Qed.
+*)

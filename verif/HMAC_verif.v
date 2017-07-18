@@ -90,6 +90,9 @@ Proof.
   e. e. e. e. 
   g. e. e. e. g.
   (* TODO: apply kinit theorem here *)
+(*  edestruct kinit_eval. Focus 10.
+  destruct H4. unfold apply in H4. unfold tapply in H4. apply H4.*)
+
 
   e. e. e. e. e. g.
   e. e. e. e. e. e. e. e. e. e. e. g.
