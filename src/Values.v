@@ -280,15 +280,24 @@ Qed.
 Theorem tobit_frombit : forall l ws (bv : BitV ws), 
   to_bitv l = Some bv -> from_bitv bv = l. 
 Proof. 
-  intros. induction l. 
+  intros. destruct l.
   - apply tobit_length in H. simpl in H. destruct ws. 
      + unfold from_bitv. simpl. reflexivity. 
      + inversion H. 
   - unfold from_bitv. destruct ws. 
-     + inversion H. destruct a; congruence.
-     + simpl. simpl in H. destruct a; try congruence. destruct (to_bitv l) eqn:?; try congruence.
-       Set Printing All.  
-Admitted. 
+    + inversion H. destruct v; congruence.
+    + simpl.
+      assert (Datatypes.length l = ws). {
+        eapply tobit_length in H.
+        simpl in H. inversion H. auto.
+      }
+      erewrite tobit_frombit'; try solve [eauto].
+      f_equal.
+      eapply testbit_tobitv; eauto.
+      instantiate (1 := nil). assumption.
+      instantiate (2 := nil).
+      eapply H.
+Qed.
 
 
 Definition env := ident -> option val.
