@@ -1,3 +1,4 @@
+(*Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
 Require Import AST.
 Require Import String.
 Require Import Coqlib.
@@ -89,6 +90,13 @@ Lemma frombitv_cons : forall l width length (bv : BitV width),
     from_bitv' width (S length) bv = (a::l).
 Proof.
   intros. simpl. rewrite H. eauto. 
+Qed. 
+
+Lemma frombit_nil : forall ws (bv : BitV ws), 
+  from_bitv bv = [] -> ws = 0%nat. 
+Proof. 
+  intros. unfold from_bitv in H. destruct ws eqn:?; try congruence.
+  inversion H.
 Qed. 
 
 Lemma list_helper : forall {A : Type} (l1 : list A) (l2 : list A) (v v0 : A), 
@@ -258,8 +266,7 @@ Proof.
       * congruence.
 Qed. 
     
-(* Main theorem, can produce a simplified corollary *) 
-Theorem tobit_frombit' :
+Lemma tobit_frombit' :
   forall len v l1 l2 width (bv : BitV width),
     (width >= len)%nat -> 
     to_bitv (l2++v::l1) = Some bv ->
@@ -277,7 +284,7 @@ Proof.
       * inversion H1. reflexivity. 
 Qed. 
 
-Theorem tobit_frombit : forall l ws (bv : BitV ws), 
+Lemma tobit_frombit : forall l ws (bv : BitV ws), 
   to_bitv l = Some bv -> from_bitv bv = l. 
 Proof. 
   intros. destruct l.
@@ -292,13 +299,36 @@ Proof.
         simpl in H. inversion H. auto.
       }
       erewrite tobit_frombit'; try solve [eauto].
-      f_equal.
+      f_equal. 
       eapply testbit_tobitv; eauto.
       instantiate (1 := nil). assumption.
       instantiate (2 := nil).
       eapply H.
 Qed.
+    
+  
 
+Lemma frombit_tobit : forall l ws (bv : BitV ws), 
+  from_bitv bv = l -> to_bitv l = Some bv. 
+Proof. 
+  induction l; intros.
+  - apply frombit_nil in H. subst. simpl. generalize (intval_width_zero).
+    intros. f_equal. eapply f_equal. apply unsigned_eq. simpl. unfold unsigned. rewrite H. reflexivity.
+  - unfold from_bitv in H. unfold from_bitv in IHl. destruct ws.
+    + inversion H.
+    + simpl in H. inversion H.  
+  (* Might need a more general, part-way lemma like tobit_frombit' *)
+
+Admitted. 
+
+(* Main theorem *)
+Theorem tobit_frombit_equiv : forall l ws (bv : BitV ws), 
+  to_bitv l = Some bv <-> from_bitv bv = l. 
+Proof. 
+  intros. split. 
+  apply tobit_frombit. 
+  apply frombit_tobit. 
+Admitted. 
 
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.

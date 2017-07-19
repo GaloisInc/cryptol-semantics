@@ -53,36 +53,32 @@ Proof.
  *) 
 (*
 Lemma otp_equiv : forall k msg l, 
-n_bits 8 k -> 
-n_bits 8 msg -> 
-  strict_eval_val ge (thunk_list (otp_encrypt' k msg)) l ->
-  eager_eval_expr ge tempty sempty (EApp (EApp (EVar encrypt) (EList (map EValue k))) (EList (map EValue msg))) l. 
+  n_bits 8 k -> 
+  n_bits 8 msg -> 
+    strict_eval_val ge (thunk_list (otp_encrypt' k msg)) l ->
+    eager_eval_expr ge tempty sempty (EApp (EApp (EVar encrypt) (EList (map EValue k))) (EList (map EValue msg))) l. 
 Proof. 
   intros. eapply n_bits_eval in H. destruct H. eapply n_bits_eval in H0. destruct H0.    
+  inversion H0. clear H0. inversion H. clear H. 
   econstructor. econstructor. eapply eager_eval_global_var. 
   unfold sempty. reflexivity.
-  unfold ge. econstructor. econstructor.
-  admit. (*eassumption.   *)
-  econstructor. (*eassumption. *)
-  admit.
+  unfold ge. econstructor. 
+  econstructor. eassumption.
+  econstructor. eassumption.
 
-  econstructor.
-  econstructor. econstructor. eapply eager_eval_global_var. unfold extend. simpl. unfold sempty. reflexivity.
-  unfold ge. econstructor.
-  econstructor. econstructor. econstructor. eauto.
+  econstructor. econstructor.
+  econstructor. eapply eager_eval_global_var. unfold extend. simpl. unfold sempty. reflexivity.
+  unfold ge. econstructor. (* This takes like 10 seconds but solves the first goal *)
+  econstructor. econstructor. econstructor. econstructor. econstructor.  
   econstructor. econstructor. econstructor. econstructor. econstructor.
-  econstructor. eapply eager_eval_local_var. unfold extend. simpl. eauto.
-  econstructor.
-  econstructor. econstructor. unfold extend. simpl. eauto.
-  econstructor.
-  
-  econstructor. unfold extend. simpl. auto.
-  econstructor. econstructor. unfold extend. simpl. auto.
-  econstructor.
+  econstructor. econstructor. econstructor. econstructor. econstructor.
+  econstructor. econstructor. econstructor. econstructor. econstructor.
+  econstructor. econstructor. econstructor.
   
   simpl. 
-  inversion H. subst. clear H.  
-  inversion H0. subst. clear H0.
+  (* Since x0 and x have length 8, they must be svcons *) 
+  unfold strict_list. 
+  unfold xor_sem.  
          
 
   
