@@ -39,7 +39,7 @@ Proof.
 Qed.
 
 Definition match_val {A B : Type} (a : A) (b : B) : Prop := True. (* TODO *)
-
+(*
 Lemma n_bits_destr :
   forall n x,
     n_bits (S n) x ->
@@ -64,19 +64,21 @@ Ltac nb_destr :=
   try match goal with
       | [ H : n_bits O _ |- _ ] => inversion H; clear H
       end.
-         
+ *)
+(*
 Lemma xor_bits_roundtrip :
   forall n x y,
     n <> O ->
     n_bits n x ->
     n_bits n y ->
     forall vx vy,
-      eager_eval_expr ge tempty sempty (EList (map EValue x)) vx ->
-      eager_eval_expr ge tempty sempty (EList (map EValue y)) vy ->
+      eager_eval_expr ge tempty sempty (EValue x) (x) ->
+      eager_eval_expr ge tempty sempty (EValue y) y ->
       exists halfway,
         xor_sem vx vy = Some halfway /\ xor_sem halfway vy = Some vx.
 Proof.
 Admitted.
+*)
 (*
   induction n; intros. congruence.
   destruct n.
@@ -110,12 +112,12 @@ Qed.
 *)    
 
 Lemma xor_roundtrip_eager :
-  forall pt,
-    Forall (n_bits 8%nat) pt ->
+  forall n pt,
+    has_type pt (tseq n byte) ->
     forall k,
       n_bits (8%nat) k ->
       exists pt',
-        eager_eval_expr ge tempty sempty (EApp (EApp decrypt (EList (map EValue k))) (EApp (EApp encrypt (EList (map EValue k))) (EList (map EList (map (map EValue) pt))))) pt' /\ match_val pt pt'.
+        eager_eval_expr ge tempty sempty (EApp (EApp decrypt (EValue k)) (EApp (EApp encrypt (EValue k)) (EValue (to_val pt)))) pt' /\ match_val pt pt'.
 Proof.
 Admitted.
 (*

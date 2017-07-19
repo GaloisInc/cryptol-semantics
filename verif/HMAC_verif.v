@@ -56,6 +56,15 @@ Definition blockLength := typenum 64.
 Definition digest := typenum 0.
 Definition msgBytes := typenum 64.
 
+
+Definition good_hash (h : Expr) (ge : genv) (T : tenv) (SE : senv) (hf : strictval -> strictval) : Prop :=
+  (exists id exp TE E,
+      eager_eval_expr ge T SE h (sclose id exp TE E) /\ (* can evaluate the hash to a closure *)
+      forall n v,
+        sn_bits n v ->
+        eager_eval_expr ge TE (extend E id v) exp (hf v) (* can evaluate that closure applied to a value *)
+  ).
+
 Lemma Hmac_eval :
   forall k,
     n_bits 64 k ->
@@ -65,7 +74,7 @@ Lemma Hmac_eval :
       forall m,
         n_bits 64 m ->
         exists v,
-          eager_eval_expr ge tempty sempty (apply (tapply (EVar hmac) (msgBytes :: pwBytes :: blockLength :: digest :: nil)) (h :: h :: h :: (EList (map EValue k)) :: (EList (map EValue m)) :: nil)) v.
+          eager_eval_expr ge tempty sempty (apply (tapply (EVar hmac) (msgBytes :: pwBytes :: blockLength :: digest :: nil)) (h :: h :: h :: (EValue k) :: (EValue m) :: nil)) v.
 Proof.
   intros. do 4 destruct H0.
   remember H as Hnbk. clear HeqHnbk.
@@ -74,8 +83,6 @@ Proof.
   eapply n_bits_eval with (ge := ge) (E := sempty) (TE := tempty) in H. destruct H. destruct H.
 
   inversion H1. subst. inversion H. subst.
-  eapply strict_list_injective in H8. subst.
-  eapply strict_list_injective in H10. subst.
 
   init_globals ge.
   eexists.

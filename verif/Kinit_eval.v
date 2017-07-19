@@ -77,7 +77,7 @@ Lemma kinit_eval :
       (exists hv,
           eager_eval_expr GE TE SE h hv) ->
     exists v,
-      eager_eval_expr GE TE SE (apply (tapply (EVar kinit) (pwBytes :: blockLength :: digest ::  nil)) (h :: (EList (map EValue k)) :: nil)) v /\ eager_eval_expr GE TE SE (EList (map EValue k)) v.
+      eager_eval_expr GE TE SE (apply (tapply (EVar kinit) (pwBytes :: blockLength :: digest ::  nil)) (h :: (EValue k) :: nil)) v /\ eager_eval_expr GE TE SE (EValue k) v.
 Proof.
   init_globals ge.
   intros.
@@ -160,13 +160,12 @@ Proof.
   e. e. e. e. e. e. e. e. e.
   
   replace (tnum 64) with (tnum (Z.of_nat (Datatypes.length x))).
-  eapply strict_list_injective in H20. subst.
-  rewrite splitAt_len. reflexivity.
+  rewrite splitAt_len. reflexivity.  
+  
   
   f_equal. omega.
   simpl.
-  eapply strict_list_injective in H20; eauto.
-  congruence.
+  reflexivity.
 
 Qed.
 

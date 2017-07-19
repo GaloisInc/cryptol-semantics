@@ -51,7 +51,7 @@ Proof.
     eexists. econstructor; eauto.
     econstructor.    
  *) 
-
+(*
 Lemma otp_equiv : forall k msg l, 
 n_bits 8 k -> 
 n_bits 8 msg -> 
@@ -95,3 +95,4 @@ Admitted.
 
 
 
+*)
