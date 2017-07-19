@@ -1,5 +1,5 @@
-(*Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -41,16 +41,24 @@ Definition otp_encrypt'  (k m: list val) : list val :=
 
 Definition sempty : senv := fun _ => None.  
 
-(*Lemma something : forall k ge e, 
+Lemma something : forall k ge te e, 
   exists k', 
-  Forall2 (eager_eval_expr ge e) (map EValue k) k'. 
+  Forall2 (eager_eval_expr ge te e) (map EValue k) k'. 
 Proof.
   induction k; intros.
   - eexists. econstructor.
-  - edestruct IHk; eauto.
-    eexists. econstructor; eauto.
-    econstructor.    
- *) 
+  - edestruct IHk. destruct a;
+    eexists;
+    econstructor; eauto.    
+    econstructor. instantiate (1:= sbit b). econstructor.
+    econstructor. (* Can't use 'e', needs to be the same environment as E but strict *)instantiate (1:= sclose id e0 TE e). econstructor. admit. 
+    econstructor. Print strict_eval_val. (* Same as above *) admit.
+    econstructor.   
+
+
+    inversion H. subst.      
+
+    
 (*
 Lemma otp_equiv : forall k msg l, 
   n_bits 8 k -> 
