@@ -58,7 +58,7 @@ Proof.
 
     inversion H. subst.      
 
-    
+Admitted.    
 (*
 Lemma otp_equiv : forall k msg l, 
   n_bits 8 k -> 
