@@ -53,6 +53,7 @@ Proof.
   do 3 destruct H3.
 
   inversion H. subst.
+  inversion H2. subst.
 
   
   eexists; split.
@@ -84,9 +85,6 @@ Proof.
   reflexivity.
 
 
-
-
-
   eapply kinit_eval.
   admit. exact H.
   admit. repeat e. repeat e.
@@ -96,4 +94,51 @@ Proof.
   rewrite list_of_strictval_of_strictlist. 
   reflexivity.
 
+  admit. (* come back here *)
+
+  e. g.
+  e. e. e. e. g.
+  simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
+  reflexivity.
+  e. e. e. e. e. e. e. e. e. e. e. g.
+  simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
+  reflexivity.
+  e. e. e. e. g.
+  e. e. e. g.
+  eapply kinit_eval.
+  admit. exact H.
+  admit. repeat e.
+  repeat e. repeat e. e.
+
+  simpl.
+  rewrite list_of_strictval_of_strictlist. 
+  reflexivity.
+
+  admit. (* come back here *)
+
+  e. e. e. repeat e.
+  repeat e.
+  
+  unfold to_sval. fold to_sval.
+  rewrite append_strict_list. 
+  reflexivity.
+
+  (* This is about the hash function *)
+  admit. (* come back here *)
+
+  e. repeat e.
+  e. e. e.
+
+  admit. (* split things, unused is not unused *)
+
+  e. repeat e. repeat e.
+  
+  admit. (* append *)
+
+  (* evaluate the hash function *)
+  admit.
+
+  (* our result matches the model *)
+  admit.
+  
 Admitted.
