@@ -124,14 +124,26 @@ Proof.
   induction f; intros.
   simpl.
   rewrite (@separate_combine string strictval) at 1. econstructor.
-  simpl in *. econstructor.
-  simpl in H. inversion H. subst.
-  eapply IHf in H3.
-  clear IHf. clear H.
-  destruct a.
-  rewrite (separate_combine f).
-Admitted. (* True, needs some defn massaging *)
+  econstructor. reflexivity.
 
+  simpl in H. inversion H. subst.
+  specialize (IHf H3).
+  destruct a. simpl in H2.
+  simpl. fold to_val_list_pair.
+  fold to_sval_list_pair.
+  econstructor. simpl. econstructor. eassumption.
+  instantiate (1 := (map snd (to_sval_list_pair f))).
+  rewrite map_snd_to_val_lp.
+  rewrite map_snd_to_sval_lp.
+  eapply Forall2_map_Forall.
+  eapply H3.
+  simpl. f_equal.
+  rewrite (separate_combine (to_sval_list_pair f)) at 1.
+  f_equal.
+  rewrite to_val_lp_fst.
+  rewrite to_sval_lp_fst.
+  reflexivity.
+Qed.
 
 Lemma strict_eval_val_to_val :
   forall ge (ev : ext_val),
@@ -147,8 +159,6 @@ Proof.
   eapply strict_eval_rec; eauto.
 Qed.
 
-
-    
 
 
 (* Eager tactics *)

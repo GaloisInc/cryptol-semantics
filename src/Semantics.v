@@ -498,9 +498,10 @@ Inductive strict_eval_val (ge : genv) : val -> strictval -> Prop :=
     forall b,
       strict_eval_val ge (bit b) (sbit b)
 | eval_srec :
-    forall lide svals,
+    forall lide svals slides,
       Forall2 (strict_eval_val ge) (map snd lide) svals ->
-      strict_eval_val ge (rec lide) (srec (combine (map fst lide) svals))
+      slides = combine (map fst lide) svals ->
+      strict_eval_val ge (rec lide) (srec slides)
 | eval_tup :
     forall lexp svals,
       Forall2 (strict_eval_val ge) lexp svals ->

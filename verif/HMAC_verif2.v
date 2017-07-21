@@ -34,6 +34,7 @@ Require Import Kinit_eval2.
 (* As well, we can simply write HMAC over ext_val *)
 
 
+(* lemma for when the length of the key is the same as the length of the block *)
 Lemma Hmac_eval_keylen_is_blocklength :
   forall (key : ext_val) keylen,
     has_type key (bytestream keylen) -> 
@@ -140,5 +141,5 @@ Proof.
 
   (* our result matches the model *)
   admit.
-  
+
 Admitted.

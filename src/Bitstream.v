@@ -73,38 +73,72 @@ Definition ext_val_ind_mut
 Defined.
 
 Fixpoint to_val (e : ext_val) : val :=
-  let fix go_pair (p : string * ext_val) := 
-      match p with
-      | (s,t) => (s, to_val t)
-      end in
-  let fix go_list_pair (ps : list (string * ext_val)) :=
+  let fix to_val_list_pair (ps : list (string * ext_val)) :=
       match ps with
       | nil => nil
-      | p :: ps => (go_pair p) :: (go_list_pair ps)
+      | (s,t) :: ps => (s, to_val t) :: (to_val_list_pair ps)
       end in
   match e with
   | ebit b => bit b
   | eseq l => thunk_list (map to_val l)
   | etup l => tuple (map to_val l)
-  | erec f => rec (go_list_pair f)
+  | erec f => rec (to_val_list_pair f)
   end.
-        
+
+Fixpoint to_val_list_pair (ps : list (string * ext_val)) :=
+  match ps with
+  | nil => nil
+  | (s,t) :: ps => (s, to_val t) :: (to_val_list_pair ps)
+  end.
+
 Fixpoint to_sval (e : ext_val) : strictval :=
-  let fix go_pair (p : string * ext_val) := 
-      match p with
-      | (s,t) => (s, to_sval t)
-      end in
-  let fix go_list_pair (ps : list (string * ext_val)) :=
+  let fix to_sval_list_pair (ps : list (string * ext_val)) :=
       match ps with
       | nil => nil
-      | p :: ps => (go_pair p) :: (go_list_pair ps)
+      | (s,t) :: ps => (s,to_sval t) :: (to_sval_list_pair ps)
       end in
   match e with
   | ebit b => sbit b
   | eseq l => strict_list (map to_sval l)
   | etup l => stuple (map to_sval l)
-  | erec f => srec (go_list_pair f)
+  | erec f => srec (to_sval_list_pair f)
   end.
+
+Fixpoint to_sval_list_pair (ps : list (string * ext_val)) :=
+  match ps with
+  | nil => nil
+  | (s,t) :: ps => (s,to_sval t) :: (to_sval_list_pair ps)
+  end.
+
+Lemma map_snd_to_sval_lp :
+  forall f,
+    map snd (to_sval_list_pair f) = map to_sval (map snd f).
+Proof.
+  induction f; intros; simpl; auto.
+  destruct a. simpl. f_equal. auto.
+Qed.
+
+Lemma map_snd_to_val_lp :
+  forall f,
+    map snd (to_val_list_pair f) = map to_val (map snd f).
+Proof.
+  induction f; intros; simpl; auto.
+  destruct a. simpl. f_equal. auto.
+Qed.
+
+Lemma to_sval_lp_fst :
+  forall f,
+    map fst (to_sval_list_pair f) = map fst f.
+Proof.
+  induction f; simpl; intros; auto; destruct a; simpl; f_equal; auto.
+Qed.
+
+Lemma to_val_lp_fst :
+  forall f,
+    map fst (to_val_list_pair f) = map fst f.
+Proof.
+  induction f; simpl; intros; auto; destruct a; simpl; f_equal; auto.
+Qed.
 
 Inductive ext_type :=
 | tbit
