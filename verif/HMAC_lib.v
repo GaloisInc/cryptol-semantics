@@ -85,79 +85,6 @@ Proof.
 Qed.
 
 
-Lemma strict_eval_list :
-  forall l ge,
-    Forall (fun v => strict_eval_val ge (to_val v) (to_sval v)) l ->
-    strict_eval_val ge (thunk_list (map to_val l)) (strict_list (map to_sval l)).
-Proof.
-  induction l; intros.
-  simpl. econstructor; eauto.
-  simpl.
-  inversion H. subst. eapply IHl in H3.
-  econstructor; eauto.
-  econstructor; eauto.
-Qed.
-
-Lemma Forall2_map_Forall :
-  forall {A B C : Type} P (f1 : A -> B) (f2 : A -> C) (l : list A),
-    Forall (fun x => P (f1 x) (f2 x)) l ->
-    Forall2 P (map f1 l) (map f2 l).
-Proof.
-  induction 1; intros.
-  simpl. econstructor.
-  simpl. econstructor; eauto.
-Qed.
-
-Lemma separate_combine :
-  forall {A B : Type} (l : list (A * B)),
-    l = combine (map fst l) (map snd l).
-Proof.
-  induction l; intros; simpl; auto.
-  destruct a; simpl; f_equal; eauto.
-Qed.
-
-Lemma strict_eval_rec :
-  forall ge f,
-    Forall (fun ev : ext_val => strict_eval_val ge (to_val ev) (to_sval ev)) (map snd f) ->
-    strict_eval_val ge (to_val (erec f)) (to_sval (erec f)).
-Proof.
-  induction f; intros.
-  simpl.
-  rewrite (@separate_combine string strictval) at 1. econstructor.
-  econstructor. reflexivity.
-
-  simpl in H. inversion H. subst.
-  specialize (IHf H3).
-  destruct a. simpl in H2.
-  simpl. fold to_val_list_pair.
-  fold to_sval_list_pair.
-  econstructor. simpl. econstructor. eassumption.
-  instantiate (1 := (map snd (to_sval_list_pair f))).
-  rewrite map_snd_to_val_lp.
-  rewrite map_snd_to_sval_lp.
-  eapply Forall2_map_Forall.
-  eapply H3.
-  simpl. f_equal.
-  rewrite (separate_combine (to_sval_list_pair f)) at 1.
-  f_equal.
-  rewrite to_val_lp_fst.
-  rewrite to_sval_lp_fst.
-  reflexivity.
-Qed.
-
-Lemma strict_eval_val_to_val :
-  forall ge (ev : ext_val),
-    strict_eval_val ge (to_val ev) (to_sval ev).
-Proof.
-  induction ev using ext_val_ind_mut; intros;
-    try solve [econstructor; eauto].
-  simpl.
-  eapply strict_eval_list; eauto.
-  simpl.
-  econstructor.
-  eapply Forall2_map_Forall; eauto.
-  eapply strict_eval_rec; eauto.
-Qed.
 
 
 
@@ -183,8 +110,6 @@ Ltac e :=
   end.
 
 
-(* Model of hmac, given model of hash *)
-Definition hmac_model (hf : strictval -> strictval) (key msg : strictval) : option strictval := None. (* TODO *)
 
 Definition typenum (n : Z) : Expr := ETyp (TCon (TC (TCNum n)) []).
 

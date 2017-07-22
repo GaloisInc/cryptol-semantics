@@ -27,12 +27,30 @@ Require Import HMAC_spec.
 
 Require Import HMAC_lib.
 
-(* Grab this for now, use better spec later *)
 Require Import Kinit_eval2.
 
 (* Now we can use ext_val to characterize the inputs to HMAC *)
 (* As well, we can simply write HMAC over ext_val *)
 
+(* Model of hmac, given model of hash *)
+Definition hmac_model (hf : strictval -> strictval) (key msg : strictval) : option strictval := None. (* TODO *)
+
+Lemma eager_eval_bind_senvs :
+  forall l GE TE exp SE id,
+    (forall sv, exists v, eager_eval_expr GE TE (extend SE id sv) exp v) ->
+    exists vs,
+      Forall2 (fun se => eager_eval_expr GE TE se exp)
+              (bind_senvs SE (map (fun sv => [(id,sv)]) (map to_sval l))) vs.
+Proof.
+  induction l; intros.
+  eexists. econstructor; eauto.
+  edestruct IHl; eauto.
+  specialize (H (to_sval a)).
+  destruct H.
+  eexists.
+  unfold map. fold (map to_sval).
+  econstructor; eauto.
+Qed.
 
 (* lemma for when the length of the key is the same as the length of the block *)
 Lemma Hmac_eval_keylen_is_blocklength :
@@ -56,7 +74,8 @@ Proof.
   inversion H. subst.
   inversion H2. subst.
 
-  
+  edestruct eager_eval_bind_senvs.
+  Focus 2.
   eexists; split.
 
   e. e. e. e. e. e. e. e. e.
@@ -95,8 +114,8 @@ Proof.
   rewrite list_of_strictval_of_strictlist. 
   reflexivity.
 
-  admit. (* come back here *)
-
+  eapply H4. (* generated from lemma that probably needs strengthening *)
+  
   e. g.
   e. e. e. e. g.
   simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
@@ -142,4 +161,13 @@ Proof.
   (* our result matches the model *)
   admit.
 
+  e. e. e. e. g. unfold extend. simpl.
+  admit. e. e. e. e. e. e. g.
+  unfold extend. simpl. admit.
+  e. e. e. repeat e.
+  e.
+  reflexivity.
+  e. e. e. e. e. e. e. e.
+  admit.
+  
 Admitted.

@@ -13,18 +13,16 @@ Import ListNotations.
 (* This is the simplest example I can think of *)
 Inductive simple_tree :=
 | leaf
-| internal (l : list simple_tree)
+| internal (f : list simple_tree)
 .
 
 
 (* Coq can figure this out *)
-Fixpoint get_leaves (s : simple_tree) : list simple_tree :=
+Fixpoint better_id (s : simple_tree) : simple_tree :=
   match s with
-  | leaf => s :: nil
-  | internal l =>
-    concat (map get_leaves l)
+  | leaf => leaf
+  | internal l => internal (map better_id l)
   end.
-
 
 (* This is particularly common for representing records *)
 (* could also be used to represent a trie *)
@@ -38,19 +36,17 @@ Inductive labeled_tree {A B : Type} :=
 (* Now it is hard to write functions over this type *)
 (* Coq doesn't like this: *)
 (* Error: Cannot guess decreasing argument of fix. *)
-(*
 
-Fixpoint map_leaves {A B C : Type} (f : B -> C) (t : @labeled_tree A B) : @labeled_tree A C :=
+(*
+Fixpoint map_leaves {A B C : Type} (f : B -> C) (t : @labeled_tree A B) {struct t} : @labeled_tree A C :=
   match t with
   | tleaf x => tleaf (f x)
   | tinternal l =>
     let labels := map fst l in
-    let subts := map snd l in
-    let subts' := map (map_leaves f) subts in
+    let subts' := map (fun x => map_leaves f (snd x)) l in
     tinternal (combine labels subts')
   end.
-
- *)
+*)
 
 (* If we actually want to write this function, we have some fun times ahead of us *)
 
@@ -84,16 +80,25 @@ Fixpoint map_leaves {A B C : Type} (f : B -> C) (t : @labeled_tree A B) : @label
   end.
 
 (* If you want to minimize the number of internal fixes, do more like this *)
-Fixpoint map_leaves' {A B C : Type} (f : B -> C) (t : @labeled_tree A B) : @labeled_tree A C :=
-  let fix go_list_pair lp :=
+Fixpoint map_leaves' {A B C : Type} (f : B -> C) (t : @labeled_tree A B) {struct t} : @labeled_tree A C :=
+  let fix go_list_pair f lp :=
       match lp with
       | nil => nil
-      | (lab,subt) :: r => (lab, map_leaves' f subt) :: (go_list_pair r)
+      | (lab,subt) :: r => (lab, map_leaves' f subt) :: (go_list_pair f r)
       end in
   match t with
   | tleaf x => tleaf (f x)
-  | tinternal l => tinternal (go_list_pair l)
+  | tinternal l => tinternal (go_list_pair f l)
   end.
+
+                                                 
+
+Definition go_list_pair {A B C : Type} :=
+  let fix go_list_pair (f : B -> C) (lp : list (A * @labeled_tree A B)) :=
+      match lp with
+      | nil => nil
+      | (lab,subt) :: r => (lab, @map_leaves' A B C f subt) :: (go_list_pair f r)
+      end in go_list_pair.
 
 
 (* Now we've defined a bunch of functions, but that's just the
@@ -121,7 +126,7 @@ Inductive nonzero : @labeled_tree nat nat -> Prop :=
 
 (* Suppose we add one to all the leaves *)
 (* This transformation should preserve the nonzero property *)
-Lemma nonzero_succ_preserved :
+Lemma nonzero_succ_preserved_garden :
   forall t,
     nonzero t ->
     nonzero (map_leaves S t).
@@ -144,4 +149,75 @@ Proof.
       
       (* However, here we need to know about l0, which means we need better induction *)
 Abort.
+
+Definition labeled_tree_rect_full 
+  (A B : Type)
+    (P : @labeled_tree A B -> Type)
+    (Pl : list (A * @labeled_tree A B) -> Type)
+    (Hleaf : forall x, P (tleaf x))
+    (Hinternal : forall l, Pl l -> P (tinternal l))
+    (Hnil : Pl nil)
+    (Hcons : forall a f r, P f -> Pl r -> Pl ((a,f) :: r))
+    (t : @labeled_tree A B) : P t :=
+    let fix go t :=
+        let fix go_list_pair lp :=
+            match lp as _lp return Pl _lp with
+            | nil => Hnil
+            | (a,f) :: r => Hcons a f r (go f) (go_list_pair r)
+            end in
+        match t as _t return P _t with
+        | tleaf x => Hleaf x
+        | tinternal l => Hinternal l (go_list_pair l)
+        end in
+    go t.
+
+Definition labeled_tree_ind'
+  (A B : Type)
+    (P : @labeled_tree A B -> Prop)
+    (Hleaf : forall x, P (tleaf x))
+    (Hinternal : forall l, Forall P (map snd l) -> P (tinternal l))
+    (t : @labeled_tree A B) : P t.
   
+  eapply labeled_tree_rect_full.
+  eapply Hleaf.
+  eapply Hinternal.
+  econstructor.
+  intros. econstructor; eauto.
+Defined.
+
+Lemma nonzero_succ_preserved :
+  forall t,
+    nonzero t ->
+    nonzero (map_leaves' S t).
+Proof.
+  induction t using labeled_tree_ind'; intros.
+  - inversion H. subst.
+    simpl. econstructor; eauto.
+    
+  - inversion H0. subst.
+    simpl.
+    match goal with
+    | [ |- nonzero (tinternal (?X l)) ] =>
+      replace X with (@go_list_pair nat nat nat S)
+    end.
+    Focus 2.
+    unfold go_list_pair.
+    simpl.
+    
+    reflexivity.
+    
+    induction l; simpl. econstructor; eauto.
+    destruct a. simpl.
+    econstructor; eauto.
+    simpl.
+    simpl in H. inversion H. subst.
+    inversion H0. subst.
+    simpl in *.
+    inversion H3. subst.
+    specialize (H4 H7).
+    econstructor. eassumption.
+    assert (nonzero (tinternal (go_list_pair S l))).
+    eapply IHl; eauto. econstructor; eauto.
+    inversion H1. eauto.
+Qed.
+    
