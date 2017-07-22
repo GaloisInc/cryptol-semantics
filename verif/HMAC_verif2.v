@@ -36,20 +36,20 @@ Require Import Kinit_eval2.
 Definition hmac_model (hf : strictval -> strictval) (key msg : strictval) : option strictval := None. (* TODO *)
 
 Lemma eager_eval_bind_senvs :
-  forall l GE TE exp SE id,
-    (forall sv, exists v, eager_eval_expr GE TE (extend SE id sv) exp v) ->
-    exists vs,
-      Forall2 (fun se => eager_eval_expr GE TE se exp)
-              (bind_senvs SE (map (fun sv => [(id,sv)]) (map to_sval l))) vs.
+  forall l model GE TE exp SE id,
+    (Forall (fun x => has_type x byte) l) ->
+    (forall ev, has_type ev byte -> eager_eval_expr GE TE (extend SE id (to_sval ev)) exp (model ev)) ->
+    Forall2 (fun se => eager_eval_expr GE TE se exp)
+            (bind_senvs SE (map (fun sv => [(id,sv)]) (map to_sval l))) (map model l).
 Proof.
   induction l; intros.
-  eexists. econstructor; eauto.
-  edestruct IHl; eauto.
-  specialize (H (to_sval a)).
-  destruct H.
-  eexists.
-  unfold map. fold (map to_sval).
   econstructor; eauto.
+  
+  inversion H. subst.
+  eapply IHl in H4.
+  simpl. econstructor; [idtac | eassumption].
+  eapply H0. eauto.
+  intros. eapply H0. eauto.
 Qed.
 
 (* lemma for when the length of the key is the same as the length of the block *)
@@ -74,8 +74,6 @@ Proof.
   inversion H. subst.
   inversion H2. subst.
 
-  edestruct eager_eval_bind_senvs.
-  Focus 2.
   eexists; split.
 
   e. e. e. e. e. e. e. e. e.
@@ -114,7 +112,20 @@ Proof.
   rewrite list_of_strictval_of_strictlist. 
   reflexivity.
 
-  eapply H4. (* generated from lemma that probably needs strengthening *)
+  (* Begin model section *)
+  eapply eager_eval_bind_senvs. eassumption.
+  intros. e. e. e. g. unfold extend. simpl.
+  eapply wf_env_not_local; eauto. reflexivity.
+  e. e. e. e. e. e. g.
+  unfold extend. simpl.
+  eapply wf_env_not_local; eauto. reflexivity.
+  e. repeat e. repeat e. e. repeat e.
+  repeat e. simpl.
+  inversion H4. subst. simpl.
+  admit. (* build model here *)
+  (* End model section *)
+
+  
   
   e. g.
   e. e. e. e. g.
