@@ -1,4 +1,4 @@
-# cryptol-semantics
+# Cryptol Semantics [![Build Status](https://travis-ci.org/GaloisInc/cryptol-semantics.svg?branch=master)](https://travis-ci.org/GaloisInc/cryptol-semantics)
 ## Motivation
 The goal of this project is to provide a Coq model of the Semantics of the Cryptol language.
 
