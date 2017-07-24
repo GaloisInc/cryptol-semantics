@@ -122,6 +122,63 @@ Proof.
   e. repeat e. repeat e. e. repeat e.
   repeat e. simpl.
   inversion H4. subst. simpl.
+
+  unfold strictnum.
+
+  
+  Fixpoint xor_const_list (idx : Z) (const : Z) (l : list ext_val) : list ext_val :=
+    match l with
+    | nil => nil
+    | (ebit b) :: r =>
+      let r' := xor_const_list (idx +1) const r in
+      let b' := Z.testbit const idx in
+      (ebit (xorb b b')) :: r'
+    | _ => nil
+    end.
+
+  
+  Definition xor_const (const : Z) (e : ext_val) : ext_val :=
+    match e with
+    | eseq l => eseq (xor_const_list 0 const l)
+    | _ => ebit false
+    end.
+  
+  Lemma xor_num :
+    forall l z,
+      has_type (eseq l) byte ->
+      xor_sem (strict_list (map to_sval l)) (strict_list (strictval_from_bitv (@repr 8 z))) = Some (to_sval (xor_const z (eseq l))).
+  Proof.
+    intros.
+    destruct l; simpl in H; inversion H.
+    destruct l; simpl in H; inversion H.
+    destruct l; simpl in H; inversion H.
+    destruct l; simpl in H; inversion H.
+    destruct l; simpl in H; inversion H.
+    destruct l; simpl in H; inversion H.
+    destruct l; simpl in H; inversion H.
+    destruct l; simpl in H; inversion H.
+    destruct l; simpl in H; inversion H.
+    subst.
+    clear -H2.
+    repeat match goal with
+           | [ H : Forall _ _ |- _ ] => inversion H; clear H
+           end.
+    subst.
+    repeat match goal with
+           | [ H : has_type _ _ |- _ ] => inversion H; clear H
+           end.
+    subst.
+    unfold map. unfold to_sval. fold to_sval.
+    unfold xor_const.
+    unfold xor_const_list.
+    cbv.    
+
+    induction l; intros.
+    simpl.
+      has_type l 
+      length l = length l' ->
+      exists l0,
+        xor_sem (strict_list l) (strict_list l') = Some (
   admit. (* build model here *)
   (* End model section *)
 
