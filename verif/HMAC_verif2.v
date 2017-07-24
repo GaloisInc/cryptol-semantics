@@ -52,6 +52,56 @@ Proof.
   intros. eapply H0. eauto.
 Qed.
 
+Fixpoint xor_const_list (idx : Z) (const : Z) (l : list ext_val) : list ext_val :=
+  match l with
+  | nil => nil
+  | (ebit b) :: r =>
+    let r' := xor_const_list (idx +1) const r in
+    let b' := Z.testbit const idx in
+    (ebit (xorb b b')) :: r'
+  | _ => nil
+  end.
+
+
+Definition xor_const (const : Z) (e : ext_val) : ext_val :=
+  match e with
+  | eseq l => eseq (xor_const_list 0 const l)
+  | _ => ebit false
+  end.
+
+
+(* This is perhaps true, come back to it *)
+Lemma strictval_from_bitv_tail :
+  forall n z w,
+    (w >= n)%nat ->
+    0 <= z <= @max_unsigned w ->
+    strictval_from_bitv' w n (repr z) = strictval_from_bitv' n n (repr z).
+Proof.
+Admitted.
+
+(* we can tweak xor_const to make this true *)
+Lemma xor_num :
+  forall  l z,
+    has_type (eseq l) (tseq (Datatypes.length l) tbit) ->
+    xor_sem (strict_list (map to_sval l)) (strict_list (strictval_from_bitv (@repr (Datatypes.length l) z))) = Some (to_sval (xor_const z (eseq l))).
+Proof.
+  induction l; intros.
+  
+  simpl in H. simpl.
+  reflexivity.
+  assert (has_type (eseq l) (tseq (Datatypes.length l) tbit)).
+  {
+    inversion H. econstructor; eauto. inversion H2. auto.
+  }
+  inversion H. subst. inversion H3. subst.
+  inversion H4. subst.
+  simpl.
+  unfold strictval_from_bitv in IHl.
+  rewrite strictval_from_bitv_tail.
+  rewrite IHl. f_equal. f_equal.
+
+Admitted.
+
 (* lemma for when the length of the key is the same as the length of the block *)
 Lemma Hmac_eval_keylen_is_blocklength :
   forall (key : ext_val) keylen,
@@ -91,29 +141,35 @@ Proof.
   eapply strict_eval_val_to_val.
 
   e. e. e. e. e. e. e. e.
-  g. 
-  admit. (* not local *)
+  g. simpl. unfold extend. simpl.
+  eapply wf_env_not_local; eauto.
+  reflexivity.
+
   e.
   e. e. e.
   eapply eager_eval_global_var.
-  admit. (* not local *)
+  reflexivity.
   reflexivity.
   e. e. e. eapply eager_eval_global_var.
-  admit.
+  reflexivity.
   reflexivity.
 
-
+  
   eapply kinit_eval.
-  admit. exact H.
-  admit. repeat e. repeat e.
+  admit. (* extend env is wf_env *)
+  exact H.
+  admit. (* hash is a good hash in extended environment *)
+
+  repeat e. repeat e.
   repeat e. e.
   
   simpl.
   rewrite list_of_strictval_of_strictlist. 
   reflexivity.
-
+  
   (* Begin model section *)
   eapply eager_eval_bind_senvs. eassumption.
+  instantiate (1 := fun x => to_sval (xor_const 92 x)).  
   intros. e. e. e. g. unfold extend. simpl.
   eapply wf_env_not_local; eauto. reflexivity.
   e. e. e. e. e. e. g.
@@ -122,68 +178,14 @@ Proof.
   e. repeat e. repeat e. e. repeat e.
   repeat e. simpl.
   inversion H4. subst. simpl.
-
   unfold strictnum.
-
-  
-  Fixpoint xor_const_list (idx : Z) (const : Z) (l : list ext_val) : list ext_val :=
-    match l with
-    | nil => nil
-    | (ebit b) :: r =>
-      let r' := xor_const_list (idx +1) const r in
-      let b' := Z.testbit const idx in
-      (ebit (xorb b b')) :: r'
-    | _ => nil
-    end.
-
-  
-  Definition xor_const (const : Z) (e : ext_val) : ext_val :=
-    match e with
-    | eseq l => eseq (xor_const_list 0 const l)
-    | _ => ebit false
-    end.
-  
-  Lemma xor_num :
-    forall l z,
-      has_type (eseq l) byte ->
-      xor_sem (strict_list (map to_sval l)) (strict_list (strictval_from_bitv (@repr 8 z))) = Some (to_sval (xor_const z (eseq l))).
-  Proof.
-    intros.
-    destruct l; simpl in H; inversion H.
-    destruct l; simpl in H; inversion H.
-    destruct l; simpl in H; inversion H.
-    destruct l; simpl in H; inversion H.
-    destruct l; simpl in H; inversion H.
-    destruct l; simpl in H; inversion H.
-    destruct l; simpl in H; inversion H.
-    destruct l; simpl in H; inversion H.
-    destruct l; simpl in H; inversion H.
-    subst.
-    clear -H2.
-    repeat match goal with
-           | [ H : Forall _ _ |- _ ] => inversion H; clear H
-           end.
-    subst.
-    repeat match goal with
-           | [ H : has_type _ _ |- _ ] => inversion H; clear H
-           end.
-    subst.
-    unfold map. unfold to_sval. fold to_sval.
-    unfold xor_const.
-    unfold xor_const_list.
-    cbv.    
-
-    induction l; intros.
-    simpl.
-      has_type l 
-      length l = length l' ->
-      exists l0,
-        xor_sem (strict_list l) (strict_list l') = Some (
-  admit. (* build model here *)
+  unfold Z.to_nat. unfold Pos.to_nat.
+  unfold Pos.iter_op. unfold Init.Nat.add.
+  rewrite <- H5.
+  rewrite xor_num. reflexivity.
+  rewrite H5. eassumption.
   (* End model section *)
 
-  
-  
   e. g.
   e. e. e. e. g.
   simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
