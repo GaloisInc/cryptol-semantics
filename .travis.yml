@@ -1,0 +1,18 @@
+sudo: required
+language: c
+addons : 
+  apt : 
+    sources:
+      - sourceline : 'ppa:avsm/ppa' 
+    packages : 
+      - opam
+cache : 
+  - apt: true,
+  - directories: [ "$HOME/.opam" ]
+install : 
+    - opam init -y
+    - eval $(opam config env)
+    - opam config var root
+    - opam repo add coq-released https://coq.inria.fr/opam/released || true
+    - opam install -y ocamlfind ocamlgraph
+    - opam pin add coq -y `opam show --field=version coq`
