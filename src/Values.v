@@ -176,8 +176,7 @@ Qed.
 
 Lemma testbit_widen :
   forall wsbig wssmall zidx bv_z,
-    0 <= bv_z <= @max_unsigned wsbig ->
-    (wsbig > wssmall)%nat ->
+    (wsbig >= wssmall)%nat ->
     Z.of_nat wssmall > zidx ->
     testbit (@repr wsbig bv_z) zidx = testbit (@repr wssmall bv_z) zidx.
 Proof.
@@ -225,8 +224,8 @@ Proof.
         clear H0. f_equal.
         erewrite testbit_widen.
         instantiate (1 := ws).
-
-        Focus 4.
+        
+        Focus 3.
         eapply tobit_length in Heqo. rewrite Heqo.
         destruct l; simpl; auto. rewrite Zpos_P_of_succ_nat. omega.
         rewrite Zpos_P_of_succ_nat. rewrite app_length.
@@ -235,14 +234,8 @@ Proof.
         apply Zgt_pos_0.
         rewrite Zpos_P_of_succ_nat. rewrite Zpos_P_of_succ_nat.  omega. 
           
-        Focus 3. omega.
-        Focus 2. unfold max_unsigned. unfold modulus.
-        generalize (unsigned_range b0). intros.
-        unfold modulus in H.
-        destruct b. 
-        rewrite two_power_nat_S.
-        omega. rewrite two_power_nat_S.
-        omega.
+        Focus 2. omega.
+
         rewrite repr_mod.
         replace ((unsigned b0 + (if b then two_power_nat ws else 0)) mod modulus) with (unsigned b0).
         rewrite repr_unsigned. reflexivity.

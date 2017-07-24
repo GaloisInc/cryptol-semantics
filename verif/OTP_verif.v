@@ -1,5 +1,5 @@
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
+(*Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -52,7 +52,7 @@ Proof.
     econstructor; eauto.    
     econstructor. instantiate (1:= sbit b). econstructor.
     econstructor. (* Can't use 'e', needs to be the same environment as E but strict *)instantiate (1:= sclose id e0 TE e). econstructor. admit. 
-    econstructor. Print strict_eval_val. (* Same as above *) admit.
+    econstructor.  (* Same as above *) admit.
     econstructor.   
 
 

@@ -56,51 +56,151 @@ Fixpoint xor_const_list (idx : Z) (const : Z) (l : list ext_val) : list ext_val 
   match l with
   | nil => nil
   | (ebit b) :: r =>
-    let r' := xor_const_list (idx +1) const r in
+    let r' := xor_const_list (idx - 1) const r in
     let b' := Z.testbit const idx in
     (ebit (xorb b b')) :: r'
   | _ => nil
   end.
 
-
 Definition xor_const (const : Z) (e : ext_val) : ext_val :=
   match e with
-  | eseq l => eseq (xor_const_list 0 const l)
+  | eseq l => eseq (xor_const_list ((Z.of_nat ((Datatypes.length l)) - 1)) const l)
   | _ => ebit false
   end.
 
-
-(* This is perhaps true, come back to it *)
-Lemma strictval_from_bitv_tail :
-  forall n z w,
-    (w >= n)%nat ->
-    0 <= z <= @max_unsigned w ->
-    strictval_from_bitv' w n (repr z) = strictval_from_bitv' n n (repr z).
+Lemma strictval_from_bitv'_widen :
+  forall a b n z,
+    (a >= n)%nat ->
+    (b >= n)%nat ->
+    strictval_from_bitv' a n (@repr a z) = strictval_from_bitv' b n (@repr b z).
 Proof.
-Admitted.
+  induction n; intros.
+  simpl. reflexivity.
+
+  simpl.
+  f_equal. f_equal.
+  assert (Z.of_nat (S n) > Z.of_nat n).
+  simpl. rewrite Zpos_P_of_succ_nat. omega.
+  erewrite testbit_widen.
+  symmetry.
+  erewrite testbit_widen.
+  reflexivity.
+  eassumption.
+  assumption.
+  eassumption.
+  assumption.
+  eapply IHn; eauto; omega.
+Qed.
+
+Lemma strictval_from_bitv_norm :
+  forall x n z,
+    (x >= n)%nat ->
+    strictval_from_bitv' x n (@repr x z) = strictval_from_bitv' n n (@repr n z).
+Proof.
+  intros.
+  erewrite strictval_from_bitv'_widen; eauto.
+Qed.
+
+Lemma testbit_unsigned_repr :
+  forall w z idx,
+    Z.of_nat w > idx ->
+    Z.testbit (@unsigned w (@repr w z)) idx = Z.testbit z idx.
+Proof.
+  induction w; intros;
+    simpl.
+  * assert (idx < 0) by (simpl in H; omega).
+    destruct idx; simpl in H0; try omega.
+    remember (Zgt_pos_0 p) as HH. omega.
+    simpl. reflexivity.
+  * rewrite Z_mod_modulus_eq; try omega.
+    unfold modulus.
+    rewrite two_power_nat_equiv.
+    rewrite Z.mod_pow2_bits_low;
+      try omega.
+    reflexivity.
+Qed.
+
+Lemma length_cons :
+  forall {A} (e : A) l,
+    Datatypes.length (e :: l) = S (Datatypes.length l).
+Proof.
+  reflexivity.
+Qed.
+
+Lemma map_cons :
+  forall {A B} (f : A -> B) (e : A) l,
+    map f (e :: l) = (f e) :: (map f l).
+Proof.
+  reflexivity.
+Qed.
+
+Lemma succ_nat_pred :
+  forall n,
+    (Z.of_nat (S n)) - 1 = Z.of_nat n.
+Proof.
+  intros.
+  repeat rewrite Nat2Z.inj_succ.
+  omega.
+Qed.
+
 
 (* we can tweak xor_const to make this true *)
 Lemma xor_num :
-  forall  l z,
+  forall  l n z,
     has_type (eseq l) (tseq (Datatypes.length l) tbit) ->
-    xor_sem (strict_list (map to_sval l)) (strict_list (strictval_from_bitv (@repr (Datatypes.length l) z))) = Some (to_sval (xor_const z (eseq l))).
+    n = Datatypes.length l ->
+    xor_sem (strict_list (map to_sval l)) (strict_list (strictval_from_bitv (@repr n z))) = Some (to_sval (xor_const z (eseq l))).
 Proof.
   induction l; intros.
-  
-  simpl in H. simpl.
-  reflexivity.
+  simpl in *.
+  unfold strictval_from_bitv. subst n.
+  simpl. reflexivity.
+
   assert (has_type (eseq l) (tseq (Datatypes.length l) tbit)).
   {
-    inversion H. econstructor; eauto. inversion H2. auto.
+    inversion H. econstructor; eauto. inversion H3. auto.
+    
   }
-  inversion H. subst. inversion H3. subst.
+  inversion H. subst.
   inversion H4. subst.
-  simpl.
-  unfold strictval_from_bitv in IHl.
-  rewrite strictval_from_bitv_tail.
-  rewrite IHl. f_equal. f_equal.
+  inversion H3. subst.
+  
+  unfold strictval_from_bitv in *.
+  unfold strictval_from_bitv'. fold strictval_from_bitv'.
+  repeat rewrite length_cons.
+  repeat rewrite map_cons.
+  unfold strict_list. fold strict_list.
+  unfold to_sval at 1.   unfold xor_sem. fold xor_sem.
+  unfold strictval_from_bitv'. fold strictval_from_bitv'.
+  unfold strict_list. fold strict_list.
+  
+  repeat rewrite strictval_from_bitv_norm by (eauto; try omega).
+  repeat match goal with
+         | [ |- context[(Z.of_nat (?X - 0))] ] => 
+           replace (X - 0)%nat with X by omega
+         end.
+  rewrite IHl; eauto.
+  f_equal.
+  unfold xor_const. rewrite length_cons.
+  unfold xor_const_list.
+  fold xor_const_list.
+  unfold to_sval.
+  unfold strict_list.
+  fold strict_list.
+  fold to_sval.
+  rewrite map_cons.
+  unfold strict_list.
+  fold strict_list.
+  repeat rewrite succ_nat_pred.
+  f_equal.
+  
+  unfold xorb.
+  unfold testbit.
+  rewrite testbit_unsigned_repr by (simpl; rewrite Zpos_P_of_succ_nat; omega).
+  destruct b; try reflexivity.
+  destruct (Z.testbit z (Z.of_nat (Datatypes.length l))); reflexivity.
+Qed.
 
-Admitted.
 
 (* lemma for when the length of the key is the same as the length of the block *)
 Lemma Hmac_eval_keylen_is_blocklength :
@@ -184,6 +284,7 @@ Proof.
   rewrite <- H5.
   rewrite xor_num. reflexivity.
   rewrite H5. eassumption.
+  reflexivity.
   (* End model section *)
 
   e. g.
