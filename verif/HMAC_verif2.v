@@ -166,19 +166,11 @@ Proof.
   
   admit. (* append *)
 
+  
   (* evaluate the hash function *)
   admit.
 
   (* our result matches the model *)
-  admit.
-
-  e. e. e. e. g. unfold extend. simpl.
-  admit. e. e. e. e. e. e. g.
-  unfold extend. simpl. admit.
-  e. e. e. repeat e.
-  e.
-  reflexivity.
-  e. e. e. e. e. e. e. e.
   admit.
   
 Admitted.
