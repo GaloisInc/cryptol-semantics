@@ -33,7 +33,7 @@ Require Import Kinit_eval2.
 (* As well, we can simply write HMAC over ext_val *)
 
 (* Model of hmac, given model of hash *)
-Definition hmac_model (hf : strictval -> strictval) (key msg : strictval) : option strictval := None. (* TODO *)
+Definition hmac_model (hf : ext_val -> ext_val) (key msg : ext_val) : option ext_val := None. (* TODO *)
 
 Lemma eager_eval_bind_senvs :
   forall l model GE TE exp SE id,
@@ -202,6 +202,32 @@ Proof.
 Qed.
 
 
+Lemma Forall_app :
+  forall {A} (l1 l2 : list A) P,
+    Forall P (l1 ++ l2) <-> Forall P l1 /\ Forall P l2.
+Proof.
+  induction l1; intros; split; intros; simpl; auto.
+  destruct H. auto.
+  simpl in H. inversion H. subst.
+  rewrite IHl1 in H3.
+  destruct H3. split.
+  econstructor; eauto.
+  eauto.
+  destruct H. inversion H. econstructor; eauto.
+  rewrite IHl1. split; eauto.
+Qed.
+
+Lemma Forall_map :
+  forall {A} (l : list A) P f,
+    Forall P l ->
+    (forall x, P x -> P (f x)) ->
+    Forall P (map f l).
+Proof.
+  induction 1; intros; simpl; auto.
+Qed.
+
+
+
 (* lemma for when the length of the key is the same as the length of the block *)
 Lemma Hmac_eval_keylen_is_blocklength :
   forall (key : ext_val) keylen,
@@ -213,13 +239,13 @@ Lemma Hmac_eval_keylen_is_blocklength :
         forall msg msglen unused,
           has_type msg (bytestream msglen) ->
           exists v,
-            eager_eval_expr GE TE SE (apply (tapply (EVar hmac) ((typenum (Z.of_nat msglen)) :: (typenum (Z.of_nat keylen)) :: (typenum unused) :: (typenum (Z.of_nat keylen)) :: nil)) (h :: h :: h :: (EValue (to_val key)) :: (EValue (to_val msg)) :: nil)) v /\ hmac_model hf (to_sval key) (to_sval msg) = Some v.
+            eager_eval_expr GE TE SE (apply (tapply (EVar hmac) ((typenum (Z.of_nat msglen)) :: (typenum (Z.of_nat keylen)) :: (typenum unused) :: (typenum (Z.of_nat keylen)) :: nil)) (h :: h :: h :: (EValue (to_val key)) :: (EValue (to_val msg)) :: nil)) (to_sval v) /\ hmac_model hf key msg = Some v.
 Proof.
   intros.
   init_globals ge.
   abstract_globals ge.
-  edestruct good_hash_eval; eauto.
-  do 3 destruct H3.
+  edestruct good_hash_complete_eval; eauto.
+  do 4 destruct H3.
 
   inversion H. subst.
   inversion H2. subst.
@@ -277,13 +303,13 @@ Proof.
   eapply wf_env_not_local; eauto. reflexivity.
   e. repeat e. repeat e. e. repeat e.
   repeat e. simpl.
-  inversion H4. subst. simpl.
+  inversion H5. subst. simpl.
   unfold strictnum.
   unfold Z.to_nat. unfold Pos.to_nat.
   unfold Pos.iter_op. unfold Init.Nat.add.
-  rewrite <- H5.
+  rewrite <- H6.
   rewrite xor_num. reflexivity.
-  rewrite H5. eassumption.
+  rewrite H6. eassumption.
   reflexivity.
   (* End model section *)
 
@@ -305,7 +331,24 @@ Proof.
   rewrite list_of_strictval_of_strictlist. 
   reflexivity.
 
-  admit. (* come back here *)
+
+  eapply eager_eval_bind_senvs. eassumption.
+  instantiate (1 := fun x => to_sval (xor_const 54 x)).  
+  intros. e. e. e. g. unfold extend. simpl.
+  eapply wf_env_not_local; eauto. reflexivity.
+  e. e. e. e. e. e. g.
+  unfold extend. simpl.
+  eapply wf_env_not_local; eauto. reflexivity.
+  e. repeat e. repeat e. e. repeat e.
+  repeat e. simpl.
+  inversion H5. subst. simpl.
+  unfold strictnum.
+  unfold Z.to_nat. unfold Pos.to_nat.
+  unfold Pos.iter_op. unfold Init.Nat.add.
+  rewrite <- H6.
+  rewrite xor_num. reflexivity.
+  rewrite H6. eassumption.
+  reflexivity.
 
   e. e. e. repeat e.
   repeat e.
@@ -314,8 +357,25 @@ Proof.
   rewrite append_strict_list. 
   reflexivity.
 
-  (* This is about the hash function *)
-  admit. (* come back here *)
+  eapply global_extends_eager_eval.
+  Focus 2.
+
+  (* TODO: get to_sval to the outside *)
+
+  replace (map (fun x3 : ext_val => to_sval (xor_const 54 x3)) l) with
+      (map to_sval (map (fun x3 => xor_const 54 x3) l)) by (rewrite list_map_compose; reflexivity).
+  rewrite <- list_append_map.
+  remember (app (map (fun x3 : ext_val => xor_const 54 x3) l) l0) as ll.
+  replace (strict_list (map to_sval ll)) with (to_sval (eseq ll)) by (reflexivity).
+  subst ll.
+  eapply H4.
+  econstructor.
+
+  rewrite Forall_app. split; auto.
+  eapply Forall_map. eassumption.
+  admit. (* xor_const preserves type *)
+
+  admit. (* extended global environment *)
 
   e. repeat e.
   e. e. e.

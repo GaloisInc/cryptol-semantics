@@ -25,12 +25,12 @@ Require Import HMAC.
 
 
 (* TODO: is this the right definition of a good hash? *)
-Definition good_hash (h : Expr) (ge : genv) (T : tenv) (SE : senv) (hf : strictval -> strictval) : Prop :=
+Definition good_hash (h : Expr) (ge : genv) (T : tenv) (SE : senv) (hf : ext_val -> ext_val) : Prop :=
   (exists id exp TE E,
       eager_eval_expr ge T SE h (sclose id exp TE E) /\ (* can evaluate the hash to a closure *)
       forall n v,
-        sn_bits n v ->
-        eager_eval_expr ge TE (extend E id v) exp (hf v) (* can evaluate that closure applied to a value *)
+        has_type v (bytestream n) ->
+        eager_eval_expr ge TE (extend E id (to_sval v)) exp (to_sval (hf v)) (* can evaluate that closure applied to a value *)
   ).
 
 Lemma good_hash_eval :
@@ -40,8 +40,38 @@ Lemma good_hash_eval :
       eager_eval_expr GE T SE h (sclose id exp TE E).
 Proof.
   intros. unfold good_hash in *.
-  do 5 destruct H. eauto.
+  do 5 destruct H.
+  eauto.
 Qed.
+
+Lemma good_hash_complete_eval :
+  forall h GE T SE hf,
+    good_hash h GE T SE hf ->
+    exists id exp TE E,
+      eager_eval_expr GE T SE h (sclose id exp TE E) /\
+      forall n v,
+        has_type v (bytestream n) ->
+        eager_eval_expr GE TE (extend E id (to_sval v)) exp (to_sval (hf v)).
+Proof.
+  intros. unfold good_hash in *.
+  do 5 destruct H.
+  repeat eexists. eauto. eauto.
+Qed.
+
+Definition global_extends (ge GE : genv) : Prop :=
+  forall id v,
+    ge id = Some v ->
+    GE id = Some v.
+
+Lemma global_extends_eager_eval :
+  forall ge GE,
+    global_extends ge GE ->
+    forall TE SE expr v,
+      eager_eval_expr ge TE SE expr v ->
+      eager_eval_expr GE TE SE expr v.
+Proof.
+Admitted. (* needs crazy induction *)
+  
 
 (* lowercase is concrete, uppercase is abstract *)
 (* wf_env lets this proof be used over a variety of environments that meet the proper constraints *)
