@@ -358,7 +358,6 @@ Proof.
   reflexivity.
 
   eapply global_extends_eager_eval.
-  Focus 2.
 
   (* TODO: get to_sval to the outside *)
 
@@ -380,12 +379,21 @@ Proof.
   e. repeat e.
   e. e. e.
 
-  admit. (* split things, unused is not unused *)
+  (* We need a fact about the hash function that shows its result type *)
+  (* We need a fact about splitting things of the right type *)
+  simpl.
+  remember (hf (eseq (map (fun x3 : ext_val => xor_const 54 x3) l ++ l0))) as hv1.
+  
+  assert (exists n, has_type hv1 (tseq n tbit)) by admit.
+  destruct H5.
+
+  
+  admit. (* split things *)
 
   e. repeat e. repeat e.
   
   admit. (* append *)
-
+  
   
   (* evaluate the hash function *)
   admit.

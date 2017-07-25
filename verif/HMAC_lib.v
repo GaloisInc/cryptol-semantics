@@ -25,12 +25,14 @@ Require Import HMAC.
 
 
 (* TODO: is this the right definition of a good hash? *)
+(* *)
 Definition good_hash (h : Expr) (ge : genv) (T : tenv) (SE : senv) (hf : ext_val -> ext_val) : Prop :=
   (exists id exp TE E,
       eager_eval_expr ge T SE h (sclose id exp TE E) /\ (* can evaluate the hash to a closure *)
       forall n v,
         has_type v (bytestream n) ->
-        eager_eval_expr ge TE (extend E id (to_sval v)) exp (to_sval (hf v)) (* can evaluate that closure applied to a value *)
+        eager_eval_expr ge TE (extend E id (to_sval v)) exp (to_sval (hf v)) /\ exists n, has_type (hf v) (tseq n tbit)
+  
   ).
 
 Lemma good_hash_eval :
@@ -51,11 +53,11 @@ Lemma good_hash_complete_eval :
       eager_eval_expr GE T SE h (sclose id exp TE E) /\
       forall n v,
         has_type v (bytestream n) ->
-        eager_eval_expr GE TE (extend E id (to_sval v)) exp (to_sval (hf v)).
+        eager_eval_expr GE TE (extend E id (to_sval v)) exp (to_sval (hf v)) /\ exists n, has_type (hf v) (tseq n tbit).
 Proof.
   intros. unfold good_hash in *.
   do 5 destruct H.
-  repeat eexists. eauto. eauto.
+  do 4 eexists. split; eauto.
 Qed.
 
 Definition global_extends (ge GE : genv) : Prop :=
@@ -64,12 +66,13 @@ Definition global_extends (ge GE : genv) : Prop :=
     GE id = Some v.
 
 Lemma global_extends_eager_eval :
-  forall ge GE,
-    global_extends ge GE ->
-    forall TE SE expr v,
+    forall v ge TE SE expr,
       eager_eval_expr ge TE SE expr v ->
-      eager_eval_expr GE TE SE expr v.
+      forall GE,
+        global_extends ge GE ->
+        eager_eval_expr GE TE SE expr v.
 Proof.
+  
 Admitted. (* needs crazy induction *)
   
 

@@ -209,3 +209,143 @@ Definition sempty : senv := fun _ => None.
 
 Definition tenv := ident -> option Tval.
 Definition tempty : tenv := fun _ => None.
+
+(* Induction principles *)
+(* Exprs *)
+
+
+Definition Expr_mut_rect_full 
+           (P : Expr -> Type)
+           (Pl : list Expr -> Type)
+           (Pllm : list (list Match) -> Type)
+           (Plm : list Match -> Type)
+           (Pm : Match -> Type)
+           (Ppl : list (string * Expr) -> Type)
+           (Pd : Declaration -> Type)
+           (Pld : list Declaration -> Type)
+           (Pdd : DeclDef -> Type)
+           (Pg : DeclGroup -> Type)
+           (Pldg : list DeclGroup -> Type)
+           (HEBuiltin : forall (b : builtin) (l : list Expr), Pl l -> P (EBuiltin b l))
+           (HEList : forall l : list Expr, Pl l -> P (EList l))
+           (HETuple : forall l : list Expr, Pl l -> P (ETuple l))
+           (HERec : forall l : list (string * Expr), Ppl l -> P (ERec l))
+           (HESel : forall e : Expr, P e -> forall s : Selector, P (ESel e s))
+           (HEIf : forall cond : Expr, P cond -> forall t : Expr, P t -> forall f4 : Expr, P f4 -> P (EIf cond t f4))
+           (HEComp : forall e : Expr, P e -> forall l : list (list Match), Pllm l -> P (EComp e l))
+           (HEVar : forall id : ident, P (EVar id))
+           (HETAbs : forall (id : ident) (e : Expr), P e -> P (ETAbs id e))
+           (HETApp : forall e : Expr, P e -> forall t : Expr, P t -> P (ETApp e t))
+           (HETyp : forall t : Typ, P (ETyp t))
+           (HEApp : forall f10 : Expr, P f10 -> forall v : Expr, P v -> P (EApp f10 v))
+           (HEAbs : forall (id : ident) (e : Expr), P e -> P (EAbs id e))
+           (HEWhere : forall e : Expr, P e -> forall l : list DeclGroup, Pldg l -> P (EWhere e l))
+           (HEAppend : forall e1 : Expr, P e1 -> forall e2 : Expr, P e2 -> P (EAppend e1 e2))
+           (HEHead : forall e : Expr, P e -> P (EHead e))
+           (HEDrop : forall (n : nat) (e : Expr), P e -> P (EDrop n e))
+           (HETake : forall (n : nat) (e : Expr), P e -> P (ETake n e))
+           (HEValue : forall v : val, P (EValue v))
+           (HELiftUnary : forall (b : builtin) (targs : list Expr) (e : Expr), P e -> Pl targs -> P (ELiftUnary b targs e))
+           (HELiftBinary : forall (b : builtin) (targs : list Expr) (e1 : Expr),
+               P e1 -> forall e2 : Expr, P e2 -> forall env1 env2 : ident -> option val, Pl targs -> P (ELiftBinary b targs e1 e2 env1 env2))
+           (HECompImp : forall e : Expr, P e -> forall (n : nat) (llm : list (list Match)), Pllm llm -> P (ECompImp e n llm))
+           (HmFrom : forall id e, P e -> Pm (From id e))
+           (HmMlet : forall d, Pd d -> Pm (MLet d))
+           (HNonRecursive : forall d, Pd d -> Pg (NonRecursive d))
+           (HRecursive : forall ld, Pld ld -> Pg (Recursive ld))
+           (HPddPrim : Pdd DPrim)
+           (HPddDexpr : forall e, P e -> Pdd (DExpr e))
+           (HPddPd : forall id dd, Pdd dd -> Pd (Decl id dd))
+           (Hnil : Pl nil)
+           (HCons : forall f r, P f -> Pl r -> Pl (f :: r))
+           (HPnil : Ppl nil)
+           (HPcons : forall s f r, P f -> Ppl r -> Ppl ((s,f) :: r))
+           (HPlmnil : Plm nil)
+           (HPllmnil : Pllm nil)
+           (HPlmcons : forall m l, Pm m -> Plm l -> Plm (m :: l))
+           (Hpllmcons : forall ms ls, Plm ms -> Pllm ls -> Pllm (ms :: ls))
+           (HPldnil : Pld nil)
+           (HPldcons : forall d ds, Pd d -> Pld ds -> Pld (d :: ds))
+           (Hldgnil : Pldg nil)
+           (Hldgcons : forall f r, Pg f -> Pldg r -> Pldg (f :: r))
+           (e : Expr) : 
+    P e :=
+  let fix go e :=
+      let fix go_list l :=
+          match l as _l return Pl _l with
+          | nil => Hnil
+          | f :: r => HCons f r (go f) (go_list r)
+          end in
+      let fix go_list_pair lp :=
+          match lp as _lp return Ppl _lp with
+          | nil => HPnil
+          | (s,f) :: r => HPcons s f r (go f) (go_list_pair r)
+          end in
+      let fix go_decldef dd :=
+          match dd as _dd return Pdd _dd with
+          | DExpr e => HPddDexpr e (go e)
+          | DPrim => HPddPrim
+          end in
+      let fix go_declaration d :=
+          match d as _d return Pd _d with
+          | Decl id dd => HPddPd id dd (go_decldef dd)
+          end in
+      let fix go_list_declaration ld :=
+          match ld as _ld return Pld _ld with
+          | nil => HPldnil
+          | (f :: r) => HPldcons f r (go_declaration f) (go_list_declaration r)
+          end in
+      let fix go_declgroup dg :=
+          match dg as _dg return Pg _dg with
+          | NonRecursive d => HNonRecursive d (go_declaration d)
+          | Recursive ld => HRecursive ld (go_list_declaration ld)
+          end in
+      let fix go_list_declgroup ldg :=
+          match ldg as _ldg return Pldg _ldg with
+          | nil => Hldgnil
+          | f :: r => Hldgcons f r (go_declgroup f) (go_list_declgroup r)
+          end in
+      let fix go_match m :=
+          match m as _m return Pm _m with
+          | From id e => HmFrom id e (go e)
+          | MLet d => HmMlet d (go_declaration d) 
+          end in
+      let fix go_list_match lm :=
+          match lm as _lm return Plm _lm with
+          | nil => HPlmnil
+          | m :: rm => HPlmcons m rm (go_match m) (go_list_match rm)
+          end in
+      let fix go_list_list_match llm :=
+          match llm as _llm return Pllm _llm with
+          | nil => HPllmnil
+          | ms :: ls => Hpllmcons ms ls (go_list_match ms) (go_list_list_match ls)
+          end in
+      match e with
+      | EBuiltin bi le => HEBuiltin bi le (go_list le)
+      | EList le => HEList le (go_list le)
+      | ETuple le => HETuple le (go_list le)
+      | ERec lp => HERec lp (go_list_pair lp)
+      | ESel e s => HESel e (go e) s 
+      | EIf eif ethen eelse => HEIf eif (go eif) ethen (go ethen) eelse (go eelse)
+      | EComp e llm => HEComp e (go e) llm (go_list_list_match llm)
+      | EVar id => HEVar id 
+      | ETAbs id e => HETAbs id e (go e)
+      | ETApp e1 e2 => HETApp e1 (go e1) e2 (go e2) 
+      | ETyp t => HETyp t
+      | EApp e1 e2 => HEApp e1 (go e1) e2 (go e2)
+      | EAbs id e => HEAbs id e (go e)
+      | EWhere e ld => HEWhere e (go e) ld (go_list_declgroup ld) 
+      | EAppend e1 e2 => HEAppend e1 (go e1) e2 (go e2)
+      | EHead e => HEHead e (go e)
+      | EDrop n e => HEDrop n e (go e)
+      | ETake n e => HETake n e (go e)
+      | EValue v => HEValue v  (* TODO: might want to be able to recurse over the value here *)
+      | ELiftUnary bi le e => HELiftUnary bi le e (go e) (go_list le) 
+      | ELiftBinary bi targs l r lE rE => HELiftBinary bi targs l (go l) r (go r) lE rE (go_list targs)
+      | ECompImp e n llm => HECompImp e (go e) n llm (go_list_list_match llm)
+      end in go e.
+
+
+(* strictvals *)
+
+(* vals *)
