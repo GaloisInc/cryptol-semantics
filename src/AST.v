@@ -74,6 +74,54 @@ Inductive Typ :=
 | TRec (l : list (string * Typ))
 .
 
+Definition Typ_rect_full
+           (P : Typ -> Type)
+           (Pl : list Typ -> Type)
+           (Plp : list (string * Typ) -> Type)
+           (HTCon : forall tc l, Pl l -> P (TCon tc l))
+           (HTVar : forall tv, P (TVar tv))
+           (HTUser : forall id l t, Pl l -> P t -> P (TUser id l t))
+           (HTRec : forall l, Plp l -> P (TRec l))
+           (HPlnil : Pl nil)
+           (HPlcons : forall f r, P f -> Pl r -> Pl (f :: r))
+           (HPlpnil : Plp nil)
+           (HPlpcons : forall s f r, P f -> Plp r -> Plp ((s,f)::r))
+           (t : Typ) : P t :=
+  let fix go t :=
+      let fix go_list l :=
+          match l as _l return Pl _l with
+          | nil => HPlnil
+          | f :: r => HPlcons f r (go f) (go_list r)
+          end in
+      let fix go_list_pair lp :=
+          match lp as _lp return Plp _lp with
+          | nil => HPlpnil
+          | (s,f) :: r => HPlpcons s f r (go f) (go_list_pair r)
+          end in
+      match t with
+      | TCon tc l => HTCon tc l (go_list l)
+      | TVar tv => HTVar tv
+      | TUser id l t => HTUser id l t (go_list l) (go t)
+      | TRec lp => HTRec lp (go_list_pair lp)
+      end in
+  go t.
+
+Definition Typ_ind_useful
+           (P : Typ -> Prop)
+           (HTCon : forall tc l, Forall P l -> P (TCon tc l))
+           (HTVar : forall tv, P (TVar tv))
+           (HTUser : forall id l t, Forall P l -> P t -> P (TUser id l t))
+           (HTRec : forall l, Forall P (map snd l) -> P (TRec l))
+           (t : Typ) : P t.
+Proof.
+  eapply Typ_rect_full.
+  eapply HTCon.
+  eapply HTVar.
+  eapply HTUser.
+  eapply HTRec.
+  all: intros; econstructor; eauto.
+Defined.
+
 (* Type level values *)
 Inductive Tval :=
 | trec (l : list (string * Tval)) (* record *)
@@ -270,20 +318,20 @@ Definition Expr_mut_rect_full
            (Hldgcons : forall f r, Pg f -> Pldg r -> Pldg (f :: r))
            (e : Expr) : 
     P e :=
-  let fix go e :=
+  let fix go_expr e :=
       let fix go_list l :=
           match l as _l return Pl _l with
           | nil => Hnil
-          | f :: r => HCons f r (go f) (go_list r)
+          | f :: r => HCons f r (go_expr f) (go_list r)
           end in
       let fix go_list_pair lp :=
           match lp as _lp return Ppl _lp with
           | nil => HPnil
-          | (s,f) :: r => HPcons s f r (go f) (go_list_pair r)
+          | (s,f) :: r => HPcons s f r (go_expr f) (go_list_pair r)
           end in
       let fix go_decldef dd :=
           match dd as _dd return Pdd _dd with
-          | DExpr e => HPddDexpr e (go e)
+          | DExpr e => HPddDexpr e (go_expr e)
           | DPrim => HPddPrim
           end in
       let fix go_declaration d :=
@@ -307,7 +355,7 @@ Definition Expr_mut_rect_full
           end in
       let fix go_match m :=
           match m as _m return Pm _m with
-          | From id e => HmFrom id e (go e)
+          | From id e => HmFrom id e (go_expr e)
           | MLet d => HmMlet d (go_declaration d) 
           end in
       let fix go_list_match lm :=
@@ -325,25 +373,25 @@ Definition Expr_mut_rect_full
       | EList le => HEList le (go_list le)
       | ETuple le => HETuple le (go_list le)
       | ERec lp => HERec lp (go_list_pair lp)
-      | ESel e s => HESel e (go e) s 
-      | EIf eif ethen eelse => HEIf eif (go eif) ethen (go ethen) eelse (go eelse)
-      | EComp e llm => HEComp e (go e) llm (go_list_list_match llm)
+      | ESel e s => HESel e (go_expr e) s 
+      | EIf eif ethen eelse => HEIf eif (go_expr eif) ethen (go_expr ethen) eelse (go_expr eelse)
+      | EComp e llm => HEComp e (go_expr e) llm (go_list_list_match llm)
       | EVar id => HEVar id 
-      | ETAbs id e => HETAbs id e (go e)
-      | ETApp e1 e2 => HETApp e1 (go e1) e2 (go e2) 
+      | ETAbs id e => HETAbs id e (go_expr e)
+      | ETApp e1 e2 => HETApp e1 (go_expr e1) e2 (go_expr e2) 
       | ETyp t => HETyp t
-      | EApp e1 e2 => HEApp e1 (go e1) e2 (go e2)
-      | EAbs id e => HEAbs id e (go e)
-      | EWhere e ld => HEWhere e (go e) ld (go_list_declgroup ld) 
-      | EAppend e1 e2 => HEAppend e1 (go e1) e2 (go e2)
-      | EHead e => HEHead e (go e)
-      | EDrop n e => HEDrop n e (go e)
-      | ETake n e => HETake n e (go e)
-      | EValue v => HEValue v  (* TODO: might want to be able to recurse over the value here *)
-      | ELiftUnary bi le e => HELiftUnary bi le e (go e) (go_list le) 
-      | ELiftBinary bi targs l r lE rE => HELiftBinary bi targs l (go l) r (go r) lE rE (go_list targs)
-      | ECompImp e n llm => HECompImp e (go e) n llm (go_list_list_match llm)
-      end in go e.
+      | EApp e1 e2 => HEApp e1 (go_expr e1) e2 (go_expr e2)
+      | EAbs id e => HEAbs id e (go_expr e)
+      | EWhere e ld => HEWhere e (go_expr e) ld (go_list_declgroup ld) 
+      | EAppend e1 e2 => HEAppend e1 (go_expr e1) e2 (go_expr e2)
+      | EHead e => HEHead e (go_expr e)
+      | EDrop n e => HEDrop n e (go_expr e)
+      | ETake n e => HETake n e (go_expr e)
+      | EValue v => HEValue v 
+      | ELiftUnary bi le e => HELiftUnary bi le e (go_expr e) (go_list le) 
+      | ELiftBinary bi targs l r lE rE => HELiftBinary bi targs l (go_expr l) r (go_expr r) lE rE (go_list targs)
+      | ECompImp e n llm => HECompImp e (go_expr e) n llm (go_list_list_match llm)
+      end in go_expr e.
 
 
 (* strictvals *)

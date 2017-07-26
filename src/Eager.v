@@ -456,12 +456,12 @@ Proof.
 Qed.
 
 Lemma eager_to_strict_lazy_type :
-  forall t ge TE tv,
+  forall t tv ge TE,
     eager_eval_type ge TE t tv ->
     eval_type ge TE t tv.
 Proof.
-  
-  (* weird Forall2 induction needed *)
+  induction t using Typ_ind_useful; intros.
+
 Admitted.
 
 Lemma eager_to_strict_lazy :
