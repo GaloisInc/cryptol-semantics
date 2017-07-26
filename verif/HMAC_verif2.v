@@ -144,7 +144,6 @@ Proof.
 Qed.
 
 
-(* we can tweak xor_const to make this true *)
 Lemma xor_num :
   forall  l n z,
     has_type (eseq l) (tseq (Datatypes.length l) tbit) ->
@@ -226,7 +225,60 @@ Proof.
   induction 1; intros; simpl; auto.
 Qed.
 
+Lemma ext_val_list_of_strictval :
+  forall ev n t,
+    has_type ev (tseq n t) ->
+    exists l,
+      list_of_strictval (to_sval ev) = Some l.
+Proof.
+  intros.
+  destruct ev; try solve [inversion H].
+  simpl. rewrite list_of_strictval_of_strictlist.
+  eauto.
+Qed.
 
+Lemma xor_const_list_length_pres :
+  forall l z n,
+    Forall (fun b => has_type b tbit) l ->
+    Datatypes.length (xor_const_list z n l) = Datatypes.length l.
+Proof.
+  induction l; intros;
+    simpl. reflexivity.
+  destruct a; simpl. rewrite IHl; eauto.
+  inversion H. eauto.
+  inversion H. inversion H2.
+  inversion H. inversion H2.
+  inversion H. inversion H2.
+Qed.
+
+
+Lemma xor_const_byte :
+  forall ev,
+    has_type ev byte ->
+    forall n,
+      has_type (xor_const n ev) byte.
+Proof.
+  intros.
+  inversion H.
+  subst.
+  do 9 (destruct l; simpl in H0; try omega).
+  clear H0.
+  repeat match goal with
+         | [ H : Forall _ _ |- _ ] => inversion H; clear H; subst
+         end.
+  repeat match goal with
+         | [ H : has_type _ tbit |- _ ] => inversion H; clear H
+         end; subst.
+  
+  unfold xor_const.
+  unfold byte.
+  replace 8%nat with (Datatypes.length [ebit b6, ebit b5, ebit b4, ebit b3, ebit b2, ebit b1, ebit b0, ebit b]) by (simpl; auto).
+  erewrite <- xor_const_list_length_pres.
+  econstructor.
+  simpl.
+  repeat econstructor; eauto.
+  repeat econstructor; eauto.
+Qed.
 
 (* lemma for when the length of the key is the same as the length of the block *)
 Lemma Hmac_eval_keylen_is_blocklength :
@@ -249,7 +301,14 @@ Proof.
 
   inversion H. subst.
   inversion H2. subst.
-
+  remember (hf (eseq (map (fun x3 : ext_val => xor_const 54 x3) l ++ l0))) as hv1.
+  assert (HT : exists n, has_type hv1 (tseq n tbit)) by admit. (* TODO: redo good hash defn slightly *)
+  destruct HT as [n0'].
+  rename H5 into HT.
+  edestruct ext_val_list_of_strictval; try eassumption.
+  rename H5 into Hlres.
+  
+  
   eexists; split.
 
   e. e. e. e. e. e. e. e. e.
@@ -359,8 +418,6 @@ Proof.
 
   eapply global_extends_eager_eval.
 
-  (* TODO: get to_sval to the outside *)
-
   replace (map (fun x3 : ext_val => to_sval (xor_const 54 x3)) l) with
       (map to_sval (map (fun x3 => xor_const 54 x3) l)) by (rewrite list_map_compose; reflexivity).
   rewrite <- list_append_map.
@@ -372,27 +429,21 @@ Proof.
 
   rewrite Forall_app. split; auto.
   eapply Forall_map. eassumption.
-  admit. (* xor_const preserves type *)
+
+  intros. eapply xor_const_byte; eauto.
 
   admit. (* extended global environment *)
 
   e. repeat e.
   e. e. e.
 
-  (* We need a fact about the hash function that shows its result type *)
-  (* We need a fact about splitting things of the right type *)
   simpl.
-  remember (hf (eseq (map (fun x3 : ext_val => xor_const 54 x3) l ++ l0))) as hv1.
+  rewrite <- Heqhv1.
+  rewrite Hlres. reflexivity.
   
-  assert (exists n, has_type hv1 (tseq n tbit)) by admit.
-  destruct H5.
-
-  
-  admit. (* split things *)
-
   e. repeat e. repeat e.
-  
-  admit. (* append *)
+
+  rewrite append_strict_list. reflexivity.
   
   
   (* evaluate the hash function *)
