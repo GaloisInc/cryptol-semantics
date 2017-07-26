@@ -229,7 +229,7 @@ Lemma ext_val_list_of_strictval :
   forall ev n t,
     has_type ev (tseq n t) ->
     exists l,
-      list_of_strictval (to_sval ev) = Some l.
+      list_of_strictval (to_sval ev) = Some (map to_sval l).
 Proof.
   intros.
   destruct ev; try solve [inversion H].
@@ -278,6 +278,39 @@ Proof.
   simpl.
   repeat econstructor; eauto.
   repeat econstructor; eauto.
+Qed.
+
+Lemma firstn_map :
+  forall {A B: Type} (f : A -> B)  n l,
+    firstn n (map f l) = map f (firstn n l).
+Proof.
+  induction n; intros.
+  simpl. reflexivity.
+  simpl. destruct l; simpl. reflexivity.
+  f_equal. eapply IHn.
+Qed.
+
+
+Lemma get_each_n_map_commutes :
+  forall {A B : Type} (f : A -> B) n l,
+    get_each_n n (map f l) = map (map f) (get_each_n n l).
+Proof.
+  (* This is true, fun one though *)
+Admitted.
+
+Lemma strict_list_map_to_sval :
+  forall l,
+    strict_list (map to_sval l) = to_sval (eseq l).
+Proof.
+  induction l; intros; simpl; auto.
+Qed.
+
+Lemma map_strict_list_map_map_to_sval :
+  forall l,
+    map strict_list (map (map to_sval) l) = map to_sval (map eseq l).
+Proof.
+  induction l; intros; simpl; auto.
+  f_equal. assumption.
 Qed.
 
 (* lemma for when the length of the key is the same as the length of the block *)
@@ -444,10 +477,28 @@ Proof.
   e. repeat e. repeat e.
 
   rewrite append_strict_list. reflexivity.
-  
-  
+  eapply global_extends_eager_eval.
+
+  (* get to_sval out to outside *)
   (* evaluate the hash function *)
-  admit.
+
+  replace (map (fun x4 : ext_val => to_sval (xor_const 92 x4)) l) with
+  (map to_sval (map (xor_const 92) l)) by
+      (clear -l; 
+       induction l; simpl; auto; f_equal; eapply IHl; eauto).
+    
+  rewrite get_each_n_map_commutes.
+
+
+  rewrite map_strict_list_map_map_to_sval.
+  rewrite <- list_append_map.
+  rewrite strict_list_map_to_sval.
+
+  assert (exists n, has_type (eseq (map (xor_const 92) l ++ map eseq (get_each_n (Pos.to_nat 8) x3))) (bytestream n)) by admit.
+  destruct H5.
+  eapply H4 in H5. destruct H5. eapply H5.
+  (* global extends *)
+  admit.  
 
   (* our result matches the model *)
   admit.
