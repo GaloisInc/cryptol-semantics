@@ -59,8 +59,6 @@ Definition hmac_model (hf : ext_val -> ext_val) (key msg : ext_val) :=
     end.
   
 
-
-
 (* TODO: is this the right definition of a good hash? *)
 (* *)
 Definition good_hash (h : Expr) (ge : genv) (T : tenv) (SE : senv) (hf : ext_val -> ext_val) : Prop :=
@@ -103,7 +101,7 @@ Definition global_extends (ge GE : genv) : Prop :=
     GE id = Some v.
 
 Lemma global_extends_eager_eval :
-    forall v ge TE SE expr,
+    forall expr v ge TE SE,
       eager_eval_expr ge TE SE expr v ->
       forall GE,
         global_extends ge GE ->
