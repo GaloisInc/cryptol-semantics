@@ -88,23 +88,48 @@ Check HMAC.
 (* msg : Message *)
 (* result has type Bv c *)
 
-
-Definition bv_to_extval {w : nat} (bv : Bvector w) : ext_val := eseq nil.
+Fixpoint bv_to_extval' {w : nat} (bv : Bvector w) : list ext_val :=
+  match bv with
+  | Vector.nil => nil
+  | Vector.cons b _ r => ebit b :: bv_to_extval' r
+  end.
   
+Definition bv_to_extval {w : nat} (bv : Bvector w) : ext_val :=
+  let bits := bv_to_extval' bv in
+  let bytes := get_each_n 8 bits in
+  eseq (map eseq bytes).
 
+Lemma split_append :
+  forall a (x : Bvector a) b (y : Bvector b),
+    splitVector a b (Vector.append x y) = (x,y).
+Proof.
+  induction x; intros.
+  simpl. reflexivity.
+  simpl. rewrite IHx. reflexivity.
+Qed.
   
 (* I think this is the right theorem *)
 Theorem HMAC_equiv (MSGT : Set) :
   forall keylen msglen key msg,
     has_type key (bytestream keylen) ->
     has_type msg (bytestream msglen) ->
-    forall c p hf res H iv (splitAndPad : MSGT -> list (Bvector (b c p))) fpad opad ipad,
+    forall c p hf res Hash iv (splitAndPad : MSGT -> list (Bvector (b c p))) fpad opad ipad,
       hmac_model hf key msg = Some res ->
-      @correct_model_hash c p hf (H iv) ->
+      @correct_model_hash c p hf (Hash iv) ->
       forall nmsg nkey nres,
         eseq (map bv_to_extval (splitAndPad nmsg)) = msg ->
         bv_to_extval nkey = key ->
         bv_to_extval nres = res ->
-        @HMAC c p H iv MSGT splitAndPad fpad opad ipad nkey nmsg = nres.
+        @HMAC c p Hash iv MSGT splitAndPad fpad opad ipad nkey nmsg = nres.
 Proof.
+  intros.
+  unfold HMAC.
+  unfold HMAC_2K.
+  unfold GHMAC_2K.
+  unfold hash_words.
+  unfold h_star.
+  rewrite split_append.
+  simpl. unfold app_fpad.
+  
+  
 Admitted.
