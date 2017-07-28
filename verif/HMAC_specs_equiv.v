@@ -2,6 +2,7 @@ Require Import List.
 Import ListNotations.
 
 Require Import Bvector.
+Require Import Program. (* dependent destruction *)
 Require Import Coqlib.
 
 Require Import Utils.
@@ -44,6 +45,7 @@ Proof.
     eauto.
 Qed.
 
+(*
 (* Haha lol *)
 Lemma false_set :
   forall (A : Set),
@@ -62,6 +64,7 @@ Definition to_bv {n : nat} (e : ext_val) (p : has_type e (tseq n tbit)) : Bvecto
   eapply false_set.
   eapply to_bvector_succeeds in p. destruct p. congruence.
 Defined.
+ *)
 
 Lemma bytestream_type :
   forall l t,
@@ -124,8 +127,23 @@ Lemma get_each_n_head :
     n <> O ->
     get_each_n n (l ++ l') = [l] ++ get_each_n n l'.
 Proof.
+  (* This is morally true, might need to massage preconditions a tiny bit to make it actually true, *)
+  (* and the induction to prove it is going to be very annoying *)
 Admitted.
 
+
+Lemma zero_width_is_nil :
+  forall {A} (v : Vector.t A O),
+    v = []%vector.
+Proof.  
+  intros.
+  dependent destruction v.
+  reflexivity.
+Qed.
+
+(* In order to prove these two parts, we're going to need a way to say that Bvectors have certain values *)
+(* that match with the values given to xor_const. *)
+(* we should probably abstract over the numbers in the future, but for now we could leave them as concrete *)
 
 Lemma hmac_first_part_equiv :
   forall keylen w ekey nkey opad,
@@ -140,7 +158,7 @@ Proof.
     simpl. destruct nkey; simpl in H0; try congruence.
     Focus 2. unfold bv_to_extval in H0. inversion H0.
     unfold bv_to_extval'.
-    assert (BVxor 0 []%vector opad = []%vector) by admit.
+    assert (BVxor 0 []%vector opad = []%vector) by (eapply zero_width_is_nil).
     rewrite H1. simpl. reflexivity.
 
   * inversion H.
