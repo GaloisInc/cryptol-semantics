@@ -141,13 +141,44 @@ Proof.
   reflexivity.
 Qed.
 
-(* In order to prove these two parts, we're going to need a way to say that Bvectors have certain values *)
-(* that match with the values given to xor_const. *)
-(* we should probably abstract over the numbers in the future, but for now we could leave them as concrete *)
+Inductive same_bits' (n : Z) : list bool -> Prop :=
+| same_bits_nil :
+    same_bits' n nil
+| same_bits_cons :
+    forall b7 b6 b5 b4 b3 b2 b1 b0 l,
+      same_bits' n l ->
+      b7 = Z.testbit n 7 ->
+      b6 = Z.testbit n 6 ->
+      b5 = Z.testbit n 5 ->
+      b4 = Z.testbit n 4 ->
+      b3 = Z.testbit n 3 ->
+      b2 = Z.testbit n 2 ->
+      b1 = Z.testbit n 1 ->
+      b0 = Z.testbit n 0 ->
+      same_bits' n (b7 :: b6 :: b5 :: b4 :: b3 :: b2 :: b1 :: b0 :: l).
 
-Definition same_bits {w : nat} (n : Z) (bv : Bvector w) : Prop := False.
+
+Definition same_bits {w : nat} (n : Z) (bv : Bvector w) : Prop := same_bits' n (Vector.to_list bv).
+
+Lemma vector_to_list_cons :
+  forall {A : Type} f {w : nat} (r : Vector.t A w),
+    Vector.to_list (f :: r)%vector = f :: (Vector.to_list r).
+Proof.
+  simpl; auto.
+Qed.
+
+Lemma vector_to_list_append :
+  forall {A : Type} {w' : nat} (f : Vector.t A w') {w : nat} (r : Vector.t A w),
+    Vector.to_list (Vector.append f r)%vector = (Vector.to_list f) ++ (Vector.to_list r).
+Proof.
+  induction f; intros.
+  simpl. reflexivity.
+  unfold Vector.append. fold (@Vector.append A).
+  repeat rewrite vector_to_list_cons.
+  simpl. rewrite <- IHf.
+  reflexivity.
+Qed.
   
-
 Lemma same_bits_testbit :
   forall {w} n b7 b6 b5 b4 b3 b2 b1 b0 (bv : Bvector w),
     same_bits n (Vector.append [b7;b6;b5;b4;b3;b2;b1;b0]%vector bv) ->
@@ -161,7 +192,14 @@ Lemma same_bits_testbit :
     b0 = Z.testbit n 0 /\
     same_bits n bv.
 Proof.
-Admitted.
+  intros. unfold same_bits in H.
+  rewrite vector_to_list_append in H.
+  unfold Vector.append in H.
+  simpl in H.
+  inversion H. subst.
+  repeat (split; [solve [auto] | idtac]).
+  eassumption.
+Qed.
 
 Lemma BVxor_cons :
   forall n b b' v v',
@@ -170,6 +208,7 @@ Proof.
   simpl. auto.
 Qed.
 
+(* This proof is ugly, but it works *)
 Lemma hmac_first_part_equiv :
   forall keylen w ekey nkey opad n,
     has_type (eseq ekey) (bytestream keylen) ->
