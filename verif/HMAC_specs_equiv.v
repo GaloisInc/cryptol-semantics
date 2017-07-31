@@ -145,34 +145,59 @@ Qed.
 (* that match with the values given to xor_const. *)
 (* we should probably abstract over the numbers in the future, but for now we could leave them as concrete *)
 
+Definition same_bits {w : nat} (n : Z) (bv : Bvector w) : Prop := False.
+  
+
+Lemma same_bits_testbit :
+  forall {w} n b7 b6 b5 b4 b3 b2 b1 b0 (bv : Bvector w),
+    same_bits n (Vector.append [b7;b6;b5;b4;b3;b2;b1;b0]%vector bv) ->
+    b7 = Z.testbit n 7 /\
+    b6 = Z.testbit n 6 /\
+    b5 = Z.testbit n 5 /\
+    b4 = Z.testbit n 4 /\
+    b3 = Z.testbit n 3 /\
+    b2 = Z.testbit n 2 /\
+    b1 = Z.testbit n 1 /\
+    b0 = Z.testbit n 0 /\
+    same_bits n bv.
+Proof.
+Admitted.
+
+Lemma BVxor_cons :
+  forall n b b' v v',
+    BVxor (S n) (b :: v)%vector (b' :: v')%vector = ((xorb b b') :: (BVxor n v v'))%vector.
+Proof.
+  simpl. auto.
+Qed.
+
 Lemma hmac_first_part_equiv :
-  forall keylen w ekey nkey opad,
+  forall keylen w ekey nkey opad n,
     has_type (eseq ekey) (bytestream keylen) ->
     bv_to_extval nkey = eseq ekey ->
-    (* opad = 92 *)
-    map eseq (get_each_n 8 (bv_to_extval' (BVxor w nkey opad))) = map (xor_const 92) ekey.
+    same_bits n opad ->
+    map eseq (get_each_n 8 (bv_to_extval' (BVxor w nkey opad))) = map (xor_const n) ekey.
 Proof.
   induction keylen; intros.
   * unfold bytestream in H.
-    inversion H. subst. destruct ekey; simpl in H2; try congruence.
+    inversion H. subst. destruct ekey; simpl in H3; try congruence.
     simpl. destruct nkey; simpl in H0; try congruence.
     Focus 2. unfold bv_to_extval in H0. inversion H0.
     unfold bv_to_extval'.
     assert (BVxor 0 []%vector opad = []%vector) by (eapply zero_width_is_nil).
-    rewrite H1. simpl. reflexivity.
+    rewrite H2. simpl. reflexivity.
 
   * inversion H.
-    destruct ekey; simpl in H2; try congruence.
+    destruct ekey; simpl in H3; try congruence.
     destruct nkey.
     unfold bv_to_extval in H0.
     unfold bv_to_extval' in H0. simpl in H0. inversion H0.
-    inversion H3.
+    inversion H4.
     unfold bv_to_extval in H0.
     unfold bv_to_extval' in H0.
-    fold (@bv_to_extval' n) in H0.
-    inversion H7. subst.
-    do 9 (destruct l1; simpl in H9; try congruence).
-    clear H9.
+    fold (@bv_to_extval' n0) in H0.
+    inversion H8. subst.
+    do 9 (destruct l1; simpl in H10; try congruence).
+    clear H10.
     repeat match goal with
            | [ H : Forall (fun x => has_type x tbit) _ |- _ ] => inversion H; clear H
            end;
@@ -184,10 +209,10 @@ Proof.
     do 7 (destruct nkey; [ subst;
     unfold bv_to_extval in H0;
     unfold bv_to_extval' in H0; simpl in H0; inversion H0;
-    inversion H3 | 
+    inversion H4 | 
                      unfold bv_to_extval in H0;
                      unfold bv_to_extval' in H0;
-                     fold (@bv_to_extval' n) in H0 ]).
+                     fold (@bv_to_extval' n0) in H0 ]).
     remember (bv_to_extval' nkey) as extval_key.
 
     replace ((ebit h :: ebit h0 :: ebit h1 :: ebit h2 :: ebit h3 :: ebit h4 :: ebit h5 :: ebit h6 :: extval_key)) with
@@ -197,22 +222,55 @@ Proof.
     simpl in H0.
     inversion H0. subst.
     clear H0.
-    inversion H2.
+    inversion H3.
     unfold length.
 
-    eapply is_seq in H8.
+    eapply is_seq in H9.
     replace (tseq (length (map eseq (get_each_n 8 (bv_to_extval' nkey)))) byte) with
-        (bytestream (length (map eseq (get_each_n 8 (bv_to_extval' nkey))))) in H8 by reflexivity.
+        (bytestream (length (map eseq (get_each_n 8 (bv_to_extval' nkey))))) in H9 by reflexivity.
 
-    rewrite H1 in H8.
-    eapply IHkeylen in H8.
-
-    Focus 2. 
-    unfold bv_to_extval. reflexivity.
-
-    (* This needs destruction of opad along with nkey *)
+    rewrite H2 in H9.
+    do 8 (dependent destruction opad).
+    replace (h :: h0 :: h1 :: h2 :: h3 :: h4 :: h5 :: h6 :: opad)%vector with
+        (Vector.append (h :: h0 :: h1 :: h2 :: h3 :: h4 :: h5 :: h6 :: [])%vector opad) in H1 by (simpl; auto).
+    eapply same_bits_testbit in H1.
+    repeat match goal with
+           | [ H : _ /\ _ |- _ ] => destruct H
+           end.
     
-Admitted.
+    eapply IHkeylen in H9;
+      [ idtac |
+        unfold bv_to_extval; reflexivity
+        | eassumption ].
+    
+    repeat rewrite BVxor_cons.
+    unfold bv_to_extval'.
+    fold (@bv_to_extval' n0).
+    replace (ebit (xorb b6 h)
+        :: ebit (xorb b5 h0)
+           :: ebit (xorb b4 h1)
+              :: ebit (xorb b3 h2)
+                 :: ebit (xorb b2 h3)
+                 :: ebit (xorb b1 h4) :: ebit (xorb b0 h5) :: ebit (xorb b h6) :: bv_to_extval' (BVxor n0 nkey opad)) with
+        ((ebit (xorb b6 h)
+        :: ebit (xorb b5 h0)
+           :: ebit (xorb b4 h1)
+              :: ebit (xorb b3 h2)
+                 :: ebit (xorb b2 h3)
+                 :: ebit (xorb b1 h4) :: ebit (xorb b0 h5) :: ebit (xorb b h6) :: nil) ++ bv_to_extval' (BVxor n0 nkey opad)) by (simpl; auto).
+    
+    erewrite get_each_n_head by (simpl; auto).
+    unfold app.
+    repeat rewrite map_cons.
+    erewrite <- H9.
+    f_equal.
+
+    unfold xor_const.
+    unfold xor_const_list.
+    unfold length.
+    f_equal.
+    subst. reflexivity.
+Qed.
 
 
 Lemma hmac_second_part_equiv :
@@ -220,7 +278,9 @@ Lemma hmac_second_part_equiv :
     correct_model_hash hf HASH ->
     forall ekey emsg l,
       hf (eseq (map (fun x : ext_val => xor_const 54 x) ekey ++ emsg)) = eseq l ->
-      forall (fpad : Bvector c -> Bvector p) ipad nkey msgl,
+      forall ipad,
+        same_bits 54 ipad ->
+      forall (fpad : Bvector c -> Bvector p) nkey msgl,
         bv_to_extval' (Vector.append (HASH (BVxor (b c p) nkey ipad :: msgl)) (fpad (HASH (BVxor (b c p) nkey ipad :: msgl)))) = l.
 Proof.
 Admitted.
@@ -237,8 +297,8 @@ Theorem HMAC_equiv (MSGT : Set) :
         eseq (map bv_to_extval (splitAndPad nmsg)) = msg ->
         bv_to_extval nkey = key ->
         forall opad ipad,
-          (* opad = 92 = 0x5C *)
-          (* ipad = 54 = 0x36 *)
+          same_bits 92 opad ->
+          same_bits 54 ipad ->
         bv_to_extval (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg) = res.
 Proof.
   intros.
