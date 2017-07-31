@@ -121,15 +121,80 @@ Proof.
   simpl. rewrite IHx. reflexivity.
 Qed.
 
+Lemma firstn_app :
+  forall {A} (l : list A) l',
+    firstn (length l) (l ++ l') = l.
+Proof.
+  induction l; intros; simpl; auto.
+  f_equal. eapply IHl.
+Qed.
+
+Lemma list_drop_app :
+  forall {A} (l : list A) l',
+    list_drop (length l) (l ++ l') = l'.
+Proof.
+  induction l; intros; simpl; auto.
+Qed.
+
+Lemma list_drop_length :
+  forall {A} (l : list A) n,
+    (length (list_drop n l) <= length l)%nat.
+Proof.
+  induction l; intros.
+  simpl. destruct n; simpl; omega.
+  simpl. destruct n; simpl. omega.
+  specialize (IHl n). omega.
+Qed.
+
+Lemma get_each_n'_fuel :
+  forall {A} n (l : list A) fuel tot,
+    (n >= length l)%nat ->
+    (fuel >= length l)%nat ->
+    tot <> O ->
+    get_each_n' fuel tot l = get_each_n' (length l) tot l.
+Proof.
+  induction n; intros.
+  destruct l; simpl in *; destruct fuel; try reflexivity; omega.
+  destruct l. simpl in *.
+  destruct fuel; reflexivity.
+  assert (n >= length l)%nat by (simpl in *; omega).
+  simpl. destruct tot; try omega.
+  simpl. destruct fuel; simpl in *; try omega.
+  f_equal.
+  assert (tot = O \/ tot <> O) by omega.
+  destruct H3. subst. simpl.
+  eapply IHn; eauto; omega.
+  assert (length (list_drop tot l) <= length l)%nat by (eapply list_drop_length; eauto).
+  erewrite IHn; try omega.
+  symmetry.
+  eapply IHn; omega.
+Qed.
+    
+
 Lemma get_each_n_head :
   forall {A : Type} (l l' : list A) n,
     n = length l ->
     n <> O ->
     get_each_n n (l ++ l') = [l] ++ get_each_n n l'.
 Proof.
-  (* This is morally true, might need to massage preconditions a tiny bit to make it actually true, *)
-  (* and the induction to prove it is going to be very annoying *)
-Admitted.
+  induction l; intros.
+  simpl in *. congruence.
+  simpl in *.
+  destruct n; inversion H.
+  assert (n = O \/ n <> O) by omega.
+  destruct H1. subst. 
+  destruct l; simpl in H1; try omega.
+  simpl. unfold get_each_n. simpl. reflexivity.
+  unfold get_each_n. simpl.
+  rewrite firstn_app.
+  rewrite list_drop_app.
+  f_equal.
+  unfold get_each_n in IHl.
+  eapply get_each_n'_fuel; eauto.
+  
+  rewrite app_length.
+  omega.
+Qed.
 
 
 Lemma zero_width_is_nil :
@@ -315,13 +380,16 @@ Qed.
 Lemma hmac_second_part_equiv :
   forall c p hf HASH,
     correct_model_hash hf HASH ->
-    forall ekey emsg l,
-      hf (eseq (map (fun x : ext_val => xor_const 54 x) ekey ++ emsg)) = eseq l ->
+    forall ekey emsg l n,
+      hf (eseq (map (fun x : ext_val => xor_const n x) ekey ++ emsg)) = eseq l ->
       forall ipad,
-        same_bits 54 ipad ->
+        same_bits n ipad ->
       forall (fpad : Bvector c -> Bvector p) nkey msgl,
         bv_to_extval' (Vector.append (HASH (BVxor (b c p) nkey ipad :: msgl)) (fpad (HASH (BVxor (b c p) nkey ipad :: msgl)))) = l.
 Proof.
+  intros.
+  SearchAbout correct_model_hash.
+  
 Admitted.
 
 (* I think this is the right theorem *)
@@ -329,7 +397,7 @@ Theorem HMAC_equiv (MSGT : Set) :
   forall keylen msglen key msg,
     has_type key (bytestream keylen) ->
     has_type msg (bytestream msglen) ->
-    forall c p hf res HashBlock iv (splitAndPad : MSGT -> list (Bvector (b c p))) fpad,
+    forall c p hf res HashBlock iv (splitAndPad : MSGT -> list (Bvector (b c p))),
       hmac_model hf key msg = Some res ->
       @correct_model_hash c p hf (h_star p HashBlock iv) ->
       forall nmsg nkey,
@@ -338,7 +406,8 @@ Theorem HMAC_equiv (MSGT : Set) :
         forall opad ipad,
           same_bits 92 opad ->
           same_bits 54 ipad ->
-        bv_to_extval (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg) = res.
+          forall fpad,
+            bv_to_extval (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg) = res.
 Proof.
   intros.
   unfold HMAC.
@@ -355,14 +424,12 @@ Proof.
 
   match goal with
   | [ |- bv_to_extval (HashBlock (HashBlock iv ?V1) ?V2) = _ ] =>
-    replace (HashBlock (HashBlock iv V1) V2) with (h_star p HashBlock iv (V1 :: V2 :: nil))
+    replace (HashBlock (HashBlock iv V1) V2) with (h_star p HashBlock iv (V1 :: V2 :: nil)) by (unfold h_star; simpl; reflexivity)
   end.
-  Focus 2. unfold h_star. simpl. reflexivity.
   match goal with
   | [ |- context[(h_star p HashBlock (HashBlock iv ?V1) ?V2)] ] =>
-    replace (h_star p HashBlock (HashBlock iv V1) V2) with (h_star p HashBlock iv (V1 :: V2))
+    replace (h_star p HashBlock (HashBlock iv V1) V2) with (h_star p HashBlock iv (V1 :: V2)) by (simpl; reflexivity)
   end.
-  Focus 2. simpl. reflexivity.
   remember (h_star p HashBlock iv) as HASH.
 
   rename l into ekey.
