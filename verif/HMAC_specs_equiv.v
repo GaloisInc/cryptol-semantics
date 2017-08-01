@@ -104,14 +104,15 @@ Fixpoint eappend (l : list ext_val) : ext_val :=
 (* TODO *)
 Definition correct_model_hash {c p : nat} (hf : ext_val -> ext_val) (h : list (Bvector (b c p)) -> Bvector c) : Prop := True. 
 
+
 (* We need this to be true about the hash function *)  
 Axiom correct_hash_commutes :
   forall {c p : nat} hf (HASH : list (Bvector (b c p)) -> Bvector c),
     correct_model_hash hf HASH ->
     forall l,
       bv_to_extval (HASH l) = hf (eappend (map bv_to_extval l)).
-
-
+  
+  
 Lemma split_append :
   forall a (x : Bvector a) b (y : Bvector b),
     splitVector a b (Vector.append x y) = (x,y).
@@ -376,21 +377,45 @@ Proof.
     subst. reflexivity.
 Qed.
 
+(* Roughly what we need *)
+Lemma fpad_hash :
+  forall {w w'} (x : Bvector w) (fpad : Bvector w -> Bvector w'),
+    bv_to_extval' (Vector.append x (fpad x)) = bv_to_extval' x.
+Proof.
+Admitted.
+
+Lemma bv_to_extval'_append :
+  forall {w w'} (x : Bvector w) (y : Bvector w'),
+    bv_to_extval' (Vector.append x y) = (bv_to_extval' x) ++ (bv_to_extval' y).
+Proof.
+  induction x; intros.
+  simpl; auto.
+  simpl. f_equal. auto.
+Qed.
 
 Lemma hmac_second_part_equiv :
-  forall c p hf HASH,
-    correct_model_hash hf HASH ->
-    forall ekey emsg l n,
-      hf (eseq (map (fun x : ext_val => xor_const n x) ekey ++ emsg)) = eseq l ->
-      forall ipad,
-        same_bits n ipad ->
-      forall (fpad : Bvector c -> Bvector p) nkey msgl,
-        bv_to_extval' (Vector.append (HASH (BVxor (b c p) nkey ipad :: msgl)) (fpad (HASH (BVxor (b c p) nkey ipad :: msgl)))) = l.
+  forall c hf ekey emsg l n,
+    hf (eseq (map (fun x : ext_val => xor_const n x) ekey ++ emsg)) = eseq l ->
+    forall ipad,
+      same_bits n ipad ->
+      forall nkey msgl,
+        hf (eappend (map (fun (bv : Bvector (b c 0)) => eseq (map eseq (get_each_n 8 (bv_to_extval' bv))))
+                         (BVxor (b c 0) nkey ipad :: msgl))) =
+        eseq (map eseq (get_each_n 8 l)).
 Proof.
   intros.
-  SearchAbout correct_model_hash.
   
 Admitted.
+
+Lemma eseq_eq :
+  forall x y a b,
+    x = y ->
+    eseq a = eseq b ->
+    eseq (x ++ a) = eseq (y ++ b).
+Proof.
+  intros. inversion H0. congruence.
+Qed.
+
 
 (* I think this is the right theorem *)
 Theorem HMAC_equiv (MSGT : Set) :
@@ -406,6 +431,8 @@ Theorem HMAC_equiv (MSGT : Set) :
         forall opad ipad,
           same_bits 92 opad ->
           same_bits 54 ipad ->
+          p = O ->
+          Nat.divide 8 c ->
           forall fpad,
             bv_to_extval (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg) = res.
 Proof.
@@ -436,13 +463,27 @@ Proof.
   rename l0 into emsg.
   erewrite correct_hash_commutes by eassumption.
   f_equal. simpl.
-  f_equal. rewrite app_nil_r.
-  f_equal.
+
+  eapply eseq_eq.
+
   eapply hmac_first_part_equiv; eauto.
+  rewrite bv_to_extval'_append.
+  unfold Pos.to_nat. simpl.
+  rewrite app_nil_r.
+  
+  assert (Hc : b c p = c) by (subst p; unfold b; omega).
+  assert (Hbv : Bvector (b c p) = Bvector c) by congruence.
+  subst p. simpl.
+  match goal with
+  | [ |- context[fpad ?X] ] => replace (fpad X) with (Bnil) by (erewrite zero_width_is_nil; eauto)
+  end.
+  
+  simpl. rewrite app_nil_r.
+  
+  eapply correct_hash_commutes in H2.
+  unfold bv_to_extval in H2.
+  erewrite H2. clear H2.
 
-  f_equal. f_equal.
-
-  remember (splitAndPad nmsg) as msgl.
   
   eapply hmac_second_part_equiv; eauto.
 Qed.
