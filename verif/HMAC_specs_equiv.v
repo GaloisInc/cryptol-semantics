@@ -377,13 +377,6 @@ Proof.
     subst. reflexivity.
 Qed.
 
-(* Roughly what we need *)
-Lemma fpad_hash :
-  forall {w w'} (x : Bvector w) (fpad : Bvector w -> Bvector w'),
-    bv_to_extval' (Vector.append x (fpad x)) = bv_to_extval' x.
-Proof.
-Admitted.
-
 Lemma bv_to_extval'_append :
   forall {w w'} (x : Bvector w) (y : Bvector w'),
     bv_to_extval' (Vector.append x y) = (bv_to_extval' x) ++ (bv_to_extval' y).
@@ -393,19 +386,102 @@ Proof.
   simpl. f_equal. auto.
 Qed.
 
+Lemma eappend_map_eseq :
+  forall {A} f (l : list A),
+    eappend (map (fun x => eseq (f x)) l) = eseq (concat (map f l)).
+Proof.
+  induction l; intros.
+  simpl. reflexivity.
+  simpl. rewrite IHl. reflexivity.
+Qed.
+
+Lemma xor_const_bytestream :
+  forall len l,
+    has_type (eseq l) (bytestream len) ->
+    forall n,
+      has_type (eseq (map (xor_const n) l)) (bytestream len).
+Proof.
+Admitted.
+
+Lemma has_type_length :
+  forall l len t,
+    has_type (eseq l) (tseq len t) ->
+    length l = len.
+Proof.
+  induction l; intros.
+  inversion H. subst. auto.
+  inversion H. subst. inversion H2.
+  subst. simpl. f_equal.
+Qed.
+
+(* We'll need this about the hash function *)
+Lemma hash_bits_or_bytes :
+  forall hf x y,
+    hf (eseq x) = eseq y ->
+    hf (eseq (map eseq (get_each_n 8 x))) = eseq (map eseq (get_each_n 8 y)).
+Proof.
+Admitted.
+
+Lemma get_each_n_length_divides :
+  forall {A} n (l : list A) l',
+    Nat.divide n (length l) ->
+    get_each_n n (l ++ l') = (get_each_n n l) ++ (get_each_n n l').
+Proof.
+  (* this is true *)
+Admitted.
+
+
 Lemma hmac_second_part_equiv :
-  forall c hf ekey emsg l n,
+  forall c hf ekey emsg l n keylen,
     hf (eseq (map (fun x : ext_val => xor_const n x) ekey ++ emsg)) = eseq l ->
     forall ipad,
       same_bits n ipad ->
       forall nkey msgl,
+        map bv_to_extval msgl = emsg ->
+        bv_to_extval nkey = eseq ekey ->
+        has_type (eseq ekey) (bytestream keylen) ->
+        Nat.divide 8 keylen ->
         hf (eappend (map (fun (bv : Bvector (b c 0)) => eseq (map eseq (get_each_n 8 (bv_to_extval' bv))))
                          (BVxor (b c 0) nkey ipad :: msgl))) =
         eseq (map eseq (get_each_n 8 l)).
 Proof.
   intros.
+  simpl.
+  subst emsg.  
+  rewrite eappend_map_eseq.
+  erewrite hmac_first_part_equiv; eauto.
+
+  unfold bv_to_extval in *.
+  replace (fun x => xor_const n x) with (xor_const n) in * by (auto).
+  (* This has the wrong type *)
+  (* HERE *)
+Admitted.  
+(*  remember H as Hhf. clear HeqHhf.
   
+  erewrite get_each_n_length_divides by (erewrite map_length; congruence).
+  rewrite map_app.
+  f_equal.
+
+
+  
+  eapply hash_bits_or_bytes in H. (* not proven yet *)
+  erewrite <- H. 
+  
+  f_equal. 
+  f_equal. simpl.
+  
+  unfold bytestream in H3.
+  remember H3 as HType. clear HeqHType.
+  eapply has_type_length in H3.
+
+  assert (keylen = 8 * c)%nat by admit.
+  (* this is true *)
+
+  Focus 2. 
+  
+    
 Admitted.
+ *)
 
 Lemma eseq_eq :
   forall x y a b,
@@ -416,8 +492,34 @@ Proof.
   intros. inversion H0. congruence.
 Qed.
 
+Lemma eappend_eseq_append :
+  forall l1 l2,
+    eseq (l1 ++ l2) = eappend ((eseq l1)::(eseq l2)::nil).
+Proof.
+  intros. simpl. rewrite app_nil_r. reflexivity.
+Qed.
+
+Lemma second_part :
+  forall c p hf HASH,
+    @correct_model_hash c p hf HASH ->
+    forall n ipad,
+      same_bits n ipad ->
+      forall ekey nkey,
+        bv_to_extval nkey = eseq ekey ->
+        forall msgl emsg,
+          (map bv_to_extval msgl) = emsg ->
+          eseq (bv_to_extval' (HASH (BVxor (b c p) nkey ipad :: msgl))) =
+          hf (eseq (map (xor_const n) ekey ++ emsg)).
+Proof.
+  intros.
+  subst emsg.
+  erewrite eappend_eseq_append.
+
+Admitted.
 
 (* I think this is the right theorem *)
+(* Caveat: this assumes everything is bytes, no padding *)
+(* It would be quite nice to verify padding *)
 Theorem HMAC_equiv (MSGT : Set) :
   forall keylen msglen key msg,
     has_type key (bytestream keylen) ->
@@ -432,7 +534,7 @@ Theorem HMAC_equiv (MSGT : Set) :
           same_bits 92 opad ->
           same_bits 54 ipad ->
           p = O ->
-          Nat.divide 8 c ->
+          Nat.divide 8 keylen ->
           forall fpad,
             bv_to_extval (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg) = res.
 Proof.
@@ -479,11 +581,11 @@ Proof.
   end.
   
   simpl. rewrite app_nil_r.
-  
-  eapply correct_hash_commutes in H2.
-  unfold bv_to_extval in H2.
-  erewrite H2. clear H2.
 
-  
-  eapply hmac_second_part_equiv; eauto.
+  f_equal. f_equal. f_equal.
+
+  erewrite <- second_part in Heqe; eauto;
+    try congruence.
+  inversion Heqe; auto.
+  inversion H3. auto.
 Qed.
