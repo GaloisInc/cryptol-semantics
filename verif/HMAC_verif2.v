@@ -101,7 +101,30 @@ Proof.
 
   
   eapply kinit_eval.
-  admit. (* extend env is wf_env *)
+
+  unfold bind_decl_groups.
+  unfold erase_decl_groups.
+  repeat eapply wf_env_extend_GE.
+  repeat eapply wf_env_extend_TE.
+  repeat eapply wf_env_erase_SE.
+  repeat eapply wf_env_extend_SE.
+  eassumption.
+
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+
+
   exact H.
   admit. (* hash is a good hash in extended environment *)
 
@@ -142,9 +165,20 @@ Proof.
   e. e. e. e. g.
   e. e. e. g.
   eapply kinit_eval.
-  
-  admit. exact H.
-  admit. repeat e.
+
+  unfold bind_decl_groups.
+  unfold erase_decl_groups.
+  repeat eapply wf_env_extend_GE.
+  repeat eapply wf_env_extend_TE.
+  repeat eapply wf_env_erase_SE.
+  repeat eapply wf_env_extend_SE.
+  assumption.
+
+  all: try solve [reflexivity].
+
+  exact H.
+  admit. (* good hash in extended env *)
+  repeat e.
   repeat e. repeat e. e.
 
   simpl.
@@ -192,8 +226,8 @@ Proof.
   eapply Forall_map. eassumption.
 
   intros. eapply xor_const_byte; eauto.
-
-  admit. (* extended global environment *)
+    
+  admit. (* global_extends *)
 
   e. repeat e.
   e. e. e.
@@ -227,13 +261,10 @@ Proof.
   destruct H5.
   eapply H4 in H5. destruct H5. eapply H5.
 
-  unfold global_extends.
-  intros. unfold bind_decl_groups.
-  simpl. unfold extend.
   
-  (* global extends *)
+  admit.  (* global extends *)
   (* We need GE to not have all the extra local identifiers *)
-  admit.  
+  
 
   (* our result matches the model *)
   subst hv1.
