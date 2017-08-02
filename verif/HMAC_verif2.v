@@ -36,6 +36,7 @@ Lemma Hmac_eval_keylen_is_blocklength :
     has_type key (bytestream keylen) -> 
     forall GE TE SE, 
       wf_env ge GE TE SE ->
+      (forall id, In id [(371, "ks");(372, "okey");(373, "ikey");(374, "internal")] -> GE id = None) ->
       forall h hf,
         good_hash h GE TE SE hf ->
         forall msg msglen unused,
@@ -44,6 +45,9 @@ Lemma Hmac_eval_keylen_is_blocklength :
             eager_eval_expr GE TE SE (apply (tapply (EVar hmac) ((typenum (Z.of_nat msglen)) :: (typenum (Z.of_nat keylen)) :: (typenum unused) :: (typenum (Z.of_nat keylen)) :: nil)) (h :: h :: h :: (EValue (to_val key)) :: (EValue (to_val msg)) :: nil)) (to_sval v) /\ hmac_model hf key msg = Some v.
 Proof.
   intros.
+  rename H1 into HIDs.
+  rename H2 into H1.
+  rename H3 into H2.
   init_globals ge.
   abstract_globals ge.
   edestruct good_hash_complete_eval; eauto.
@@ -104,10 +108,11 @@ Proof.
 
   unfold bind_decl_groups.
   unfold erase_decl_groups.
-  repeat eapply wf_env_extend_GE.
+
   repeat eapply wf_env_extend_TE.
   repeat eapply wf_env_erase_SE.
   repeat eapply wf_env_extend_SE.
+  repeat eapply wf_env_extend_GE.
   eassumption.
 
   reflexivity.
@@ -230,9 +235,19 @@ Proof.
   eapply Forall_map. eassumption.
 
   intros. eapply xor_const_byte; eauto.
-    
-  admit. (* global_extends *)
 
+  unfold bind_decl_groups.
+  unfold bind_decl_group.
+  unfold declare.
+  
+  repeat (eapply global_extends_extend_r; try eapply wf_env_name_irrel_GE; eauto).
+  eapply global_extends_refl.
+
+  eapply HIDs. simpl. left. reflexivity.
+  eapply HIDs. simpl. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. right. left. reflexivity.
+  
   e. repeat e.
   e. e. e.
 
@@ -283,10 +298,14 @@ Proof.
   
   destruct H5.
   eapply H4 in H5. destruct H5. eapply H5.
-  
-  admit.  (* global extends *)
-  (* We need GE to not have all the extra local identifiers *)
-  
+
+  repeat (eapply global_extends_extend_r; try eapply wf_env_name_irrel_GE; eauto).
+  eapply global_extends_refl.
+
+  eapply HIDs. simpl. left. reflexivity.
+  eapply HIDs. simpl. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. right. left. reflexivity.
 
   (* our result matches the model *)
   subst hv1.
@@ -298,4 +317,4 @@ Proof.
   Unshelve.
   all: exact id.
   
-Admitted.
+Qed.

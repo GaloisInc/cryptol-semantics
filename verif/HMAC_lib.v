@@ -82,13 +82,13 @@ Admitted.
 (* This'll be a fun one *)
 (* if too hard, it's fine to existentially quantify the Nat.div number *)
 Lemma type_stream_of_bytes :
-  forall l t,
+  forall n l t,
     Forall (fun x => has_type x t) l ->
-    forall n,
-      Nat.divide n (Datatypes.length l) ->
-      has_type (eseq (map eseq (get_each_n n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
+    Nat.divide n (Datatypes.length l) ->
+    has_type (eseq (map eseq (get_each_n n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
+Proof.
+  (* This will be a fun proof to be sure *)
 Admitted.
-
 
 Lemma good_hash_eval :
   forall h GE T SE hf,
@@ -129,19 +129,59 @@ Lemma global_extends_eager_eval :
 Proof.
   
 Admitted. (* needs crazy induction *)
-  
+
 Definition name_irrel {A : Type} (E : ident -> option A) : Prop :=
   forall id id',
     if ident_eq id id' then E id = E id' else True.
 
+Lemma global_extends_extend_r :
+  forall ge ge',
+    global_extends ge ge' ->
+    name_irrel ge ->
+    forall id exp,
+      ge id = None ->
+      global_extends ge (extend ge' id exp).
+Proof.
+  intros.
+  unfold global_extends in *.
+  intros.
+  unfold extend.
+  remember H2 as Hsome.
+  clear HeqHsome.
+  eapply H in H2.
+  rewrite H2.
+  destruct (ident_eq id0 id) eqn:?; auto.
+  unfold name_irrel in *.
+  specialize (H0 id0 id).
+  rewrite Heqs in H0. congruence.
+Qed.
+
+
+Lemma global_extends_refl :
+  forall ge,
+    global_extends ge ge.
+Proof.
+  unfold global_extends.
+  auto.
+Qed.
+
+
+
 (* lowercase is concrete, uppercase is abstract *)
 (* wf_env lets this proof be used over a variety of environments that meet the proper constraints *)
-Definition wf_env (ge GE : genv) (TE : tenv) (SE : senv) : Prop :=
+Definition wf_env (ge GE : genv) (TE : tenv) (SE : senv)  : Prop :=
   name_irrel ge /\ name_irrel GE /\ name_irrel TE /\ name_irrel SE /\
   (forall id,
-    ge id <> None -> (TE id = None /\ SE id = None /\ ge id = GE id)).
+      ge id <> None -> (TE id = None /\ SE id = None /\ ge id = GE id)).
 
-(* Massage good hash to include this *)
+Lemma wf_env_name_irrel_GE :
+  forall ge GE TE SE ,
+    wf_env ge GE TE SE ->
+    name_irrel GE.
+Proof.
+  intros. unfold wf_env in *. intuition.
+Qed.
+
 Lemma good_hash_same_eval :
   forall h GE TE SE hf,
     good_hash h GE TE SE hf ->
@@ -151,6 +191,7 @@ Lemma good_hash_same_eval :
         eager_eval_expr GE' TE' SE' h' v ->
         good_hash h' GE' TE' SE' hf.
 Proof.
+  (* needs determinacy of eager_eval_expr, which is true but unproven *)
 Admitted.
 
 Lemma name_irrel_extend :
@@ -200,6 +241,27 @@ Proof.
     auto; congruence.
 Qed.
 
+(*
+Lemma extend_other_name_irrel :
+  forall {A} l id0 GE,
+    Forall (fun id => GE id = None) l ->
+    ~ In (fst id0) (map fst l) ->
+    forall (v : A),
+      Forall (fun id => extend GE id0 v id = None) l.
+Proof.
+  induction 1; intros.
+  econstructor.
+  destruct id0. unfold map in H1. fold (map fst l) in H1.
+  destruct x. unfold fst in H1. fold (@fst Z string) in H1.
+  erewrite not_in_cons in H1.
+  destruct H1.
+  econstructor; try eapply IHforall; eauto.
+  
+  unfold extend. destruct (ident_eq (z0,s0) (z,s)); try congruence.
+  simpl in e. congruence.
+Qed.
+*)
+
 Lemma wf_env_extend_GE :
   forall ge GE TE SE,
     wf_env ge GE TE SE ->
@@ -210,7 +272,8 @@ Proof.
   intros.
   unfold wf_env in *.
   intros.
-  destruct H. destruct H1.
+  destruct H.
+  destruct H1.
   destruct H2. destruct H3.
   split; auto.
   split; auto.
@@ -224,13 +287,10 @@ Proof.
   remember H5 as Hcontra.
   clear HeqHcontra.
   eapply H4 in H5.
-  destruct H5.
-  destruct H6.
-  split; auto.
-  split; auto.
-  rewrite H7.
+  intuition.
+  rewrite H8.
   edestruct (name_irrel_diff_results _ id0 id H); try congruence.
-  unfold extend. erewrite H8.
+  unfold extend. erewrite H7.
   reflexivity.
 Qed.
 
@@ -258,12 +318,10 @@ Proof.
   remember H5 as Hcontra.
   clear HeqHcontra.
   eapply H4 in H5.
-  destruct H5.
-  destruct H6.
-  split; auto.
+  intuition.
   edestruct (name_irrel_diff_results _ id0 id H); try congruence.  
 
-  unfold extend. erewrite H8.
+  unfold extend. erewrite H7.
   assumption.
 Qed.
 
@@ -286,17 +344,14 @@ Proof.
   eapply name_irrel_extend; eauto.
 
   intros.
-  
+
   remember H5 as Hcontra.
   clear HeqHcontra.
   eapply H4 in H5.
-  destruct H5.
-  destruct H6.
-  split; auto.
-  split; auto.
+  intuition.
   edestruct (name_irrel_diff_results _ id0 id H); try congruence.  
 
-  unfold extend. erewrite H8.
+  unfold extend. erewrite H7.
   assumption.
 Qed.
 
@@ -319,12 +374,12 @@ Proof.
   intros. remember H4 as Hcontra.
   clear HeqHcontra.
   eapply H3 in H4.
-  destruct H4. destruct H5.
-  split; auto.
-  rewrite H5.
-  split.
+  split; intuition.
+  
+  rewrite H4.
+
   destruct (ident_eq id0 id); auto.
-  assumption.
+
 Qed.
 
 Lemma wf_env_global :
@@ -338,7 +393,8 @@ Proof.
   destruct H. destruct H1.
   destruct H2. destruct H3.
   destruct (H4 id); try congruence.
-  destruct H6. congruence.
+  intuition.
+  congruence.
 Qed.
 
 Lemma wf_env_not_local :
@@ -353,7 +409,7 @@ Proof.
          | [ H : _ /\ _ |- _ ] => destruct H
          end.
   destruct (H4 id); try congruence.
-  destruct H6. congruence.
+  intuition.
 Qed.
 
 Lemma wf_env_not_type :
@@ -789,3 +845,12 @@ Proof.
   econstructor; eauto.
   eapply Forall_app; eauto.
 Qed.
+
+Lemma gt_not_refl :
+  forall {ws} (bv : BitV ws),
+    gt_sem (strict_list (strictval_from_bitv bv)) (strict_list (strictval_from_bitv bv)) = Some (sbit false).
+Proof.
+  unfold strictval_from_bitv.
+  induction ws; intros. simpl. reflexivity.
+  (* inductive case will be harder, I think it's true though *)
+Admitted.

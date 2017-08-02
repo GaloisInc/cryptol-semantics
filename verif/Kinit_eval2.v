@@ -27,15 +27,6 @@ Require Import HMAC_spec.
 
 Require Import HMAC_lib.
 
-Lemma gt_not_refl :
-  forall {ws} (bv : BitV ws),
-    gt_sem (strict_list (strictval_from_bitv bv)) (strict_list (strictval_from_bitv bv)) = Some (sbit false).
-Proof.
-  unfold strictval_from_bitv.
-  induction ws; intros. simpl. reflexivity.
-  (* inductive case will be harder, I think it's true though *)
-Admitted.
-
 
 Lemma kinit_eval :
   forall GE TE SE,
