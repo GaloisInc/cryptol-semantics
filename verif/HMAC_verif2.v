@@ -257,7 +257,33 @@ Proof.
   rewrite strict_list_map_to_sval.
 
   (* This one will be some fun *)
-  assert (exists n, has_type (eseq (map (xor_const 92) l ++ map eseq (get_each_n (Pos.to_nat 8) x3))) (bytestream n)) by admit.
+  assert (exists n, has_type (eseq (map (xor_const 92) l ++ map eseq (get_each_n (Pos.to_nat 8) x3))) (bytestream n)). {
+
+    Lemma has_type_seq_append :
+      forall l l' t,
+        (exists n, has_type (eseq l) (tseq n t)) ->
+        (exists n, has_type (eseq l') (tseq n t)) ->
+        (exists n, has_type (eseq (l ++ l')) (tseq n t)).
+    Proof.
+      induction l; intros.
+      simpl; auto.
+      simpl. destruct H. destruct H0.
+      inversion H. inversion H3.
+      subst.
+      inversion H0. subst.
+      eexists. econstructor.
+      econstructor; eauto.
+      eapply Forall_app; eauto.
+    Qed.
+
+    eapply has_type_seq_append.
+    exists (Datatypes.length (map (xor_const 92) l)).
+    econstructor.
+    eapply Forall_map. eassumption.
+    intros. eapply xor_const_byte; eauto.
+    admit.
+    
+  }
   destruct H5.
   eapply H4 in H5. destruct H5. eapply H5.
 
