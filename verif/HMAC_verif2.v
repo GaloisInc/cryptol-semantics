@@ -297,5 +297,5 @@ Proof.
 
   Unshelve.
   all: exact id.
-x  
+  
 Admitted.
