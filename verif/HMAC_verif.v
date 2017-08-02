@@ -24,253 +24,297 @@ Open Scope string.
 Require Import HMAC.
 
 Require Import HMAC_spec.
+
+Require Import HMAC_lib.
+
 Require Import Kinit_eval.
 
-(* Require Import Bvector.*)
 
-
-(* Eager tactics *)
-(* TODO: standardize *)
-Ltac ec := econstructor; try unfold mb; try reflexivity.
-Ltac fg := eapply eager_eval_global_var; [ reflexivity | eassumption | idtac].
-Ltac g := eapply eager_eval_global_var; try eassumption; try reflexivity.
-
-
-Ltac et :=
-  match goal with
-  | [ |- eager_eval_type _ _ _ _ ] => solve [repeat econstructor; eauto]
-  end.
-
-Ltac e :=
-  match goal with
-  | [ |- eager_eval_expr ?GE _ ?E (EVar ?id) _ ] =>
-    (try fg); (try reflexivity);
-    (try solve [eapply eager_eval_local_var; reflexivity]);
-    fail 1 "couldn't figure out variable"
-  | [ |- _ ] => ec; try solve [et]
-  end.
-
-Definition typenum (n : Z) : Expr := ETyp (TCon (TC (TCNum n)) []).
-Definition pwBytes := typenum 64.
-Definition blockLength := typenum 64.
-Definition digest := typenum 0.
-Definition msgBytes := typenum 64.
-
-
-Definition good_hash (h : Expr) (ge : genv) (T : tenv) (SE : senv) (hf : strictval -> strictval) : Prop :=
-  (exists id exp TE E,
-      eager_eval_expr ge T SE h (sclose id exp TE E) /\ (* can evaluate the hash to a closure *)
-      forall n v,
-        sn_bits n v ->
-        eager_eval_expr ge TE (extend E id v) exp (hf v) (* can evaluate that closure applied to a value *)
-  ).
-
-Lemma Hmac_eval :
-  forall k,
-    n_bits 64 k ->
-    forall h,
-      (exists id exp TE E,
-          eager_eval_expr ge tempty sempty h (sclose id exp TE E)) ->
-      forall m,
-        n_bits 64 m ->
-        exists v,
-          eager_eval_expr ge tempty sempty (apply (tapply (EVar hmac) (msgBytes :: pwBytes :: blockLength :: digest :: nil)) (h :: h :: h :: (EValue k) :: (EValue m) :: nil)) v.
+(* lemma for when the length of the key is the same as the length of the block *)
+Lemma Hmac_eval_keylen_is_blocklength :
+  forall (key : ext_val) keylen,
+    has_type key (bytestream keylen) -> 
+    forall GE TE SE, 
+      wf_env ge GE TE SE ->
+      (forall id, In id [(371, "ks");(372, "okey");(373, "ikey");(374, "internal")] -> GE id = None) ->
+      forall h hf,
+        good_hash h GE TE SE hf ->
+        forall msg msglen unused,
+          has_type msg (bytestream msglen) ->
+          exists v,
+            eager_eval_expr GE TE SE (apply (tapply (EVar hmac) ((typenum (Z.of_nat msglen)) :: (typenum (Z.of_nat keylen)) :: (typenum unused) :: (typenum (Z.of_nat keylen)) :: nil)) (h :: h :: h :: (EValue (to_val key)) :: (EValue (to_val msg)) :: nil)) (to_sval v) /\ hmac_model hf key msg = Some v.
 Proof.
-  intros. do 4 destruct H0.
-  remember H as Hnbk. clear HeqHnbk.
-  remember H1 as Hnbm. clear HeqHnbm.
-  eapply n_bits_eval with (ge := ge) (E := sempty) (TE := tempty) in H1. destruct H1. destruct H1.
-  eapply n_bits_eval with (ge := ge) (E := sempty) (TE := tempty) in H. destruct H. destruct H.
-
-  inversion H1. subst. inversion H. subst.
-
-  init_globals ge.
-  eexists.
-
-  unfold apply. unfold tapply. e. e. e. e. e. e. e. e. e.
-  g. e. e. e. e. e. eassumption.
-  e. eassumption.
-  e. eassumption.
-  e. e.
-  eassumption. e. eassumption.
-  e. e. e. e. e. e. e. e. g.
-  e. e. e. e. 
-  g. e. e. e. g.
-  (* TODO: apply kinit theorem here *)
-(*  edestruct kinit_eval. Focus 10.
-  destruct H4. unfold apply in H4. unfold tapply in H4. apply H4.*)
-
-
-  e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e. g.
-  e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. g. e.
-  e. e. e. e. e. e. e. g. e. e. e. e.
-  e. e. e.
-  (* here we evaluate the hash to something *)
-  admit.
-  e. e. e. e. e. e. e. e.
-  (* what we got back from the hash splits *)
-  admit.
-  e. e. g. e. e. e. e. e. simpl. reflexivity.
-  e. e. e. e. e. e. e. e. e. e.
-
-  (* append nil to the end *)
-  admit.
-
-  e. g. e. g. e. e. e. e. g. e. e. e. e. e. e. e. e. e. e. e. e. e.
-
-  (* now we can split the thing *)
-  admit.
-
-  (* project the tuple *)
-  admit.
-
-  (* make a list of it *)
-  admit.
-
-  (* evaluate elements of that list *)
-  admit.
-
-  e. g. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e.
-  e. g. e. e. e. e. g. e. e. e. g.
-  e. e. e. e. e. g. e. e. e. e. e. e.
-  e. e. e. e. e. g. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. simpl. reflexivity. e. e.
-  e. e. g. e. e. e. e. e. e. e. e. e. g.
-  e. e. e. e. e. e. e. e. g. e. e. e. e. e.
-  e. e.
-
-  (* evaluate the hash to something (again) *)
-  admit.
-
-  e. e. e. e. e. e. e. e. 
-  
-  (* what we got back from the hash splits *)
-  admit.
-  e. e. g. e. e. e. e. e. simpl. reflexivity.
-  e. e. e. e. e. e. e. e. e. e.
-
-  (* append nil to the end *)
-  admit.
-
-  e. g. e. g. e. e. e. e. g. e. e. e. e. e. e. e. e. e. e. e. e. e.
-
-  (* now we can split the thing *)
-  admit.
-
-  (* project the tuple *)
-  admit.
-
-  (* make a list of it *)
-  admit.
-
-  (* evaluate elements of that list *)
-  admit.
-  (* now we can split the thing *)
-  admit.
-
-  e. e. e. 
-
-  (* evaluate the hash to something (again) *)
-  admit.
-
-  e. e. e. e. e. e. e. e.
-
-  (* split something *)
-  admit.
-
-  e. e. e. e. e. e. e. e. e. e.
-
-  (* final append *)
-  admit.
-
-  (* evaluate the hash one final time *)
-  admit.
-
-  
-Admitted.  
-
-  
-
-  (*
-Lemma kinit_eval :
-  forall k,
-    n_bits 64 k ->
-    forall h,
-      (exists hv,
-          eager_eval_expr ge tempty sempty h hv) ->
-    exists v,
-      eager_eval_expr ge tempty sempty (apply (tapply (EVar kinit) (pwBytes :: blockLength :: digest ::  nil)) (h :: (EList (map EValue k)) :: nil)) v /\ eager_eval_expr ge tempty sempty (EList (map EValue k)) v.
-Proof.
-  init_globals ge.
   intros.
-  remember H as Hnb; clear HeqHnb.
-  eapply n_bits_eval in H; eauto.
-  destruct H. instantiate (3 := ge) in H.
-  instantiate (1 := sempty) in H.
-  instantiate (1 := tempty) in H.
-  destruct H.
+  rename H1 into HIDs.
+  rename H2 into H1.
+  rename H3 into H2.
+  init_globals ge.
+  abstract_globals ge.
+  edestruct good_hash_complete_eval; eauto.
+  do 4 destruct H3.
+
   inversion H. subst.
-  destruct H0.
-  eexists. split; try eassumption. unfold apply.
+  inversion H2. subst.
+  remember (hf (eseq (map (fun x3 : ext_val => xor_const 54 x3) l ++ l0))) as hv1.
+  assert (HT : exists n, has_type hv1 (tseq n tbit)). {
+    assert (exists n, has_type (eseq (map (fun x3 : ext_val => xor_const 54 x3) l ++ l0)) (bytestream n)). {
+      eexists. econstructor.
+      rewrite Forall_app. split.
+      eapply Forall_map. eauto.
+      intros. eapply xor_const_byte; eauto.
+      eauto.
+    }
+    destruct H5.
+    eapply H4 in H5. destruct H5. subst hv1. eauto.
+  }
+  destruct HT as [n0'].
+  rename H5 into HT.
+  edestruct ext_val_list_of_strictval; try eassumption.
+  rename H5 into Hlres.
   
+  
+  eexists; split.
+
+  e. e. e. e. e. e. e. e. e.
+  ag.
+
+  e. e. e. e. e.
+  eassumption.
+  e. eassumption.
+  e. eassumption.
   e. e.
+
+  eapply strict_eval_val_to_val.
+
+  e. e.
+  eapply strict_eval_val_to_val.
+
+  e. e. e. e. e. e. e. e.
+  g. simpl. unfold extend. simpl.
+  eapply wf_env_not_local; eauto.
+  reflexivity.
+
+  e.
   e. e. e.
+  eapply eager_eval_global_var.
+  reflexivity.
+  reflexivity.
+  e. e. e. eapply eager_eval_global_var.
+  reflexivity.
+  reflexivity.
+
   
-  g.
-  e. e. repeat e.
-  e. repeat e.
-  e. repeat e.
+  eapply kinit_eval.
+
+  unfold bind_decl_groups.
+  unfold erase_decl_groups.
+
+  repeat eapply wf_env_extend_TE.
+  repeat eapply wf_env_erase_SE.
+  repeat eapply wf_env_extend_SE.
+  repeat eapply wf_env_extend_GE.
   eassumption.
+
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+  reflexivity.
+
+  exact H.
+
+
+  eapply good_hash_same_eval; eauto.
   e. 
-  eassumption.
-  e. e. e. e. g. e. repeat e.
-  e. e. e. g. e.
-  repeat e. repeat e.
-  simpl. repeat e.
-  simpl. e. repeat e.
-  repeat e. repeat e. 
-  
 
-  
-  e. e. e. fg. repeat e.
-  e. repeat e. e. repeat e. repeat e.
   repeat e. repeat e.
+  repeat e. e.
+  
   simpl.
-
-  e. e. e. e. g.
-  repeat e. repeat e.
-  e. repeat e.
-  e. repeat e.
-  e. e. e. e. e. e. g.
-  repeat e. e. e. repeat e.
-  e. repeat e. e. e. e. e. g.
-  repeat e. repeat e.
-  repeat e. repeat e.
-
-  rewrite append_strict_list. reflexivity.  
+  rewrite list_of_strictval_of_strictlist. 
+  reflexivity.
   
-  e. g. e. g.
+  (* Begin model section *)
+  eapply eager_eval_bind_senvs. eassumption.
+  instantiate (1 := fun x => to_sval (xor_const 92 x)).  
+  intros. e. e. e. g. unfold extend. simpl.
+  eapply wf_env_not_local; eauto. reflexivity.
+  e. e. e. e. e. e. g.
+  unfold extend. simpl.
+  eapply wf_env_not_local; eauto. reflexivity.
+  e. repeat e. repeat e. e. repeat e.
+  repeat e. simpl.
+  inversion H5. subst. simpl.
+  unfold strictnum.
+  unfold Z.to_nat. unfold Pos.to_nat.
+  unfold Pos.iter_op. unfold Init.Nat.add.
+  rewrite <- H6.
+  rewrite xor_num. reflexivity.
+  rewrite H6. eassumption.
+  reflexivity.
+  (* End model section *)
+
+  e. g.
   e. e. e. e. g.
-  all: try solve [repeat e].
+  simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
+  reflexivity.
+  e. e. e. e. e. e. e. e. e. e. e. g.
+  simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
+  reflexivity.
+  e. e. e. e. g.
+  e. e. e. g.
+  eapply kinit_eval.
+
+  unfold bind_decl_groups.
+  unfold erase_decl_groups.
+  repeat eapply wf_env_extend_GE.
+  repeat eapply wf_env_extend_TE.
+  repeat eapply wf_env_erase_SE.
+  repeat eapply wf_env_extend_SE.
+  assumption.
+
+  all: try solve [reflexivity].
+
+  exact H.
+  
+  solve [eapply good_hash_same_eval; eauto; e].
+
+  repeat e.
+  repeat e. repeat e. e.
+
+  simpl.
+  rewrite list_of_strictval_of_strictlist. 
+  reflexivity.
+
+
+  eapply eager_eval_bind_senvs. eassumption.
+  instantiate (1 := fun x => to_sval (xor_const 54 x)).  
+  intros. e. e. e. g. unfold extend. simpl.
+  eapply wf_env_not_local; eauto. reflexivity.
+  e. e. e. e. e. e. g.
+  unfold extend. simpl.
+  eapply wf_env_not_local; eauto. reflexivity.
+  e. repeat e. repeat e. e. repeat e.
+  repeat e. simpl.
+  inversion H5. subst. simpl.
+  unfold strictnum.
+  unfold Z.to_nat. unfold Pos.to_nat.
+  unfold Pos.iter_op. unfold Init.Nat.add.
+  rewrite <- H6.
+  rewrite xor_num. reflexivity.
+  rewrite H6. eassumption.
+  reflexivity.
+
+  e. e. e. repeat e.
+  repeat e.
+  
+  unfold to_sval. fold to_sval.
+  rewrite append_strict_list. 
+  reflexivity.
+
+  eapply global_extends_eager_eval.
+
+  replace (map (fun x3 : ext_val => to_sval (xor_const 54 x3)) l) with
+      (map to_sval (map (fun x3 => xor_const 54 x3) l)) by (rewrite list_map_compose; reflexivity).
+  rewrite <- list_append_map.
+  remember (app (map (fun x3 : ext_val => xor_const 54 x3) l) l0) as ll.
+  replace (strict_list (map to_sval ll)) with (to_sval (eseq ll)) by (reflexivity).
+  subst ll.
+  eapply H4.
+  econstructor.
+
+  rewrite Forall_app. split; auto.
+  eapply Forall_map. eassumption.
+
+  intros. eapply xor_const_byte; eauto.
+
+  unfold bind_decl_groups.
+  unfold bind_decl_group.
+  unfold declare.
+  
+  repeat (eapply global_extends_extend_r; try eapply wf_env_name_irrel_GE; eauto).
+  eapply global_extends_refl.
+
+  eapply HIDs. simpl. left. reflexivity.
+  eapply HIDs. simpl. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. right. left. reflexivity.
+  
+  e. repeat e.
+  e. e. e.
+
+  simpl.
+  rewrite <- Heqhv1.
+  rewrite Hlres. reflexivity.
+  
   e. repeat e. repeat e.
 
+  rewrite append_strict_list. reflexivity.
+  eapply global_extends_eager_eval.
 
-  replace (tnum 64) with (tnum (Z.of_nat (Datatypes.length x))).
-  rewrite splitAt_len. reflexivity.
+  (* get to_sval out to outside *)
+  (* evaluate the hash function *)
+
+  replace (map (fun x4 : ext_val => to_sval (xor_const 92 x4)) l) with
+  (map to_sval (map (xor_const 92) l)) by
+      (clear -l; 
+       induction l; simpl; auto; f_equal; eapply IHl; eauto).
+    
+  rewrite get_each_n_map_commutes.
+
+
+  rewrite map_strict_list_map_map_to_sval.
+  rewrite <- list_append_map.
+  rewrite strict_list_map_to_sval.
+
+  (* This one will be some fun *)
+  assert (exists n, has_type (eseq (map (xor_const 92) l ++ map eseq (get_each_n (Pos.to_nat 8) x3))) (bytestream n)). {
+
+
+    eapply has_type_seq_append.
+    exists (Datatypes.length (map (xor_const 92) l)).
+    econstructor.
+    eapply Forall_map. eassumption.
+    intros. eapply xor_const_byte; eauto.
+    subst hv1.
+    inversion HT. subst.
+    rewrite <- H5 in Hlres.
+    eapply list_of_strictval_to_sval in Hlres. inversion Hlres.
+    subst. clear Hlres.
+    remember H1 as HHash.
+    clear HeqHHash.
+    symmetry in H5.
+    eapply good_hash_fully_padded in H1; try eassumption.
+    eapply type_stream_of_bytes in H1; eauto.
+  }
   
-  f_equal. omega.
-  simpl. reflexivity.
+  destruct H5.
+  eapply H4 in H5. destruct H5. eapply H5.
 
+  repeat (eapply global_extends_extend_r; try eapply wf_env_name_irrel_GE; eauto).
+  eapply global_extends_refl.
+
+  eapply HIDs. simpl. left. reflexivity.
+  eapply HIDs. simpl. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. right. left. reflexivity.
+
+  (* our result matches the model *)
+  subst hv1.
+  eapply list_of_strictval_to_sval in Hlres.
+  simpl. rewrite Hlres.
+
+  reflexivity.
+
+  Unshelve.
+  all: exact id.
+  
 Qed.
-*)
-
-  
-
