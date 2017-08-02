@@ -99,10 +99,9 @@ Proof.
   split; eassumption.
 Qed.
     
-
-(* TODO *)
-Definition correct_model_hash {c p : nat} (hf : ext_val -> ext_val) (h : list (Bvector (b c p)) -> Bvector c) : Prop := True. 
-
+Definition correct_model_hash {c p : nat} (hf : ext_val -> ext_val) (h : list (Bvector (b c p)) -> Bvector c) : Prop :=
+    forall l,
+      eseq (bv_to_extval' (h l)) = hf (eappend (map bv_to_extval l)).
 
 (* We need this to be true about the hash function *)
 (* HASH takes a list of chunks and produces some bits *)
@@ -111,11 +110,14 @@ Definition correct_model_hash {c p : nat} (hf : ext_val -> ext_val) (h : list (B
 (* (map bv_to_extval l) is a list of ext_val which are all streams of bytes *)
 (* eappend (map bv_to_extval l) is a stream of bytes *)
 (* this is the correct statement of hash commuting *)
-Axiom correct_hash_commutes :
+Lemma correct_hash_commutes :
   forall {c p : nat} hf (HASH : list (Bvector (b c p)) -> Bvector c),
     correct_model_hash hf HASH ->
     forall l,
       eseq (bv_to_extval' (HASH l)) = hf (eappend (map bv_to_extval l)).
+Proof.
+  intros. eapply H.
+Qed.
   
 Lemma split_append :
   forall a (x : Bvector a) b (y : Bvector b),
@@ -425,9 +427,6 @@ Proof.
   simpl. rewrite IHl. reflexivity.
 Qed.
 
-(* I think this is the right theorem *)
-(* Caveat: this assumes everything is bytes, no padding *)
-(* It would be quite nice to verify padding *)
 Theorem HMAC_equiv (MSGT : Set) :
   forall keylen msglen key msg,
     has_type key (bytestream keylen) ->
