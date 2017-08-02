@@ -80,12 +80,37 @@ Fixpoint eappend (l : list ext_val) : ext_val :=
   | _ => eseq nil
   end.
 
+(* eappend takes a list of sequences of the same type t to one sequence of that type t *)
+Lemma eappend_type :
+  forall l t,
+    (Forall (fun x => exists n, has_type x (tseq n t)) l) ->
+    exists n,
+      has_type (eappend l) (tseq n t).
+Proof.
+  induction 1; intros.
+  eexists; econstructor; eauto.
+  destruct IHForall.
+  destruct H.
+  inversion H. subst.
+  simpl.
+  inversion H1. subst.
+  eexists. econstructor.
+  eapply Forall_app.
+  split; eassumption.
+Qed.
+    
 
 (* TODO *)
 Definition correct_model_hash {c p : nat} (hf : ext_val -> ext_val) (h : list (Bvector (b c p)) -> Bvector c) : Prop := True. 
 
 
-(* We need this to be true about the hash function *)  
+(* We need this to be true about the hash function *)
+(* HASH takes a list of chunks and produces some bits *)
+(* hf takes a stream of bytes and produces a stream of bits *)
+(* l is a list of chunks *)
+(* (map bv_to_extval l) is a list of ext_val which are all streams of bytes *)
+(* eappend (map bv_to_extval l) is a stream of bytes *)
+(* this is the correct statement of hash commuting *)
 Axiom correct_hash_commutes :
   forall {c p : nat} hf (HASH : list (Bvector (b c p)) -> Bvector c),
     correct_model_hash hf HASH ->
@@ -254,7 +279,7 @@ Proof.
 Qed.
 
 (* This proof is ugly, but it works *)
-Lemma hmac_first_part_equiv :
+Lemma BVxor_to_xor_const :
   forall keylen w ekey nkey opad n,
     has_type (eseq ekey) (bytestream keylen) ->
     bv_to_extval nkey = eseq ekey ->
@@ -411,7 +436,7 @@ Theorem HMAC_equiv (MSGT : Set) :
       hmac_model hf key msg = Some res ->
       @correct_model_hash c p hf (h_star p HashBlock iv) ->
       forall nmsg nkey,
-        eseq (map bv_to_extval (splitAndPad nmsg)) = msg ->
+        eappend (map bv_to_extval (splitAndPad nmsg)) = msg ->
         bv_to_extval nkey = key ->
         forall opad ipad,
           same_bits 92 opad ->
@@ -447,15 +472,21 @@ Proof.
   rename l0 into emsg.
 
   erewrite correct_hash_commutes by eassumption.
-  f_equal. simpl. f_equal.
+  
+  f_equal. simpl.
   f_equal.
-  eapply hmac_first_part_equiv; eauto.
+  f_equal.
+  eapply BVxor_to_xor_const; eauto.
 
   rewrite app_nil_r.
-  f_equal. f_equal.
-
   unfold Pos.to_nat in *.
   simpl in *.
+
+  (* l1 is a list of bits *)
+  (* bv_to_extval' returns a list of bits *)
+  (* at this point the types work out *)
+  f_equal. f_equal.
+
   remember (splitAndPad nmsg) as msgl.
 
   rewrite H7.
@@ -465,133 +496,21 @@ Proof.
   rewrite <- Heqe.
   f_equal.
 
-
+  (* types still good here *)
   simpl.
   unfold bv_to_extval.
   erewrite eappend_map_eseq.
   f_equal.
   f_equal.
 
-  eapply hmac_first_part_equiv; eauto.
+  eapply BVxor_to_xor_const; eauto.
+
 
   eapply eseq_backwards.
   erewrite <- H3.
   unfold bv_to_extval.
   erewrite <- eappend_map_eseq.
 
-  (* So close...*)
-Admitted.  
-  
-
-(* 
-
-
-Lemma xor_const_bytestream :
-  forall len l,
-    has_type (eseq l) (bytestream len) ->
-    forall n,
-      has_type (eseq (map (xor_const n) l)) (bytestream len).
-Proof.
-Admitted.
-
-Lemma has_type_length :
-  forall l len t,
-    has_type (eseq l) (tseq len t) ->
-    length l = len.
-Proof.
-  induction l; intros.
-  inversion H. subst. auto.
-  inversion H. subst. inversion H2.
-  subst. simpl. f_equal.
+  reflexivity.
 Qed.
 
-(* We'll need this about the hash function *)
-Lemma hash_bits_or_bytes :
-  forall hf x y,
-    hf (eseq x) = eseq y ->
-    hf (eseq (map eseq (get_each_n 8 x))) = eseq (map eseq (get_each_n 8 y)).
-Proof.
-Admitted.
-
-Lemma get_each_n_length_divides :
-  forall {A} n (l : list A) l',
-    Nat.divide n (length l) ->
-    get_each_n n (l ++ l') = (get_each_n n l) ++ (get_each_n n l').
-Proof.
-  (* this is true *)
-Admitted.
-
-
-Lemma hmac_second_part_equiv :
-  forall c hf ekey emsg l n keylen,
-    hf (eseq (map (fun x : ext_val => xor_const n x) ekey ++ emsg)) = eseq l ->
-    forall ipad,
-      same_bits n ipad ->
-      forall nkey msgl,
-        map bv_to_extval msgl = emsg ->
-        bv_to_extval nkey = eseq ekey ->
-        has_type (eseq ekey) (bytestream keylen) ->
-        Nat.divide 8 keylen ->
-        hf (eappend (map (fun (bv : Bvector (b c 0)) => eseq (map eseq (get_each_n 8 (bv_to_extval' bv))))
-                         (BVxor (b c 0) nkey ipad :: msgl))) =
-        eseq (map eseq (get_each_n 8 l)).
-Proof.
-  intros.
-  simpl.
-  subst emsg.  
-  rewrite eappend_map_eseq.
-  erewrite hmac_first_part_equiv; eauto.
-
-  unfold bv_to_extval in *.
-  replace (fun x => xor_const n x) with (xor_const n) in * by (auto).
-  (* This has the wrong type *)
-  (* HERE *)
-Admitted.  
-(*  remember H as Hhf. clear HeqHhf.
-  
-  erewrite get_each_n_length_divides by (erewrite map_length; congruence).
-  rewrite map_app.
-  f_equal.
-
-
-  
-  eapply hash_bits_or_bytes in H. (* not proven yet *)
-  erewrite <- H. 
-  
-  f_equal. 
-  f_equal. simpl.
-  
-  unfold bytestream in H3.
-  remember H3 as HType. clear HeqHType.
-  eapply has_type_length in H3.
-
-  assert (keylen = 8 * c)%nat by admit.
-  (* this is true *)
-
-  Focus 2. 
-  
-    
-Admitted.
- *)
-(*
-(* Haha lol *)
-Lemma false_set :
-  forall (A : Set),
-    False ->
-    A.
-Proof.
-  intros.
-  inversion H.
-Defined.
-
-Definition to_bv {n : nat} (e : ext_val) (p : has_type e (tseq n tbit)) : Bvector n.
-  assert (exists l, e = eseq l). inversion p. eauto.
-  destruct e;
-    try solve [eapply false_set; destruct H; congruence].
-  destruct (to_bvector n (eseq l)) eqn:?. exact b.
-  eapply false_set.
-  eapply to_bvector_succeeds in p. destruct p. congruence.
-Defined.
- *)
-
-*)
