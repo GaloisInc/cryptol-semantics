@@ -45,26 +45,6 @@ Proof.
     eauto.
 Qed.
 
-(*
-(* Haha lol *)
-Lemma false_set :
-  forall (A : Set),
-    False ->
-    A.
-Proof.
-  intros.
-  inversion H.
-Defined.
-
-Definition to_bv {n : nat} (e : ext_val) (p : has_type e (tseq n tbit)) : Bvector n.
-  assert (exists l, e = eseq l). inversion p. eauto.
-  destruct e;
-    try solve [eapply false_set; destruct H; congruence].
-  destruct (to_bvector n (eseq l)) eqn:?. exact b.
-  eapply false_set.
-  eapply to_bvector_succeeds in p. destruct p. congruence.
-Defined.
- *)
 
 Lemma bytestream_type :
   forall l t,
@@ -110,8 +90,7 @@ Axiom correct_hash_commutes :
   forall {c p : nat} hf (HASH : list (Bvector (b c p)) -> Bvector c),
     correct_model_hash hf HASH ->
     forall l,
-      bv_to_extval (HASH l) = hf (eappend (map bv_to_extval l)).
-  
+      eseq (bv_to_extval' (HASH l)) = hf (eappend (map bv_to_extval l)).
   
 Lemma split_append :
   forall a (x : Bvector a) b (y : Bvector b),
@@ -377,6 +356,24 @@ Proof.
     subst. reflexivity.
 Qed.
 
+
+Lemma eappend_eseq_append :
+  forall l1 l2,
+    eseq (l1 ++ l2) = eappend ((eseq l1)::(eseq l2)::nil).
+Proof.
+  intros. simpl. rewrite app_nil_r. reflexivity.
+Qed.
+
+Lemma eseq_eq :
+  forall x y a b,
+    x = y ->
+    eseq a = eseq b ->
+    eseq (x ++ a) = eseq (y ++ b).
+Proof.
+  intros. inversion H0. congruence.
+Qed.
+
+
 Lemma bv_to_extval'_append :
   forall {w w'} (x : Bvector w) (y : Bvector w'),
     bv_to_extval' (Vector.append x y) = (bv_to_extval' x) ++ (bv_to_extval' y).
@@ -384,6 +381,14 @@ Proof.
   induction x; intros.
   simpl; auto.
   simpl. f_equal. auto.
+Qed.
+
+Lemma eseq_backwards :
+  forall x y,
+    eseq x = eseq y ->
+    x = y.
+Proof.
+  intros. inversion H. auto.
 Qed.
 
 Lemma eappend_map_eseq :
@@ -394,6 +399,92 @@ Proof.
   simpl. reflexivity.
   simpl. rewrite IHl. reflexivity.
 Qed.
+
+(* I think this is the right theorem *)
+(* Caveat: this assumes everything is bytes, no padding *)
+(* It would be quite nice to verify padding *)
+Theorem HMAC_equiv (MSGT : Set) :
+  forall keylen msglen key msg,
+    has_type key (bytestream keylen) ->
+    has_type msg (bytestream msglen) ->
+    forall c p hf res HashBlock iv (splitAndPad : MSGT -> list (Bvector (b c p))),
+      hmac_model hf key msg = Some res ->
+      @correct_model_hash c p hf (h_star p HashBlock iv) ->
+      forall nmsg nkey,
+        eseq (map bv_to_extval (splitAndPad nmsg)) = msg ->
+        bv_to_extval nkey = key ->
+        forall opad ipad,
+          same_bits 92 opad ->
+          same_bits 54 ipad ->
+          forall fpad,
+            (forall x, bv_to_extval' (app_fpad fpad (h_star p HashBlock iv x)) = bv_to_extval' (h_star p HashBlock iv x)) ->
+            eseq (bv_to_extval' (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg)) = res.
+Proof.
+  intros.
+  unfold HMAC.
+  unfold HMAC_2K.
+  unfold GHMAC_2K.
+  unfold hash_words.
+  rewrite split_append.
+  simpl. 
+  unfold hmac_model in H1.
+  destruct key; simpl in *; try congruence.
+  destruct msg; simpl in *; try congruence.
+  destruct (hf (eseq (map (fun x : ext_val => xor_const 54 x) l ++ l0))) eqn:?; try congruence.
+  inversion H1.
+
+  match goal with
+  | [ |- eseq (bv_to_extval' (HashBlock (HashBlock iv ?V1) ?V2)) = _ ] =>
+    replace (HashBlock (HashBlock iv V1) V2) with (h_star p HashBlock iv (V1 :: V2 :: nil)) by (unfold h_star; simpl; reflexivity)
+  end.
+  match goal with
+  | [ |- context[(h_star p HashBlock (HashBlock iv ?V1) ?V2)] ] =>
+    replace (h_star p HashBlock (HashBlock iv V1) V2) with (h_star p HashBlock iv (V1 :: V2)) by (simpl; reflexivity)
+  end.
+  remember (h_star p HashBlock iv) as HASH.
+
+  rename l into ekey.
+  rename l0 into emsg.
+
+  erewrite correct_hash_commutes by eassumption.
+  f_equal. simpl. f_equal.
+  f_equal.
+  eapply hmac_first_part_equiv; eauto.
+
+  rewrite app_nil_r.
+  f_equal. f_equal.
+
+  unfold Pos.to_nat in *.
+  simpl in *.
+  remember (splitAndPad nmsg) as msgl.
+
+  rewrite H7.
+
+  eapply eseq_backwards.
+  erewrite correct_hash_commutes by eassumption.
+  rewrite <- Heqe.
+  f_equal.
+
+
+  simpl.
+  unfold bv_to_extval.
+  erewrite eappend_map_eseq.
+  f_equal.
+  f_equal.
+
+  eapply hmac_first_part_equiv; eauto.
+
+  eapply eseq_backwards.
+  erewrite <- H3.
+  unfold bv_to_extval.
+  erewrite <- eappend_map_eseq.
+
+  (* So close...*)
+Admitted.  
+  
+
+(* 
+
 
 Lemma xor_const_bytestream :
   forall len l,
@@ -482,110 +573,25 @@ Admitted.
     
 Admitted.
  *)
-
-Lemma eseq_eq :
-  forall x y a b,
-    x = y ->
-    eseq a = eseq b ->
-    eseq (x ++ a) = eseq (y ++ b).
-Proof.
-  intros. inversion H0. congruence.
-Qed.
-
-Lemma eappend_eseq_append :
-  forall l1 l2,
-    eseq (l1 ++ l2) = eappend ((eseq l1)::(eseq l2)::nil).
-Proof.
-  intros. simpl. rewrite app_nil_r. reflexivity.
-Qed.
-
-Lemma second_part :
-  forall c p hf HASH,
-    @correct_model_hash c p hf HASH ->
-    forall n ipad,
-      same_bits n ipad ->
-      forall ekey nkey,
-        bv_to_extval nkey = eseq ekey ->
-        forall msgl emsg,
-          (map bv_to_extval msgl) = emsg ->
-          eseq (bv_to_extval' (HASH (BVxor (b c p) nkey ipad :: msgl))) =
-          hf (eseq (map (xor_const n) ekey ++ emsg)).
+(*
+(* Haha lol *)
+Lemma false_set :
+  forall (A : Set),
+    False ->
+    A.
 Proof.
   intros.
-  subst emsg.
-  erewrite eappend_eseq_append.
+  inversion H.
+Defined.
 
-Admitted.
+Definition to_bv {n : nat} (e : ext_val) (p : has_type e (tseq n tbit)) : Bvector n.
+  assert (exists l, e = eseq l). inversion p. eauto.
+  destruct e;
+    try solve [eapply false_set; destruct H; congruence].
+  destruct (to_bvector n (eseq l)) eqn:?. exact b.
+  eapply false_set.
+  eapply to_bvector_succeeds in p. destruct p. congruence.
+Defined.
+ *)
 
-(* I think this is the right theorem *)
-(* Caveat: this assumes everything is bytes, no padding *)
-(* It would be quite nice to verify padding *)
-Theorem HMAC_equiv (MSGT : Set) :
-  forall keylen msglen key msg,
-    has_type key (bytestream keylen) ->
-    has_type msg (bytestream msglen) ->
-    forall c p hf res HashBlock iv (splitAndPad : MSGT -> list (Bvector (b c p))),
-      hmac_model hf key msg = Some res ->
-      @correct_model_hash c p hf (h_star p HashBlock iv) ->
-      forall nmsg nkey,
-        eseq (map bv_to_extval (splitAndPad nmsg)) = msg ->
-        bv_to_extval nkey = key ->
-        forall opad ipad,
-          same_bits 92 opad ->
-          same_bits 54 ipad ->
-          p = O ->
-          Nat.divide 8 keylen ->
-          forall fpad,
-            bv_to_extval (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg) = res.
-Proof.
-  intros.
-  unfold HMAC.
-  unfold HMAC_2K.
-  unfold GHMAC_2K.
-  unfold hash_words.
-  rewrite split_append.
-  simpl. unfold app_fpad.
-  unfold hmac_model in H1.
-  destruct key; simpl in *; try congruence.
-  destruct msg; simpl in *; try congruence.
-  destruct (hf (eseq (map (fun x : ext_val => xor_const 54 x) l ++ l0))) eqn:?; try congruence.
-  inversion H1.
-
-  match goal with
-  | [ |- bv_to_extval (HashBlock (HashBlock iv ?V1) ?V2) = _ ] =>
-    replace (HashBlock (HashBlock iv V1) V2) with (h_star p HashBlock iv (V1 :: V2 :: nil)) by (unfold h_star; simpl; reflexivity)
-  end.
-  match goal with
-  | [ |- context[(h_star p HashBlock (HashBlock iv ?V1) ?V2)] ] =>
-    replace (h_star p HashBlock (HashBlock iv V1) V2) with (h_star p HashBlock iv (V1 :: V2)) by (simpl; reflexivity)
-  end.
-  remember (h_star p HashBlock iv) as HASH.
-
-  rename l into ekey.
-  rename l0 into emsg.
-  erewrite correct_hash_commutes by eassumption.
-  f_equal. simpl.
-
-  eapply eseq_eq.
-
-  eapply hmac_first_part_equiv; eauto.
-  rewrite bv_to_extval'_append.
-  unfold Pos.to_nat. simpl.
-  rewrite app_nil_r.
-  
-  assert (Hc : b c p = c) by (subst p; unfold b; omega).
-  assert (Hbv : Bvector (b c p) = Bvector c) by congruence.
-  subst p. simpl.
-  match goal with
-  | [ |- context[fpad ?X] ] => replace (fpad X) with (Bnil) by (erewrite zero_width_is_nil; eauto)
-  end.
-  
-  simpl. rewrite app_nil_r.
-
-  f_equal. f_equal. f_equal.
-
-  erewrite <- second_part in Heqe; eauto;
-    try congruence.
-  inversion Heqe; auto.
-  inversion H3. auto.
-Qed.
+*)
