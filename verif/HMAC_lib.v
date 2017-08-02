@@ -70,6 +70,26 @@ Definition good_hash (h : Expr) (ge : genv) (T : tenv) (SE : senv) (hf : ext_val
   
   ).
 
+(* TODO: massage into good_hash defn *)
+Lemma good_hash_fully_padded :
+  forall h GE TE SE hf,
+    good_hash h GE TE SE hf ->
+    forall x l,
+      hf x = eseq l ->
+      Nat.divide 8 (Datatypes.length l).
+Admitted.
+
+(* This'll be a fun one *)
+(* if too hard, it's fine to existentially quantify the Nat.div number *)
+Lemma type_stream_of_bytes :
+  forall l t,
+    Forall (fun x => has_type x t) l ->
+    forall n,
+      Nat.divide n (Datatypes.length l) ->
+      has_type (eseq (map eseq (get_each_n n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
+Admitted.
+
+
 Lemma good_hash_eval :
   forall h GE T SE hf,
     good_hash h GE T SE hf ->
@@ -120,6 +140,18 @@ Definition wf_env (ge GE : genv) (TE : tenv) (SE : senv) : Prop :=
   name_irrel ge /\ name_irrel GE /\ name_irrel TE /\ name_irrel SE /\
   (forall id,
     ge id <> None -> (TE id = None /\ SE id = None /\ ge id = GE id)).
+
+(* Massage good hash to include this *)
+Lemma good_hash_same_eval :
+  forall h GE TE SE hf,
+    good_hash h GE TE SE hf ->
+    forall v,
+      eager_eval_expr GE TE SE h v ->
+      forall GE' TE' SE' h',
+        eager_eval_expr GE' TE' SE' h' v ->
+        good_hash h' GE' TE' SE' hf.
+Proof.
+Admitted.
 
 Lemma name_irrel_extend :
   forall {A} E id (x : A),
@@ -741,3 +773,19 @@ Proof.
     eapply to_sval_injective; eauto.
 Qed.
 
+Lemma has_type_seq_append :
+  forall l l' t,
+    (exists n, has_type (eseq l) (tseq n t)) ->
+    (exists n, has_type (eseq l') (tseq n t)) ->
+    (exists n, has_type (eseq (l ++ l')) (tseq n t)).
+Proof.
+  induction l; intros.
+  simpl; auto.
+  simpl. destruct H. destruct H0.
+  inversion H. inversion H3.
+  subst.
+  inversion H0. subst.
+  eexists. econstructor.
+  econstructor; eauto.
+  eapply Forall_app; eauto.
+Qed.

@@ -124,9 +124,11 @@ Proof.
   reflexivity.
   reflexivity.
 
-
   exact H.
-  admit. (* hash is a good hash in extended environment *)
+
+
+  eapply good_hash_same_eval; eauto.
+  e. 
 
   repeat e. repeat e.
   repeat e. e.
@@ -177,7 +179,9 @@ Proof.
   all: try solve [reflexivity].
 
   exact H.
-  admit. (* good hash in extended env *)
+  
+  solve [eapply good_hash_same_eval; eauto; e].
+
   repeat e.
   repeat e. repeat e. e.
 
@@ -259,34 +263,26 @@ Proof.
   (* This one will be some fun *)
   assert (exists n, has_type (eseq (map (xor_const 92) l ++ map eseq (get_each_n (Pos.to_nat 8) x3))) (bytestream n)). {
 
-    Lemma has_type_seq_append :
-      forall l l' t,
-        (exists n, has_type (eseq l) (tseq n t)) ->
-        (exists n, has_type (eseq l') (tseq n t)) ->
-        (exists n, has_type (eseq (l ++ l')) (tseq n t)).
-    Proof.
-      induction l; intros.
-      simpl; auto.
-      simpl. destruct H. destruct H0.
-      inversion H. inversion H3.
-      subst.
-      inversion H0. subst.
-      eexists. econstructor.
-      econstructor; eauto.
-      eapply Forall_app; eauto.
-    Qed.
 
     eapply has_type_seq_append.
     exists (Datatypes.length (map (xor_const 92) l)).
     econstructor.
     eapply Forall_map. eassumption.
     intros. eapply xor_const_byte; eauto.
-    admit.
-    
+    subst hv1.
+    inversion HT. subst.
+    rewrite <- H5 in Hlres.
+    eapply list_of_strictval_to_sval in Hlres. inversion Hlres.
+    subst. clear Hlres.
+    remember H1 as HHash.
+    clear HeqHHash.
+    symmetry in H5.
+    eapply good_hash_fully_padded in H1; try eassumption.
+    eapply type_stream_of_bytes in H1; eauto.
   }
+  
   destruct H5.
   eapply H4 in H5. destruct H5. eapply H5.
-
   
   admit.  (* global extends *)
   (* We need GE to not have all the extra local identifiers *)
@@ -301,5 +297,5 @@ Proof.
 
   Unshelve.
   all: exact id.
-  
+x  
 Admitted.
