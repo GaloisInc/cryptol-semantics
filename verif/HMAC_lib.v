@@ -68,7 +68,10 @@ Definition good_hash (h : Expr) (ge : genv) (T : tenv) (SE : senv) (hf : ext_val
         has_type v (bytestream n) ->
         eager_eval_expr ge TE (extend E id (to_sval v)) exp (to_sval (hf v)) /\ exists n, has_type (hf v) (tseq n tbit)
   
-  ).
+  ) /\ (    forall x l,
+      hf x = eseq l ->
+      Nat.divide 8 (Datatypes.length l)).
+
 
 (* TODO: massage into good_hash defn *)
 Lemma good_hash_fully_padded :
@@ -77,18 +80,9 @@ Lemma good_hash_fully_padded :
     forall x l,
       hf x = eseq l ->
       Nat.divide 8 (Datatypes.length l).
-Admitted.
-
-(* This'll be a fun one *)
-(* if too hard, it's fine to existentially quantify the Nat.div number *)
-Lemma type_stream_of_bytes :
-  forall n l t,
-    Forall (fun x => has_type x t) l ->
-    Nat.divide n (Datatypes.length l) ->
-    has_type (eseq (map eseq (get_each_n n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
 Proof.
-  (* This will be a fun proof to be sure *)
-Admitted.
+  intros. unfold good_hash in H. destruct H. eauto.
+Qed.
 
 Lemma good_hash_eval :
   forall h GE T SE hf,
@@ -97,7 +91,7 @@ Lemma good_hash_eval :
       eager_eval_expr GE T SE h (sclose id exp TE E).
 Proof.
   intros. unfold good_hash in *.
-  do 5 destruct H.
+  do 6 destruct H.
   eauto.
 Qed.
 
@@ -111,7 +105,7 @@ Lemma good_hash_complete_eval :
         eager_eval_expr GE TE (extend E id (to_sval v)) exp (to_sval (hf v)) /\ exists n, has_type (hf v) (tseq n tbit).
 Proof.
   intros. unfold good_hash in *.
-  do 5 destruct H.
+  do 6 destruct H.
   do 4 eexists. split; eauto.
 Qed.
 
@@ -120,6 +114,53 @@ Definition global_extends (ge GE : genv) : Prop :=
     ge id = Some v ->
     GE id = Some v.
 
+Lemma global_extends_eager_eval' :
+    forall expr TE SE ge GE,
+      global_extends ge GE ->
+      forall v,
+        eager_eval_expr ge TE SE expr v ->
+        eager_eval_expr GE TE SE expr v.
+Proof.
+  intros expr TE SE ge GE Hextend.
+  eapply Expr_mut_rect_full
+    with (e := expr)
+         (Pl := (fun l => forall vs, Forall2 (eager_eval_expr ge TE SE) l vs -> Forall2 (eager_eval_expr GE TE SE) l vs))
+         (Ppl := (fun lp => forall vs, Forall2 (eager_eval_expr ge TE SE) (map snd lp) vs ->
+                                       Forall2 (eager_eval_expr GE TE SE) (map snd lp) vs))
+         ;
+         
+    intros;
+    try solve [
+          match goal with
+          | [ H : eager_eval_expr _ _ _ _ _ |- _ ] => inversion H
+          end;
+          subst;
+          econstructor; eauto].
+
+  * inversion H0. subst.
+    econstructor; eauto.
+
+    admit. (* types *)
+    admit. (* lemma about not_types *)
+  * inversion H2.
+    subst.
+    econstructor; eauto.
+    destruct b; eauto.
+
+  * (* Pllm *)
+    admit.
+  * inversion H;
+      subst.
+    eapply eager_eval_local_var; eauto.
+    unfold global_extends in Hextend.
+    eapply Hextend in H2.
+    eapply eager_eval_global_var.
+    eauto. eauto.
+    (* This is the killer *)
+    (* What do I do with this? *)
+    
+Admitted. 
+
 Lemma global_extends_eager_eval :
     forall expr v ge TE SE,
       eager_eval_expr ge TE SE expr v ->
@@ -127,8 +168,8 @@ Lemma global_extends_eager_eval :
         global_extends ge GE ->
         eager_eval_expr GE TE SE expr v.
 Proof.
-  
-Admitted. (* needs crazy induction *)
+  intros. eapply global_extends_eager_eval'; eauto.
+Qed.
 
 Definition name_irrel {A : Type} (E : ident -> option A) : Prop :=
   forall id id',
@@ -985,3 +1026,65 @@ Proof.
   eapply Zdiv.Zmod_small.
   omega.
 Qed.  
+
+Lemma has_type_cons :
+  forall f l n t,
+    has_type (eseq l) (tseq n t) ->
+    has_type f t ->
+    has_type (eseq (f :: l)) (tseq (S n) t).
+Proof.
+  intros. inversion H.
+  econstructor; eauto.
+Qed.
+
+(* Everything below is for type_stream_of_bytes *)
+Lemma get_each_n'_extra_fuel :
+  forall {A} fuel fuel' n (l : list A),
+    (fuel >= fuel')%nat ->
+    (fuel' >= Datatypes.length l)%nat ->
+    get_each_n' fuel n l = get_each_n' fuel' n l.
+Proof.
+  induction fuel; intros.
+  assert (fuel' = O) by omega.
+  subst. destruct l; simpl in *; try omega.
+  reflexivity.
+  assert (fuel' = S fuel \/ fuel >= fuel')%nat by omega.
+  destruct H1. subst. reflexivity.
+Admitted.
+
+
+Lemma get_each_n'_type :
+  forall fuel l n t,
+    Forall (fun x => has_type x t) l ->
+    Nat.divide n (Datatypes.length l) ->
+    n <> O ->
+    (fuel >= Datatypes.length l)%nat ->
+    has_type (eseq (map eseq (get_each_n' fuel n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
+Proof.
+  induction fuel; intros.
+  destruct l; simpl in *; try omega.
+  rewrite Nat.div_0_l by congruence.
+  econstructor; eauto.
+  assert (fuel >= Datatypes.length l \/ S fuel = Datatypes.length l)%nat by omega.
+  destruct H3.
+  erewrite get_each_n'_extra_fuel; try apply H3; try omega.
+  eapply IHfuel; eauto.
+
+  destruct l; destruct n; try solve [simpl in *; try congruence; try omega].
+  unfold get_each_n'. fold (@get_each_n' ext_val).
+
+  
+Admitted.
+  
+
+(* This'll be a fun one *)
+(* if too hard, it's fine to existentially quantify the Nat.div number *)
+Lemma type_stream_of_bytes :
+  forall n l t,
+    Forall (fun x => has_type x t) l ->
+    Nat.divide n (Datatypes.length l) ->
+    has_type (eseq (map eseq (get_each_n n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
+Proof.
+  
+  
+Admitted.

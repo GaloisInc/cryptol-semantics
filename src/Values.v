@@ -258,7 +258,8 @@ Proof.
 
       * congruence.
 Qed. 
-    
+
+
 Lemma tobit_frombit' :
   forall len v l1 l2 width (bv : BitV width),
     (width >= len)%nat -> 
@@ -299,7 +300,12 @@ Proof.
       eapply H.
 Qed.
     
-  
+Lemma from_bitv'_widen :
+  forall ws' ws bv,
+    (ws' >= ws)%nat ->
+    from_bitv' ws' ws (@repr ws' bv) = from_bitv' ws ws (@repr ws bv).
+Proof.
+Admitted.
 
 Lemma frombit_tobit : forall l ws (bv : BitV ws), 
   from_bitv bv = l -> to_bitv l = Some bv. 
@@ -309,8 +315,14 @@ Proof.
     intros. f_equal. eapply f_equal. apply unsigned_eq. simpl. unfold unsigned. rewrite H. reflexivity.
   - unfold from_bitv in H. unfold from_bitv in IHl. destruct ws.
     + inversion H.
-    + simpl in H. inversion H.  
-  (* Might need a more general, part-way lemma like tobit_frombit' *)
+    + simpl in H. inversion H.
+      destruct bv. replace ({| intval := intval; intrange := intrange |}) with (@repr (S ws) intval) in *.
+      erewrite (from_bitv'_widen (S ws) ws) in * by omega.
+      simpl.
+      subst l. specialize (IHl _ _ eq_refl).
+      rewrite IHl.
+      simpl.
+      
 
 Admitted. 
 
@@ -320,8 +332,8 @@ Theorem tobit_frombit_equiv : forall l ws (bv : BitV ws),
 Proof. 
   intros. split. 
   apply tobit_frombit. 
-  apply frombit_tobit. 
-Admitted. 
+  apply frombit_tobit.
+Qed.
 
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
