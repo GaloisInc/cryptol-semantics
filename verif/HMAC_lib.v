@@ -512,6 +512,7 @@ Proof.
   erewrite strictval_from_bitv'_widen; eauto.
 Qed.
 
+
 Lemma testbit_unsigned_repr :
   forall w z idx,
     Z.of_nat w > idx ->
@@ -919,11 +920,68 @@ Proof.
   eapply Forall_app; eauto.
 Qed.
 
+Lemma eq_is_refl :
+  forall {ws} (bv : BitV ws),
+    eq_sem (strict_list (strictval_from_bitv bv)) (strict_list (strictval_from_bitv bv)) = Some (sbit true).
+Proof.
+  unfold strictval_from_bitv.
+  induction ws; intros. simpl. reflexivity.
+  
+  destruct bv. replace ({| intval := intval; intrange := intrange |}) with (@repr (S ws) intval).
+      
+  simpl.
+  destruct (testbit (repr intval) (Z.of_nat ws));
+    erewrite strictval_from_bitv_norm by omega;
+    erewrite IHws; eauto.
+
+  eapply unsigned_eq. simpl.
+  rewrite Z_mod_modulus_eq by congruence.
+  unfold modulus.
+  eapply Zdiv.Zmod_small.
+  omega.
+Qed.
+
+Lemma lt_not_refl :
+  forall {ws} (bv : BitV ws),
+    lt_sem (strict_list (strictval_from_bitv bv)) (strict_list (strictval_from_bitv bv)) = Some (sbit false).
+Proof.
+  unfold strictval_from_bitv.
+  induction ws; intros. simpl. reflexivity.
+  
+  destruct bv. replace ({| intval := intval; intrange := intrange |}) with (@repr (S ws) intval).
+      
+  simpl.
+  destruct (testbit (repr intval) (Z.of_nat ws));
+    erewrite strictval_from_bitv_norm by omega;
+    erewrite IHws; eauto.
+
+  eapply unsigned_eq. simpl.
+  rewrite Z_mod_modulus_eq by congruence.
+  unfold modulus.
+  eapply Zdiv.Zmod_small.
+  omega.
+Qed.
+
 Lemma gt_not_refl :
   forall {ws} (bv : BitV ws),
     gt_sem (strict_list (strictval_from_bitv bv)) (strict_list (strictval_from_bitv bv)) = Some (sbit false).
 Proof.
   unfold strictval_from_bitv.
-  induction ws; intros. simpl. reflexivity.
-  (* inductive case will be harder, I think it's true though *)
-Admitted.
+  induction ws; simpl; auto; intros.
+  destruct bv. replace ({| intval := intval; intrange := intrange |}) with (@repr (S ws) intval).
+  simpl.
+  destruct (testbit (repr intval) (Z.of_nat ws));
+    erewrite strictval_from_bitv_norm by omega;
+
+
+  replace (strictval_from_bitv' ws ws (repr intval)) with (@strictval_from_bitv ws (repr intval)) by (unfold strictval_from_bitv; eauto);
+  erewrite lt_not_refl; eauto;
+    erewrite eq_is_refl; eauto.
+
+  
+  eapply unsigned_eq. simpl.
+  rewrite Z_mod_modulus_eq by congruence.
+  unfold modulus.
+  eapply Zdiv.Zmod_small.
+  omega.
+Qed.  
