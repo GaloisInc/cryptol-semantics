@@ -110,9 +110,13 @@ Proof.
 Qed.
 
 Definition global_extends (ge GE : genv) : Prop :=
-  forall id v,
+  (forall id v,
     ge id = Some v ->
-    GE id = Some v.
+    GE id = Some v) /\
+  (forall TE SE expr v,
+      eager_eval_expr ge TE SE expr v ->
+      eager_eval_expr GE TE SE expr v).
+
 
 Lemma global_extends_eager_eval' :
     forall expr TE SE ge GE,
@@ -121,45 +125,10 @@ Lemma global_extends_eager_eval' :
         eager_eval_expr ge TE SE expr v ->
         eager_eval_expr GE TE SE expr v.
 Proof.
-  intros expr TE SE ge GE Hextend.
-  eapply Expr_mut_rect_full
-    with (e := expr)
-         (Pl := (fun l => forall vs, Forall2 (eager_eval_expr ge TE SE) l vs -> Forall2 (eager_eval_expr GE TE SE) l vs))
-         (Ppl := (fun lp => forall vs, Forall2 (eager_eval_expr ge TE SE) (map snd lp) vs ->
-                                       Forall2 (eager_eval_expr GE TE SE) (map snd lp) vs))
-         ;
-         
-    intros;
-    try solve [
-          match goal with
-          | [ H : eager_eval_expr _ _ _ _ _ |- _ ] => inversion H
-          end;
-          subst;
-          econstructor; eauto].
-
-  * inversion H0. subst.
-    econstructor; eauto.
-
-    admit. (* types *)
-    admit. (* lemma about not_types *)
-  * inversion H2.
-    subst.
-    econstructor; eauto.
-    destruct b; eauto.
-
-  * (* Pllm *)
-    admit.
-  * inversion H;
-      subst.
-    eapply eager_eval_local_var; eauto.
-    unfold global_extends in Hextend.
-    eapply Hextend in H2.
-    eapply eager_eval_global_var.
-    eauto. eauto.
-    (* This is the killer *)
-    (* What do I do with this? *)
-    
-Admitted. 
+  intros. unfold global_extends in *.
+  destruct H.
+  eapply H1; eauto.
+Qed.
 
 Lemma global_extends_eager_eval :
     forall expr v ge TE SE,
@@ -185,18 +154,21 @@ Lemma global_extends_extend_r :
 Proof.
   intros.
   unfold global_extends in *.
+  destruct H. split.
   intros.
   unfold extend.
-  remember H2 as Hsome.
+  remember H3 as Hsome.
   clear HeqHsome.
-  eapply H in H2.
-  rewrite H2.
+  eapply H in H3.
+  rewrite H3.
   destruct (ident_eq id0 id) eqn:?; auto.
   unfold name_irrel in *.
   specialize (H0 id0 id).
   rewrite Heqs in H0. congruence.
-Qed.
 
+  (* getting closer, still unsettling though *)
+  
+Admitted.
 
 Lemma global_extends_refl :
   forall ge,
@@ -205,7 +177,6 @@ Proof.
   unfold global_extends.
   auto.
 Qed.
-
 
 
 (* lowercase is concrete, uppercase is abstract *)
