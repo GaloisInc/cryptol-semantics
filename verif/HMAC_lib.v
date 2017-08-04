@@ -144,6 +144,16 @@ Definition name_irrel {A : Type} (E : ident -> option A) : Prop :=
   forall id id',
     if ident_eq id id' then E id = E id' else True.
 
+Lemma eager_eval_expr_ident_irrel :
+  forall ge id,
+    ge id = None ->
+    forall TE SE expr v,
+      eager_eval_expr ge TE SE expr v ->
+      forall v',
+        eager_eval_expr (extend ge id v') TE SE expr v.
+Proof.
+Admitted.
+
 Lemma global_extends_extend_r :
   forall ge ge',
     global_extends ge ge' ->
@@ -166,7 +176,13 @@ Proof.
   specialize (H0 id0 id).
   rewrite Heqs in H0. congruence.
 
-  (* getting closer, still unsettling though *)
+  intros.
+  eapply eager_eval_expr_ident_irrel in H1; eauto.
+  eapply H2 in H3.
+      
+  
+  (* if expr evaluated under H3, and ge id = None, then expr doesn't use id *)
+  (* Thus no matter *)
   
 Admitted.
 
