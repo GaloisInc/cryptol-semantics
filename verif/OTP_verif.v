@@ -62,13 +62,13 @@ Eval compute in (otp_encrypt k1 m1).
 
 Definition sempty : senv := fun _ => None.  
 
-Theorem otp_equiv : forall key msg l, 
+(* Theorem otp_equiv : forall key msg l, 
   has_type key (bytestream 8) -> 
   has_type msg (bytestream 8) -> 
     eager_eval_expr ge tempty sempty (otp_encrypt key msg) l -> 
       eager_eval_expr ge tempty sempty 
         (EApp (EApp (EVar encrypt) (EList (map EValue key)) (EList (map EValue msg)))) l.
-
+ *)
 (* Lemma something : forall k ge te e, 
   exists k', 
   Forall2 (eager_eval_expr ge te e) (map EValue k) k'. 
