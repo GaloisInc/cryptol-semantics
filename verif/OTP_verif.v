@@ -1,5 +1,5 @@
-(*Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -18,18 +18,39 @@ Require Import Bitstream.
 
 Require Import EvalTac.
 Require Import Eager.
-
+ 
 Import HaskellListNotations.
 Open Scope string.
 
 Require Import OTP. 
 
 
+Fixpoint xor_ext (l1 l2 : list ext_val) : list ext_val :=
+  match l1 with 
+  | (ebit x :: xs) => match l2 with
+     | (ebit y :: ys) => (ebit (xorb x y)) :: xor_ext xs ys
+     | _ => []
+     end
+  | _ => []
+  end.
 
-Definition otp_encrypt (k msg : BitV 8) : BitV 8 :=
-  xor k msg.
+Definition xor_ext' (x y : ext_val) : ext_val :=
+  match x with 
+  | eseq l1 => match y with 
+    | eseq l2 => eseq (xor_ext l1 l2)
+    | _ => ebit false
+    end
+  | _ => ebit false
+  end.
+
+Definition otp_encrypt (key msg : ext_val) : ext_val :=
+  xor_ext' key msg.
   
-Definition otp_encrypt'  (k m: list val) : list val :=
+Definition k1 : ext_val := eseq (ebit false::ebit true::ebit false::nil).
+Definition m1 : ext_val := eseq (ebit true::ebit true::ebit true::nil).
+Eval compute in (otp_encrypt k1 m1). 
+
+(* Definition otp_encrypt'  (k m: list val) : list val :=
   match to_bitv k with
   | None => []
   | Some bvk => 
@@ -37,11 +58,18 @@ Definition otp_encrypt'  (k m: list val) : list val :=
       | None => []
       | Some bvm => from_bitv (otp_encrypt bvk bvm)  
       end
-  end. 
+  end.  *)
 
 Definition sempty : senv := fun _ => None.  
 
-Lemma something : forall k ge te e, 
+Theorem otp_equiv : forall key msg l, 
+  has_type key (bytestream 8) -> 
+  has_type msg (bytestream 8) -> 
+    eager_eval_expr ge tempty sempty (otp_encrypt key msg) l -> 
+      eager_eval_expr ge tempty sempty 
+        (EApp (EApp (EVar encrypt) (EList (map EValue key)) (EList (map EValue msg)))) l.
+
+(* Lemma something : forall k ge te e, 
   exists k', 
   Forall2 (eager_eval_expr ge te e) (map EValue k) k'. 
 Proof.
@@ -58,7 +86,7 @@ Proof.
 
     inversion H. subst.      
 
-Admitted.    
+Admitted.     *)
 (*
 Lemma otp_equiv : forall k msg l, 
   n_bits 8 k -> 
