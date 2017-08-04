@@ -1,5 +1,5 @@
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".
+(* Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src". *)
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -21,10 +21,11 @@ Require Import Eager.
  
 Import HaskellListNotations.
 Open Scope string.
+Require Import HMAC_lib. 
 
 Require Import OTP. 
 
-
+(* Change these to Options *)
 Fixpoint xor_ext (l1 l2 : list ext_val) : list ext_val :=
   match l1 with 
   | (ebit x :: xs) => match l2 with
@@ -48,7 +49,7 @@ Definition otp_encrypt (key msg : ext_val) : ext_val :=
   
 Definition k1 : ext_val := eseq (ebit false::ebit true::ebit false::nil).
 Definition m1 : ext_val := eseq (ebit true::ebit true::ebit true::nil).
-Eval compute in (otp_encrypt k1 m1). 
+(* Eval compute in (otp_encrypt k1 m1).  *)
 
 (* Definition otp_encrypt'  (k m: list val) : list val :=
   match to_bitv k with
@@ -60,15 +61,20 @@ Eval compute in (otp_encrypt k1 m1).
       end
   end.  *)
 
-Definition sempty : senv := fun _ => None.  
-
-(* Theorem otp_equiv : forall key msg l, 
-  has_type key (bytestream 8) -> 
-  has_type msg (bytestream 8) -> 
-    eager_eval_expr ge tempty sempty (otp_encrypt key msg) l -> 
+(* Need to convert an ext_val which is an eseq into a list val
+   Morally want "(map EValue (map to_val key))" 
+   Do I need to put xor_ext into the GE to use it in otp_encrypt? *)
+Theorem otp_equiv : forall key msg l, 
+  has_type key byte -> 
+  has_type msg byte -> 
       eager_eval_expr ge tempty sempty 
-        (EApp (EApp (EVar encrypt) (EList (map EValue key)) (EList (map EValue msg)))) l.
- *)
+        (EApp (EApp (EVar encrypt) (EValue (to_val key))) (EValue (to_val msg))) (to_sval l) /\ otp_encrypt key msg = l.
+Proof.
+  intros; split.  inversion H. do 9 (destruct l0; simpl in H1; try omega).
+  inversion H3.    
+  e. e. g. e. e.
+  Admitted. 
+    
 (* Lemma something : forall k ge te e, 
   exists k', 
   Forall2 (eager_eval_expr ge te e) (map EValue k) k'. 
