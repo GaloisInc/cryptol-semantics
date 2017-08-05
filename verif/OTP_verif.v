@@ -1,5 +1,5 @@
-(*Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
+(* Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src". *)
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -18,18 +18,40 @@ Require Import Bitstream.
 
 Require Import EvalTac.
 Require Import Eager.
-
+ 
 Import HaskellListNotations.
 Open Scope string.
+Require Import HMAC_lib. 
 
 Require Import OTP. 
 
+(* Change these to Options *)
+Fixpoint xor_ext (l1 l2 : list ext_val) : list ext_val :=
+  match l1 with 
+  | (ebit x :: xs) => match l2 with
+     | (ebit y :: ys) => (ebit (xorb x y)) :: xor_ext xs ys
+     | _ => []
+     end
+  | _ => []
+  end.
 
+Definition xor_ext' (x y : ext_val) : ext_val :=
+  match x with 
+  | eseq l1 => match y with 
+    | eseq l2 => eseq (xor_ext l1 l2)
+    | _ => ebit false
+    end
+  | _ => ebit false
+  end.
 
-Definition otp_encrypt (k msg : BitV 8) : BitV 8 :=
-  xor k msg.
+Definition otp_encrypt (key msg : ext_val) : ext_val :=
+  xor_ext' key msg.
   
-Definition otp_encrypt'  (k m: list val) : list val :=
+Definition k1 : ext_val := eseq (ebit false::ebit true::ebit false::nil).
+Definition m1 : ext_val := eseq (ebit true::ebit true::ebit true::nil).
+(* Eval compute in (otp_encrypt k1 m1).  *)
+
+(* Definition otp_encrypt'  (k m: list val) : list val :=
   match to_bitv k with
   | None => []
   | Some bvk => 
@@ -37,11 +59,23 @@ Definition otp_encrypt'  (k m: list val) : list val :=
       | None => []
       | Some bvm => from_bitv (otp_encrypt bvk bvm)  
       end
-  end. 
+  end.  *)
 
-Definition sempty : senv := fun _ => None.  
-
-Lemma something : forall k ge te e, 
+(* Need to convert an ext_val which is an eseq into a list val
+   Morally want "(map EValue (map to_val key))" 
+   Do I need to put xor_ext into the GE to use it in otp_encrypt? *)
+Theorem otp_equiv : forall key msg l, 
+  has_type key byte -> 
+  has_type msg byte -> 
+      eager_eval_expr ge tempty sempty 
+        (EApp (EApp (EVar encrypt) (EValue (to_val key))) (EValue (to_val msg))) (to_sval l) /\ otp_encrypt key msg = l.
+Proof.
+  intros; split.  inversion H. do 9 (destruct l0; simpl in H1; try omega).
+  inversion H3.    
+  e. e. g. e. e.
+  Admitted. 
+    
+(* Lemma something : forall k ge te e, 
   exists k', 
   Forall2 (eager_eval_expr ge te e) (map EValue k) k'. 
 Proof.
@@ -58,7 +92,7 @@ Proof.
 
     inversion H. subst.      
 
-Admitted.    
+Admitted.     *)
 (*
 Lemma otp_equiv : forall k msg l, 
   n_bits 8 k -> 
