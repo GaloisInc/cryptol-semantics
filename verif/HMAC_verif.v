@@ -15,6 +15,9 @@ Require Import BuiltinSyntax.
 Require Import Values.        
 Require Import Eager.
 Require Import Bitstream.
+Require Import Lib.
+Require Import GlobalExtends.
+Require Import GetEachN.
 
 Require Import EvalTac.
 
@@ -239,9 +242,14 @@ Proof.
   unfold bind_decl_groups.
   unfold bind_decl_group.
   unfold declare.
-  
-  repeat (eapply global_extends_extend_r; try eapply wf_env_name_irrel_GE; eauto).
-  eapply global_extends_refl.
+
+
+  repeat (match goal with
+          | [ |- global_extends ?X ?X ] => eapply global_extends_refl
+          | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
+          | [ |- _ ] => idtac
+          end);
+    try (eapply wf_env_name_irrel_GE; eauto).
 
   eapply HIDs. simpl. left. reflexivity.
   eapply HIDs. simpl. right. left. reflexivity.
@@ -299,13 +307,18 @@ Proof.
   destruct H5.
   eapply H4 in H5. destruct H5. eapply H5.
 
-  repeat (eapply global_extends_extend_r; try eapply wf_env_name_irrel_GE; eauto).
-  eapply global_extends_refl.
+  repeat (match goal with
+          | [ |- global_extends ?X ?X ] => eapply global_extends_refl
+          | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
+          | [ |- _ ] => idtac
+          end);
+    try (eapply wf_env_name_irrel_GE; eauto).
 
   eapply HIDs. simpl. left. reflexivity.
   eapply HIDs. simpl. right. left. reflexivity.
   eapply HIDs. simpl. right. right. left. reflexivity.
   eapply HIDs. simpl. right. right. right. left. reflexivity.
+
 
   (* our result matches the model *)
   subst hv1.

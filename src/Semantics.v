@@ -13,6 +13,7 @@ Require Import Builtins.
 Require Import Values.
 Require Import BuiltinSyntax.
 Require Import BuiltinSem.
+Require Import Lib.
 
 Open Scope list_scope.
 
@@ -233,16 +234,6 @@ Fixpoint lookup {A : Type} (str : string) (l : list (string * A)) : option A :=
     if string_dec str s then Some v else lookup str r
   end.
 
-(* Just like Forall2, but with 3 lists *)
-(* Good for modeling evaluation of binary operators *)
-Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -> list C -> Prop :=
-| Forall3_nil :
-    Forall3 TR [] [] []
-| Forall3_cons :
-    forall x y z lx ly lz,
-      TR x y z ->
-      Forall3 TR lx ly lz ->
-      Forall3 TR (x :: lx) (y :: ly) (z :: lz).
 
 
 

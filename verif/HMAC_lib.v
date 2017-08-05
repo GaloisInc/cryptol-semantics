@@ -15,6 +15,9 @@ Require Import BuiltinSyntax.
 Require Import Values.        
 Require Import Eager.
 Require Import Bitstream.
+Require Import GlobalExtends.
+Require Import Lib.
+Require Import GetEachN.
 
 Require Import EvalTac.
 
@@ -109,90 +112,6 @@ Proof.
   do 4 eexists. split; eauto.
 Qed.
 
-Definition global_extends (ge GE : genv) : Prop :=
-  (forall id v,
-    ge id = Some v ->
-    GE id = Some v) /\
-  (forall TE SE expr v,
-      eager_eval_expr ge TE SE expr v ->
-      eager_eval_expr GE TE SE expr v).
-
-
-Lemma global_extends_eager_eval' :
-    forall expr TE SE ge GE,
-      global_extends ge GE ->
-      forall v,
-        eager_eval_expr ge TE SE expr v ->
-        eager_eval_expr GE TE SE expr v.
-Proof.
-  intros. unfold global_extends in *.
-  destruct H.
-  eapply H1; eauto.
-Qed.
-
-Lemma global_extends_eager_eval :
-    forall expr v ge TE SE,
-      eager_eval_expr ge TE SE expr v ->
-      forall GE,
-        global_extends ge GE ->
-        eager_eval_expr GE TE SE expr v.
-Proof.
-  intros. eapply global_extends_eager_eval'; eauto.
-Qed.
-
-Definition name_irrel {A : Type} (E : ident -> option A) : Prop :=
-  forall id id',
-    if ident_eq id id' then E id = E id' else True.
-
-Lemma eager_eval_expr_ident_irrel :
-  forall ge id,
-    ge id = None ->
-    forall TE SE expr v,
-      eager_eval_expr ge TE SE expr v ->
-      forall v',
-        eager_eval_expr (extend ge id v') TE SE expr v.
-Proof.
-Admitted.
-
-Lemma global_extends_extend_r :
-  forall ge ge',
-    global_extends ge ge' ->
-    name_irrel ge ->
-    forall id exp,
-      ge id = None ->
-      global_extends ge (extend ge' id exp).
-Proof.
-  intros.
-  unfold global_extends in *.
-  destruct H. split.
-  intros.
-  unfold extend.
-  remember H3 as Hsome.
-  clear HeqHsome.
-  eapply H in H3.
-  rewrite H3.
-  destruct (ident_eq id0 id) eqn:?; auto.
-  unfold name_irrel in *.
-  specialize (H0 id0 id).
-  rewrite Heqs in H0. congruence.
-
-  intros.
-  eapply eager_eval_expr_ident_irrel in H1; eauto.
-  eapply H2 in H3.
-      
-  
-  (* if expr evaluated under H3, and ge id = None, then expr doesn't use id *)
-  (* Thus no matter *)
-  
-Admitted.
-
-Lemma global_extends_refl :
-  forall ge,
-    global_extends ge ge.
-Proof.
-  unfold global_extends.
-  auto.
-Qed.
 
 
 (* lowercase is concrete, uppercase is abstract *)
@@ -238,20 +157,6 @@ Proof.
   rewrite e in n. congruence.
 Qed.
 
-Lemma name_irrel_diff_results :
-  forall {A} E id id',
-    @name_irrel A E ->
-    E id <> E id' ->
-    exists p,
-      ident_eq id id' = right p.
-Proof.
-  intros.
-  unfold name_irrel in H.
-  specialize (H id id').
-  destruct (ident_eq id id') eqn:?.
-  congruence.
-  exists n. eauto.
-Qed.
 
 Lemma name_irrel_erase :
   forall {A} (E : ident -> option A) id,
@@ -455,7 +360,6 @@ Proof.
 Qed.
 
 
-
 (* Eager tactics *)
 (* TODO: standardize *)
 Ltac ec := econstructor; try unfold mb; try reflexivity.
@@ -560,28 +464,6 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma length_cons :
-  forall {A} (e : A) l,
-    Datatypes.length (e :: l) = S (Datatypes.length l).
-Proof.
-  reflexivity.
-Qed.
-
-Lemma map_cons :
-  forall {A B} (f : A -> B) (e : A) l,
-    map f (e :: l) = (f e) :: (map f l).
-Proof.
-  reflexivity.
-Qed.
-
-Lemma succ_nat_pred :
-  forall n,
-    (Z.of_nat (S n)) - 1 = Z.of_nat n.
-Proof.
-  intros.
-  repeat rewrite Nat2Z.inj_succ.
-  omega.
-Qed.
 
 
 Lemma xor_num :
@@ -641,29 +523,6 @@ Proof.
 Qed.
 
 
-Lemma Forall_app :
-  forall {A} (l1 l2 : list A) P,
-    Forall P (l1 ++ l2) <-> Forall P l1 /\ Forall P l2.
-Proof.
-  induction l1; intros; split; intros; simpl; auto.
-  destruct H. auto.
-  simpl in H. inversion H. subst.
-  rewrite IHl1 in H3.
-  destruct H3. split.
-  econstructor; eauto.
-  eauto.
-  destruct H. inversion H. econstructor; eauto.
-  rewrite IHl1. split; eauto.
-Qed.
-
-Lemma Forall_map :
-  forall {A} (l : list A) P f,
-    Forall P l ->
-    (forall x, P x -> P (f x)) ->
-    Forall P (map f l).
-Proof.
-  induction 1; intros; simpl; auto.
-Qed.
 
 Lemma ext_val_list_of_strictval :
   forall ev n t,
@@ -720,96 +579,8 @@ Proof.
   repeat econstructor; eauto.
 Qed.
 
-Lemma firstn_map :
-  forall {A B: Type} (f : A -> B)  n l,
-    firstn n (map f l) = map f (firstn n l).
-Proof.
-  induction n; intros.
-  simpl. reflexivity.
-  simpl. destruct l; simpl. reflexivity.
-  f_equal. eapply IHn.
-Qed.
 
 
-Lemma get_each_n'_zero :
-  forall {A} fuel (l : list A),
-    l <> nil ->
-    get_each_n' fuel O l = repeat [] fuel.
-Proof.
-  induction fuel; intros.
-  simpl. destruct l; reflexivity.
-  simpl. destruct l; try congruence.
-  erewrite IHfuel; eauto.
-Qed.
-
-Lemma map_repeat_nil :
-  forall {A B} k (f : A -> B),
-    repeat [] k = map (map f) (repeat [] k).
-Proof.
-  induction k; intros; simpl; auto.
-  f_equal. auto.
-Qed.
-
-Lemma length_list_drop :
-  forall {A} (l : list A) n,
-    (n > O)%nat ->
-    l <> nil ->
-    (Datatypes.length (list_drop n l) < Datatypes.length l)%nat.
-Proof.
-  induction l; intros.
-  destruct n; simpl; try omega; congruence.
-  simpl.
-  destruct n; try omega.
-  simpl.
-  destruct n; try solve [simpl; auto].
-  specialize (IHl (S n)).
-  assert (l = nil \/ l <> []) by (destruct l; try solve [left; congruence]; right; congruence).
-  destruct H1. subst l; simpl; auto.
-  assert (S n > O)%nat by omega.
-  eapply IHl in H2; try eapply H1. omega.
-Qed.
-
-Lemma get_each_n'_map_commutes_strong :
-  forall {A B : Type} (f : A -> B) len k l fuel n,
-    (len >= Datatypes.length l)%nat ->
-    (k >= fuel)%nat ->
-    get_each_n' fuel n (map f l) = map (map f) (get_each_n' fuel n l).
-Proof.
-  induction len; induction k; intros.
-  assert (fuel = O) by omega. subst. simpl.
-  destruct l; reflexivity.
-  destruct l; simpl in H; try omega.
-  simpl. destruct fuel; simpl; reflexivity.
-  destruct fuel; try omega.
-  destruct l; simpl; reflexivity.
-  assert (fuel = S k \/ k >= fuel)%nat by omega.
-  destruct H1. subst.
-  simpl. destruct l; simpl; auto.
-  f_equal. erewrite <- firstn_map. reflexivity.
-  replace (f a :: map f l) with (map f (a :: l)) by auto.
-  erewrite list_map_drop.
-  assert (n = O \/ n > O)%nat by omega.
-  destruct H1. subst. repeat erewrite get_each_n'_zero by (simpl; congruence).
-  eapply map_repeat_nil.
-  eapply IHlen.
-  eapply length_list_drop in H1.
-  instantiate (1 := a :: l) in H1.
-  omega. congruence.
-  instantiate (1 := k). omega.
-  eauto.
-Qed.
-
-Lemma get_each_n_map_commutes :
-  forall {A B : Type} (f : A -> B) n l,
-    get_each_n n (map f l) = map (map f) (get_each_n n l).
-Proof.
-  intros.
-  unfold get_each_n.
-  erewrite get_each_n'_map_commutes_strong.
-  erewrite map_length. reflexivity.
-  instantiate (1 := Datatypes.length l). omega.
-  instantiate (1 := Datatypes.length (map f l)). omega.
-Qed.
 
 Lemma strict_list_map_to_sval :
   forall l,
@@ -827,60 +598,12 @@ Proof.
 Qed.
 
 
-Lemma map_injective_function :
-  forall {A B} (f : A -> B) (l : list A),
-    Forall (fun a => (forall b, f a = f b -> a = b)) l ->
-    forall l',
-      map f l = map f l' ->
-      l = l'.
-Proof.
-  induction l; intros; simpl in *.
-  destruct l'; simpl in *; try congruence; auto.
-  destruct l'; simpl in *; try congruence.
-  inversion H0.
-  inversion H. subst. eapply H5 in H2. subst.
-  f_equal.
-  eapply IHl; eauto.
-Qed.      
-
 Lemma to_sval_list_pair_equiv :
   forall f,
     to_sval_list_pair f = combine (map fst f) (map to_sval (map snd f)).
 Proof.
   induction f; intros; simpl; auto.
   destruct a. simpl. f_equal. auto.
-Qed.
-
-Lemma combine_injective :
-  forall {A B : Type} (l1 : list A) (l2 : list B),
-  forall l3 l4,
-    combine l1 l2 = combine l3 l4 ->
-    (Datatypes.length l1 = Datatypes.length l2) ->
-    (Datatypes.length l3 = Datatypes.length l4) ->
-    l1 = l3 /\ l2 = l4.
-Proof.
-  induction l1; intros; simpl in *.
-  destruct l2; destruct l3; destruct l4; simpl in *; try congruence.
-  split; auto.
-  destruct l2; destruct l3; destruct l4; simpl in *; try congruence.
-  inversion H0. inversion H1. inversion H. subst. clear H H0 H1.
-  eapply IHl1 in H7; eauto. destruct H7. subst. split; auto.
-Qed.
-
-Lemma list_pair_parts_eq :
-  forall {A B : Type} (l1 l2 : list (A * B)),
-    map fst l1 = map fst l2 ->
-    map snd l1 = map snd l2 ->
-    l1 = l2.
-Proof.
-  induction l1; intros;
-    destruct l2; simpl in *; try congruence.
-  inversion H. inversion H0.
-  f_equal.
-  destruct a; destruct p; simpl in *.
-  congruence.
-  subst.
-  eapply IHl1; eauto.
 Qed.
 
 
@@ -1023,22 +746,6 @@ Proof.
   intros. inversion H.
   econstructor; eauto.
 Qed.
-
-(* Everything below is for type_stream_of_bytes *)
-Lemma get_each_n'_extra_fuel :
-  forall {A} fuel fuel' n (l : list A),
-    (fuel >= fuel')%nat ->
-    (fuel' >= Datatypes.length l)%nat ->
-    get_each_n' fuel n l = get_each_n' fuel' n l.
-Proof.
-  induction fuel; intros.
-  assert (fuel' = O) by omega.
-  subst. destruct l; simpl in *; try omega.
-  reflexivity.
-  assert (fuel' = S fuel \/ fuel >= fuel')%nat by omega.
-  destruct H1. subst. reflexivity.
-Admitted.
-
 
 Lemma get_each_n'_type :
   forall fuel l n t,

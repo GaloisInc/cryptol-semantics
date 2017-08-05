@@ -13,6 +13,7 @@ Require Import Builtins.
 Require Import Values.
 Require Import BuiltinSem.
 Require Import Semantics.
+Require Import GetEachN.
 
 Open Scope list_scope.
 
@@ -244,17 +245,6 @@ Fixpoint splitAt_sem (t1 : Tval) (l : strictval) : option strictval :=
     end
   | _,_ => None
   end.
-
-(* Works as long as you pass in enough fuel *)
-(* just use the length of the list *)
-Fixpoint get_each_n' {A : Type} (fuel : nat) (tot : nat) (l : list A) : list (list A) :=
-  match l,fuel with
-  | _ :: _,S fuel' => (firstn tot l) :: get_each_n' fuel' tot (list_drop tot l)
-  | _,_ => nil
-  end.
-
-Definition get_each_n {A : Type} (tot : nat) (l : list A) :=
-  get_each_n' (length l) tot l.
 
 Definition splitSem (t : Tval) (l : strictval) : option strictval :=
   match t,list_of_strictval l with

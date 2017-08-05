@@ -285,7 +285,7 @@ Definition Expr_mut_rect_full
            (HETAbs : forall (id : ident) (e : Expr), P e -> P (ETAbs id e))
            (HETApp : forall e : Expr, P e -> forall t : Expr, P t -> P (ETApp e t))
            (HETyp : forall t : Typ, P (ETyp t))
-           (HEApp : forall f10 : Expr, P f10 -> forall v : Expr, P v -> P (EApp f10 v))
+           (HEApp : forall f : Expr, P f -> forall v : Expr, P v -> P (EApp f v))
            (HEAbs : forall (id : ident) (e : Expr), P e -> P (EAbs id e))
            (HEWhere : forall e : Expr, P e -> forall l : list DeclGroup, Pldg l -> P (EWhere e l))
            (HEAppend : forall e1 : Expr, P e1 -> forall e2 : Expr, P e2 -> P (EAppend e1 e2))
@@ -392,6 +392,92 @@ Definition Expr_mut_rect_full
       | ELiftBinary bi targs l r lE rE => HELiftBinary bi targs l (go_expr l) r (go_expr r) lE rE (go_list targs)
       | ECompImp e n llm => HECompImp e (go_expr e) n llm (go_list_list_match llm)
       end in go_expr e.
+
+
+Definition Pl (P : Expr -> Prop) : list Expr -> Prop :=
+  Forall P.
+
+Definition Pdd (P : Expr -> Prop) : DeclDef -> Prop :=
+  fun dd =>
+    match dd with
+    | DExpr e => P e
+    | DPrim => True
+    end.
+
+Definition Pd (P : Expr -> Prop) : Declaration -> Prop :=
+  fun d => match d with
+           | Decl _ dd => Pdd P dd
+           end.
+
+Definition Pld (P : Expr -> Prop) : list Declaration -> Prop :=
+  Forall (Pd P).
+
+Definition Pg (P : Expr -> Prop) : DeclGroup -> Prop :=
+  fun dg =>
+    match dg with
+    | Recursive l => Pld P l
+    | NonRecursive d => Pd P d
+    end.
+                           
+Definition Pldg (P : Expr -> Prop) : list DeclGroup -> Prop :=
+  Forall (Pg P).
+
+Definition Pm (P : Expr -> Prop) : Match -> Prop :=
+  fun m =>
+    match m with
+    | MLet d => Pd P d
+    | From _ e => P e
+    end.
+
+Definition Plm (P : Expr -> Prop) : list Match -> Prop :=
+  Forall (Pm P).
+
+Definition Pllm (P : Expr -> Prop) : list (list Match) -> Prop :=
+  Forall (Plm P).
+
+Definition Ppl {A : Type} (P : Expr -> Prop) : list (A * Expr) -> Prop :=
+  fun l => Forall P (map snd l).
+
+Definition Expr_ind_useful 
+           (P : Expr -> Prop)
+           (HEBuiltin : forall (b : builtin) (l : list Expr), (Pl P) l -> P (EBuiltin b l))
+           (HEList : forall l : list Expr, (Pl P) l -> P (EList l))
+           (HETuple : forall l : list Expr, (Pl P) l -> P (ETuple l))
+           (HERec : forall l : list (string * Expr), (Ppl P) l -> P (ERec l))
+           (HESel : forall e : Expr, P e -> forall s : Selector, P (ESel e s))
+           (HEIf : forall cond : Expr, P cond -> forall t : Expr, P t -> forall f4 : Expr, P f4 -> P (EIf cond t f4))
+           (HEComp : forall e : Expr, P e -> forall l : list (list Match), (Pllm P) l -> P (EComp e l))
+           (HEVar : forall id : ident, P (EVar id))
+           (HETAbs : forall (id : ident) (e : Expr), P e -> P (ETAbs id e))
+           (HETApp : forall e : Expr, P e -> forall t : Expr, P t -> P (ETApp e t))
+           (HETyp : forall t : Typ, P (ETyp t))
+           (HEApp : forall f : Expr, P f -> forall v : Expr, P v -> P (EApp f v))
+           (HEAbs : forall (id : ident) (e : Expr), P e -> P (EAbs id e))
+           (HEWhere : forall e : Expr, P e -> forall l : list DeclGroup, (Pldg P) l -> P (EWhere e l))
+           (HEAppend : forall e1 : Expr, P e1 -> forall e2 : Expr, P e2 -> P (EAppend e1 e2))
+           (HEHead : forall e : Expr, P e -> P (EHead e))
+           (HEDrop : forall (n : nat) (e : Expr), P e -> P (EDrop n e))
+           (HETake : forall (n : nat) (e : Expr), P e -> P (ETake n e))
+           (HEValue : forall v : val, P (EValue v))
+           (HELiftUnary : forall (b : builtin) (targs : list Expr) (e : Expr), P e -> (Pl P) targs -> P (ELiftUnary b targs e))
+           (HELiftBinary : forall (b : builtin) (targs : list Expr) (e1 : Expr),
+               P e1 -> forall e2 : Expr, P e2 -> forall env1 env2 : ident -> option val, (Pl P) targs -> P (ELiftBinary b targs e1 e2 env1 env2))
+           (HECompImp : forall e : Expr, P e -> forall (n : nat) (llm : list (list Match)), (Pllm P) llm -> P (ECompImp e n llm))
+           (HmFrom : forall id e, P e -> (Pm P) (From id e))
+           (HmMlet : forall d, (Pd P) d -> (Pm P) (MLet d))
+           (HNonRecursive : forall d, (Pd P) d -> (Pg P) (NonRecursive d))
+           (HRecursive : forall ld, (Pld P) ld -> (Pg P) (Recursive ld))
+           (HPddPrim : (Pdd P) DPrim)
+           (HPddDexpr : forall e, P e -> (Pdd P) (DExpr e))
+           (HPddPd : forall id dd, (Pdd P) dd -> (Pd P) (Decl id dd))
+           (e : Expr) : 
+    P e .
+Proof.
+  eapply Expr_mut_rect_full; try solve [eassumption].
+  all: try (  instantiate (1 := Plm P));
+    intros; econstructor; eauto.
+Defined.
+
 
 
 (* strictvals *)

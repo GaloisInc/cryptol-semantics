@@ -5,14 +5,14 @@ Require Import Bvector.
 Require Import Program. (* dependent destruction *)
 Require Import Coqlib.
 
+Require Import Lib.
 Require Import Utils.
 Require Import Bitstream.
 Require Import Eager.
+Require Import GetEachN.
 
 Require Import HMAC_spec.
 Require Import HMAC_lib.
-
-
 
 Fixpoint to_bvector (w : nat) (e : ext_val) : option (Bvector w) :=
   match e,w with
@@ -44,7 +44,6 @@ Proof.
     simpl. rewrite H0.
     eauto.
 Qed.
-
 
 Lemma bytestream_type :
   forall l t,
@@ -128,80 +127,7 @@ Proof.
   simpl. rewrite IHx. reflexivity.
 Qed.
 
-Lemma firstn_app :
-  forall {A} (l : list A) l',
-    firstn (length l) (l ++ l') = l.
-Proof.
-  induction l; intros; simpl; auto.
-  f_equal. eapply IHl.
-Qed.
 
-Lemma list_drop_app :
-  forall {A} (l : list A) l',
-    list_drop (length l) (l ++ l') = l'.
-Proof.
-  induction l; intros; simpl; auto.
-Qed.
-
-Lemma list_drop_length :
-  forall {A} (l : list A) n,
-    (length (list_drop n l) <= length l)%nat.
-Proof.
-  induction l; intros.
-  simpl. destruct n; simpl; omega.
-  simpl. destruct n; simpl. omega.
-  specialize (IHl n). omega.
-Qed.
-
-Lemma get_each_n'_fuel :
-  forall {A} n (l : list A) fuel tot,
-    (n >= length l)%nat ->
-    (fuel >= length l)%nat ->
-    tot <> O ->
-    get_each_n' fuel tot l = get_each_n' (length l) tot l.
-Proof.
-  induction n; intros.
-  destruct l; simpl in *; destruct fuel; try reflexivity; omega.
-  destruct l. simpl in *.
-  destruct fuel; reflexivity.
-  assert (n >= length l)%nat by (simpl in *; omega).
-  simpl. destruct tot; try omega.
-  simpl. destruct fuel; simpl in *; try omega.
-  f_equal.
-  assert (tot = O \/ tot <> O) by omega.
-  destruct H3. subst. simpl.
-  eapply IHn; eauto; omega.
-  assert (length (list_drop tot l) <= length l)%nat by (eapply list_drop_length; eauto).
-  erewrite IHn; try omega.
-  symmetry.
-  eapply IHn; omega.
-Qed.
-    
-
-Lemma get_each_n_head :
-  forall {A : Type} (l l' : list A) n,
-    n = length l ->
-    n <> O ->
-    get_each_n n (l ++ l') = [l] ++ get_each_n n l'.
-Proof.
-  induction l; intros.
-  simpl in *. congruence.
-  simpl in *.
-  destruct n; inversion H.
-  assert (n = O \/ n <> O) by omega.
-  destruct H1. subst. 
-  destruct l; simpl in H1; try omega.
-  simpl. unfold get_each_n. simpl. reflexivity.
-  unfold get_each_n. simpl.
-  rewrite firstn_app.
-  rewrite list_drop_app.
-  f_equal.
-  unfold get_each_n in IHl.
-  eapply get_each_n'_fuel; eauto.
-  
-  rewrite app_length.
-  omega.
-Qed.
 
 
 Lemma zero_width_is_nil :
