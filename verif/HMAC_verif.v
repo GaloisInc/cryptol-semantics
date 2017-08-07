@@ -250,6 +250,7 @@ Proof.
           | [ |- _ ] => idtac
           end);
     try (eapply wf_env_name_irrel_GE; eauto).
+  eassumption.
 
   eapply HIDs. simpl. left. reflexivity.
   eapply HIDs. simpl. right. left. reflexivity.
@@ -313,7 +314,8 @@ Proof.
           | [ |- _ ] => idtac
           end);
     try (eapply wf_env_name_irrel_GE; eauto).
-
+  eassumption.
+  
   eapply HIDs. simpl. left. reflexivity.
   eapply HIDs. simpl. right. left. reflexivity.
   eapply HIDs. simpl. right. right. left. reflexivity.

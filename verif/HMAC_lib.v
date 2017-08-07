@@ -114,12 +114,6 @@ Qed.
 
 
 
-(* lowercase is concrete, uppercase is abstract *)
-(* wf_env lets this proof be used over a variety of environments that meet the proper constraints *)
-Definition wf_env (ge GE : genv) (TE : tenv) (SE : senv)  : Prop :=
-  name_irrel ge /\ name_irrel GE /\ name_irrel TE /\ name_irrel SE /\
-  (forall id,
-      ge id <> None -> (TE id = None /\ SE id = None /\ ge id = GE id)).
 
 Lemma wf_env_name_irrel_GE :
   forall ge GE TE SE ,
@@ -141,38 +135,8 @@ Proof.
   (* needs determinacy of eager_eval_expr, which is true but unproven *)
 Admitted.
 
-Lemma name_irrel_extend :
-  forall {A} E id (x : A),
-    name_irrel E ->
-    name_irrel (extend E id x).
-Proof.
-  intros. unfold name_irrel in *.
-  intros.
-  specialize (H id0 id').
-  destruct (ident_eq id0 id') eqn:?; auto.
-  unfold extend.
-  destruct (ident_eq id0 id);
-    destruct (ident_eq id' id); auto.
-  rewrite e in e0. congruence.
-  rewrite e in n. congruence.
-Qed.
 
 
-Lemma name_irrel_erase :
-  forall {A} (E : ident -> option A) id,
-    name_irrel E ->
-    name_irrel (fun x => if ident_eq x id then None else E x).
-Proof.
-  intros.
-  unfold name_irrel in *.
-  intros.
-  specialize (H id0 id').
-  destruct (ident_eq id0 id'); auto.
-  rewrite H.
-  destruct (ident_eq id0 id);
-    destruct (ident_eq id' id);
-    auto; congruence.
-Qed.
 
 (*
 Lemma extend_other_name_irrel :
@@ -215,7 +179,8 @@ Proof.
   
   split; auto.
   split; auto.
-
+  
+  
   intros.
   remember H5 as Hcontra.
   clear HeqHcontra.
