@@ -19,6 +19,27 @@ Proof.
   econstructor; eauto.
 Qed.
 
+Lemma Forall_Forall2_implies_in :
+  forall {A B} (P : A -> Prop) (Q R : A -> B -> Prop) (l : list A),
+    Forall P l ->
+    (forall a, In a l -> P a -> forall b, Q a b -> R a b) ->
+    forall (vs : list B),
+      Forall2 Q l vs ->
+      Forall2 R l vs.
+Proof.
+  induction 1; intros.
+  inversion H0. subst.
+  econstructor. 
+  inversion H2. subst.
+  
+  econstructor; eauto.
+
+  eapply H1; eauto. simpl. left. reflexivity.
+  eapply IHForall; eauto.
+  intros. eapply H1; eauto.
+  simpl. right. auto.
+Qed.
+
 (* Just like Forall2, but with 3 lists *)
 (* Good for modeling evaluation of binary operators *)
 Inductive Forall3 {A B C : Type} (TR : A -> B -> C -> Prop) : list A -> list B -> list C -> Prop :=

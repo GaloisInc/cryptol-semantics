@@ -1,4 +1,3 @@
-
 Require Import Coqlib.
 Require Import String.
 Require Import Lib.
@@ -85,138 +84,73 @@ Inductive eval_expr : genv -> env -> Expr -> val -> Prop :=
       eval_expr ge E (EConst z) (num z)
 .
 
+Definition eval_expr_ind_total 
+  (P : genv -> env -> Expr -> val -> Prop)
+  (Pl : genv -> env -> list Expr -> list val -> Prop)         
+  (Hglobal_var : forall (ge : ident -> option Expr) (id : ident) 
+                        (E : ident -> option val) (v : val) (e : Expr),
+      ge id = Some e ->
+      E id = None -> eval_expr ge E e v -> P ge E e v -> P ge E (EVar id) v)
+  (Hlist : forall (ge : genv) (l : list Expr) (vs : list val) (E : env),
+      Forall2 (eval_expr ge E) l vs ->
+      Pl ge E l vs ->
+      P ge E (EList l) (listval vs))
+  (Hlocal_var : forall (ge : genv) (id : ident) (E : ident -> option val) (v : val),
+      E id = Some v -> P ge E (EVar id) v)
+  (Hconst : forall (ge : genv) (z : Z) (E : env), P ge E (EConst z) (num z))
+  (HPlnil : forall ge E, Pl ge E nil nil)
+  (HPlcons : forall ge E e v es vs,
+      P ge E e v ->
+      Pl ge E es vs ->
+      Pl ge E (e :: es) (v :: vs))
+  (ge : genv)
+  (E : env)
+  (expr : Expr)
+  (v : val)
+  (eval : eval_expr ge E expr v) : P ge E expr v :=
+  let fix go ge E exp v eval : P ge E exp v :=
+      let fix go_list ge E es vs f2eval : Pl ge E es vs :=
+          match f2eval in (Forall2 _ es0 vs0) return (Pl ge E es0 vs0) with
+          | Forall2_nil => HPlnil ge E
+          | Forall2_cons e' v' es' vs' eval_fst forall_eval_rest =>
+            HPlcons ge E e' v' es' vs' (go ge E e' v' eval_fst) (go_list ge E es' vs' forall_eval_rest)
+          end
+          in
+      match eval in (eval_expr ge0 E0 exp0 v0) return (P ge0 E0 exp0 v0) with
+      | eval_global_var ge id E v P2 P3 P4 P5 =>
+        Hglobal_var ge id E v P2 P3 P4 P5 (go ge E P2 v P5)
+      | eval_list ge l vs E P3 =>
+        Hlist ge l vs E P3 (go_list ge E l vs P3)
+      | eval_local_var ge id E v P2 => Hlocal_var ge id E v P2
+      | eval_const ge z E => Hconst ge z E
+      end in
+          go ge E expr v eval.
 
-Definition widens (ge : genv) (e : Expr) : Prop :=
-  forall E v,
-    eval_expr ge E e v ->
-    forall id exp,
-      ge id = None ->
-      eval_expr (extend ge id exp) E e v.
-
-
-Lemma widens_ge :
-  forall e (ge : genv),
-    (forall id e, ge id = Some e -> widens ge e) ->
-    widens ge e.
-Proof.
-  induction e; intros.
-  unfold widens. intros. inversion H0. subst. econstructor; eauto.
-  unfold extend. destruct (ident_eq id id0). admit.
-  eassumption.
-  eapply H in H3. eapply H3. eauto. eauto.
-  eapply eval_local_var. eauto.
-  unfold widens. intros.
-  inversion H0.
-  econstructor; eauto.
-  unfold widens.
-  intros.
-  inversion H0. subst.
-  econstructor.
-  eapply Forall_Forall2_implies; try eassumption.
-Admitted. (* we can prove this *)  
-  
-Lemma ge_widens_empty :
-  forall ge e,
-    (forall id, ge id = None) ->
-    widens ge e.
-Proof.
-  unfold widens.
-  intros.
-  eapply widens_ge; eauto.
-  intros.
-  rewrite H in H2. congruence.
-Qed.
-
-Lemma widens_out :
-  forall (ge : genv),
-    (forall id e, ge id = Some e -> widens ge e) ->
-    forall idNew eNew,
-      forall id e, (extend ge idNew eNew) id = Some e -> widens (extend ge idNew eNew) e.
-Proof.
-  (* If we can prove this, we're set? *)
-Admitted.
-
-Fixpoint make_ge (l : list (ident * Expr)) (ge : genv) : genv :=
-  match l with
-  | nil => ge
-  | (id,exp) :: l' =>
-    let ge' := make_ge l' ge in
-    extend ge' id exp
-  end.
-
-
-Definition finite' (ge : genv) (l : list (ident * Expr)) : Prop :=
-  forall id,
-    ge id = make_ge l gempty id.
-
-Lemma all_widens :
-  forall l ge,
-    finite' ge l ->
-    forall e,
-      widens ge e.
-Proof.
-  induction l; intros.
-  unfold finite' in *.
-  eapply ge_widens_empty.
-  intros. rewrite H. simpl. unfold gempty. reflexivity.
-
-  (* How do I prove this? *)
-Admitted.
-
-(* we can prove that any expression widens, given that everything in the environment widens *)
-(* what is hard is proving that everything in the environment widens *)
-
-
-Fixpoint lookup (id : ident) (l : list (ident * Expr)) : option Expr :=
-  match l with
-  | nil => None
-  | (id',e) :: r =>
-    if ident_eq id id' then Some e else lookup id r
-  end.
-
-Inductive eval_expr_listenv : list (ident * Expr) -> env -> Expr -> val -> Prop :=
-| eval_global_var_listenv :
-    forall ge id E v e,
-      E id = None ->
-      lookup id ge = Some e ->
-      eval_expr_listenv ge E e v -> (* This line is the killer *)
-      eval_expr_listenv ge E (EVar id) v
-| eval_list_listenv :
-    forall ge l vs E,
-      Forall2 (eval_expr_listenv ge E) l vs ->
-      eval_expr_listenv ge E (EList l) (listval vs)
-| eval_local_var_listenv :
-    forall ge id E v,
-      E id = Some v ->
-      eval_expr_listenv ge E (EVar id) v
-| eval_const_listenv :
-    forall ge z E,
-      eval_expr_listenv ge E (EConst z) (num z)
-.
-
-
-(* There isn't a counterexample here *)
-(* rather the problem is that the Inductive hypothesis is not strong enough *)
-
-(* We need to be able to simultaneously add something to the global
-environment, while showing that all previous expressions still
-evaluate to the same thing under this new global environment *)
-
-(*
-Lemma eval_expr_listenv_swap :
-  forall ge E expr v,
-    eval_expr_listenv ge E expr v ->
-    forall ge',
-      (forall id exp,
-          lookup id ge = Some exp ->
-          lookup id ge' = Some exp) ->
-      eval_expr_listenv ge' E expr v.
-Proof.
- *)
-
-(*
-
-*)
+Definition eval_expr_ind_useful 
+  (P : genv -> env -> Expr -> val -> Prop)
+  (Hglobal_var : forall (ge : ident -> option Expr) (id : ident) 
+                        (E : ident -> option val) (v : val) (e : Expr),
+      ge id = Some e ->
+      E id = None -> eval_expr ge E e v -> P ge E e v -> P ge E (EVar id) v)
+  (Hlist : forall (ge : genv) (l : list Expr) (vs : list val) (E : env),
+      Forall2 (eval_expr ge E) l vs ->
+      Forall2 (P ge E) l vs ->
+      P ge E (EList l) (listval vs))
+  (Hlocal_var : forall (ge : genv) (id : ident) (E : ident -> option val) (v : val),
+      E id = Some v -> P ge E (EVar id) v)
+  (Hconst : forall (ge : genv) (z : Z) (E : env), P ge E (EConst z) (num z))
+  (ge : genv)
+  (E : env)
+  (expr : Expr)
+  (v : val)
+  (eval : eval_expr ge E expr v) : P ge E expr v .
+  eapply eval_expr_ind_total; intros; try solve [eauto].
+  eapply Hlist. eassumption.
+  eapply H0.
+  simpl. econstructor.
+  simpl in *. econstructor; eauto.
+Defined.
+           
 
 Lemma eval_expr_swap_ge :
   forall ge E expr v,
@@ -227,7 +161,15 @@ Lemma eval_expr_swap_ge :
           ge' id = Some exp) ->
       eval_expr ge' E expr v.
 Proof.
-  (* Proving this is the goal *)
-  (* If I can do it here, I can do it higher up *)
-Admitted.
-                
+  intros.
+  induction H using eval_expr_ind_useful; intros.
+  - apply eval_global_var with e; auto. 
+  - econstructor.
+
+    induction H1; eauto.
+    inversion H. subst.
+    econstructor; eauto.
+    
+  - apply eval_local_var. auto. 
+  - constructor; auto.  
+Qed.
