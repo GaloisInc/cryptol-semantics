@@ -455,12 +455,32 @@ Proof.
 Admitted.
 
 Lemma eager_to_strict_lazy :
-  forall ge TE SE exp sv,
+  forall exp ge TE SE sv,
     eager_eval_expr ge TE SE exp sv ->
     forall E,
       match_env ge E SE ->
       strict_eval_expr ge TE E exp sv.
 Proof.
+  intro.
+  eapply Expr_ind_useful with (e := exp); intros.
+Admitted.
+(*
+  - inversion H0. subst.
+    unfold Pl in H.
+    eapply Lib.Forall_Forall2_implies in H4.
+    Focus 3.
+    intros. eapply eager_to_strict_lazy_type; eauto.
+    Focus 2. instantiate (1 := fun x => True).
+    admit.
+    eapply Lib.Forall_Forall2_implies in H7.
+    Focus 3.
+    intros. eapply H; eauto.
+    econstructor; eauto.
+
+    econstructor; eauto.
+    Search Forall2.
+  
+  induction 
   induction 1; intros.
   - admit. (* needs Forall2 induction *)
   - admit.
@@ -520,7 +540,7 @@ Proof.
   - admit.
     all: fail. (* make sure we have enough bullets *)
 Admitted.
-
+*)
 Lemma eager_eval_other_envs :
   forall ge TE Es vs exp,
     Forall2 (fun s => eager_eval_expr ge TE s exp) Es vs ->
