@@ -90,10 +90,17 @@ Theorem otp_equiv : forall key msg l,
         (EApp (EApp (EVar encrypt) (EValue (to_val key))) (EValue (to_val msg))) (to_sval l) /\ otp_encrypt key msg = l.
 Proof.
   intros; split.  inversion H. do 9 (destruct l0; simpl in H1; try omega).
-  inversion H3.    
-  e. e. g. e. e. simpl. repeat econstructor. 
-   destruct (to_val e6) eqn:?. 
-    (* instantiate (01:=(sbit b)).   why not? *)
+  subst.
+  repeat match goal with
+         | [ H : Forall _ _ |- _ ] => inversion H; clear H
+         end;
+    repeat match goal with
+           | [ H : has_type _ tbit |- _ ] => inversion H; clear H
+           end;
+    subst.
+    
+  e. e. g. e. e. simpl. repeat econstructor.
+  
   Admitted.  
     
 (* Lemma something : forall k ge te e, 
