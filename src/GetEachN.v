@@ -126,6 +126,7 @@ Lemma get_each_n'_extra_fuel :
   forall {A} fuel fuel' n (l : list A),
     (fuel >= fuel')%nat ->
     (fuel' >= Datatypes.length l)%nat ->
+    (n <> O) ->
     get_each_n' fuel n l = get_each_n' fuel' n l.
 Proof.
   induction fuel; intros.
@@ -133,7 +134,7 @@ Proof.
   subst. destruct l; simpl in *; try omega.
   reflexivity.
   assert (fuel' = S fuel \/ fuel >= fuel')%nat by omega.
-  destruct H1. subst. reflexivity.
+  destruct H2. subst. reflexivity.
 
   destruct l; simpl.
   simpl in *.
@@ -143,8 +144,14 @@ Proof.
   simpl. f_equal.
 
   simpl in H0.
+  assert (fuel >= fuel')%nat by omega.
+  assert (fuel' >= length l)%nat by omega.
+  destruct n; try congruence.
+  
+  unfold list_drop. fold list_drop.
+  eapply IHfuel. omega.
+  generalize (list_drop_length l n). intros. omega.
+  congruence.
+Qed.
 
-  (* almost there? *)
-Admitted.
-
-
+  
