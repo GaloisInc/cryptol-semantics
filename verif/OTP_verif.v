@@ -1,5 +1,5 @@
 (* Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src". *)
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".  *)
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -35,10 +35,28 @@ Fixpoint xor_ext (l1 l2 : list ext_val) : list ext_val :=
   | _ => []
   end.
 
+
+Fixpoint xor1 (l1 l2 : list ext_val) : option (list ext_val) := 
+  match l1 with 
+  | (ebit x :: xs) => match l2 with
+       | (ebit y :: ys) => match (xor1 xs ys) with 
+             | Some bs => Some ((ebit (xorb x y)) :: bs)
+             | _ => None
+             end
+       | [] => Some []
+       | _ => None
+       end
+  | [] => Some []
+  | _ => None
+  end. 
+
 Definition xor_ext' (x y : ext_val) : ext_val :=
   match x with 
   | eseq l1 => match y with 
-    | eseq l2 => eseq (xor_ext l1 l2)
+    | eseq l2 => match xor1 l1 l2 with
+       | Some bs => eseq bs
+       | _ => ebit false
+       end
     | _ => ebit false
     end
   | _ => ebit false
@@ -49,6 +67,7 @@ Definition otp_encrypt (key msg : ext_val) : ext_val :=
   
 Definition k1 : ext_val := eseq (ebit false::ebit true::ebit false::nil).
 Definition m1 : ext_val := eseq (ebit true::ebit true::ebit true::nil).
+(* Eval compute in (xor_ext' k1 m1).  *)
 (* Eval compute in (otp_encrypt k1 m1).  *)
 
 (* Definition otp_encrypt'  (k m: list val) : list val :=
@@ -72,8 +91,10 @@ Theorem otp_equiv : forall key msg l,
 Proof.
   intros; split.  inversion H. do 9 (destruct l0; simpl in H1; try omega).
   inversion H3.    
-  e. e. g. e. e.
-  Admitted. 
+  e. e. g. e. e. simpl. repeat econstructor. 
+   destruct (to_val e6) eqn:?. 
+    (* instantiate (01:=(sbit b)).   why not? *)
+  Admitted.  
     
 (* Lemma something : forall k ge te e, 
   exists k', 
