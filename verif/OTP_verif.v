@@ -1,5 +1,5 @@
 (* Add LoadPath "~/Desktop/Galois/cryptol-semantics/verif".
-Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".  *)
+Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".   *)
 Require Import List.
 Import ListNotations.
 Require Import String.
@@ -98,8 +98,15 @@ Proof.
            | [ H : has_type _ tbit |- _ ] => inversion H; clear H
            end;
     subst.
-    
-  e. e. g. e. e. simpl. repeat econstructor.
+  inversion H0. clear H0. inversion H4. clear H4.
+  symmetry in H0. rewrite <- length_zero_iff_nil in H0. omega.
+  inversion H6. symmetry in H8. rewrite <- length_zero_iff_nil in H8.
+  (* find lemma for length of a cons *)
+   (* Seems like I just do this 7 more times *)         
+   (* do some goal matching here *)       
+  e. e. g. e. e. simpl. repeat econstructor. 
+
+  e. e. 
   
   Admitted.  
     
