@@ -80,9 +80,17 @@ Definition m1 : ext_val := eseq (ebit true::ebit true::ebit true::nil).
       end
   end.  *)
 
-(* Need to convert an ext_val which is an eseq into a list val
-   Morally want "(map EValue (map to_val key))" 
-   Do I need to put xor_ext into the GE to use it in otp_encrypt? *)
+Lemma length_cons : forall {A : Type} n x (xs : list A), 
+  Datatypes.length xs = n <-> 
+  Datatypes.length (x::xs) = S n.
+Proof.
+  split. 
+  - destruct n; intros.
+    + rewrite length_zero_iff_nil in H. subst. simpl. reflexivity.
+    + inversion H. simpl. reflexivity.
+  - intros. inversion H. reflexivity.  
+Qed.
+
 Theorem otp_equiv : forall key msg l, 
   has_type key byte -> 
   has_type msg byte -> 
@@ -101,12 +109,45 @@ Proof.
   inversion H0. clear H0. inversion H4. clear H4.
   symmetry in H0. rewrite <- length_zero_iff_nil in H0. omega.
   inversion H6. symmetry in H8. rewrite <- length_zero_iff_nil in H8.
-  (* find lemma for length of a cons *)
-   (* Seems like I just do this 7 more times *)         
-   (* do some goal matching here *)       
-  e. e. g. e. e. simpl. repeat econstructor. 
+  rewrite length_cons in H8. rewrite H7 in H8. omega.
+  inversion H9. symmetry in H11. rewrite <- length_zero_iff_nil in H11.
+  rewrite length_cons in H11. rewrite H10 in H11. subst.
+  rewrite <- length_cons in H2. omega.
+  subst.
 
-  e. e. 
+  inversion H12. symmetry in H3. rewrite <- length_zero_iff_nil in H3.
+  do 3 (rewrite <- length_cons in H2). omega. subst.
+  
+  inversion H5. symmetry in H7. rewrite <- length_zero_iff_nil in H7.
+  do 4 (rewrite <- length_cons in H2). omega. subst. 
+  
+  inversion H10. symmetry in H13. rewrite <- length_zero_iff_nil in H13. 
+  do 5 (rewrite <- length_cons in H2). omega. subst.
+  
+  inversion H14. symmetry in H15. rewrite <- length_zero_iff_nil in H15. 
+  do 6 (rewrite <- length_cons in H2). omega. subst.
+ 
+  inversion H16. symmetry in H17. rewrite <- length_zero_iff_nil in H17. 
+  do 7 (rewrite <- length_cons in H2). omega. subst.
+
+  inversion H18. subst.
+
+  repeat match goal with
+    | [H : has_type _ tbit |- _] => inversion H; clear H end. 
+  
+
+  (* repeat match goal with 
+   | [H : Forall _ _ |- _] => inversion H; clear H end;
+   repeat match goal with
+     | [H : [] = _ |- _] => rewrite length_cons in H end. *)
+
+  e. e. g. e. e. e. e. e. e. e. e. e. e. e. e. e.
+  e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e.
+  e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e.
+  e. e. e. e. e. e. e. e. e. e. e. e. g. e. e. e.
+  e. e. e. e. e. e. e. e. e. e. 
+  simpl. f_equal. destruct (to_sval l) eqn:?.      
+
   
   Admitted.  
     
