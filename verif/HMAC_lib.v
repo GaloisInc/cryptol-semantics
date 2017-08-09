@@ -714,6 +714,48 @@ Proof.
   econstructor; eauto.
 Qed.
 
+Lemma list_drop_all :
+  forall {A} (l : list A),
+    list_drop (Datatypes.length l) l = nil.
+Proof.
+  induction l; intros; simpl; auto.
+Qed.
+
+Lemma list_drop_exact_length :
+  forall {A} (l : list A) n,
+    (n <= Datatypes.length l)%nat ->
+    (Datatypes.length (list_drop n l) = (Datatypes.length l) - n)%nat.
+Proof.
+  induction l; intros.
+  destruct n; simpl in H; try omega. simpl. reflexivity.
+  destruct n; simpl. reflexivity.
+  eapply IHl. simpl in H. omega.
+Qed.
+
+Lemma Forall_firstn :
+  forall {A} P (l : list A),
+    Forall P l ->
+    forall n,
+      Forall P (firstn n l).
+Proof.
+  induction 1; intros.
+  destruct n; econstructor.
+  destruct n; simpl. econstructor.
+  econstructor; eauto.
+Qed.
+
+Lemma Forall_list_drop :
+  forall {A} P (l : list A),
+    Forall P l ->
+    forall n,
+      Forall P (list_drop n l).
+Proof.
+  induction 1; intros.
+  destruct n; econstructor.
+  destruct n; simpl. econstructor; eauto.
+  eauto.
+Qed.
+
 (* This'll be a fun one *)
 (* if too hard, it's fine to existentially quantify the Nat.div number *)
 (* and carry that through to type_stream_of_bytes *)
@@ -723,12 +765,13 @@ Lemma get_each_n'_type :
     Nat.divide n (Datatypes.length l) ->
     n <> O ->
     (fuel >= Datatypes.length l)%nat ->
-    has_type (eseq (map eseq (get_each_n' fuel n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
+    exists n',
+      has_type (eseq (map eseq (get_each_n' fuel n l))) (tseq n' (tseq n t)).
 Proof.
   induction fuel; intros.
   destruct l; simpl in *; try omega.
-  rewrite Nat.div_0_l by congruence.
-  econstructor; eauto.
+  eexists. econstructor; eauto.
+
   assert (fuel >= Datatypes.length l \/ S fuel = Datatypes.length l)%nat by omega.
   destruct H3.
   erewrite get_each_n'_extra_fuel; try apply H3; try omega.
@@ -736,17 +779,46 @@ Proof.
 
   destruct l; destruct n; try solve [simpl in *; try congruence; try omega].
   unfold get_each_n'. fold (@get_each_n' ext_val).
+  clear H2.
+  simpl in H3. inversion H3. subst fuel.
+  clear H3. clear H1.
+  simpl in H0.
+  eexists. econstructor. simpl.
+  econstructor.
 
-  
-Admitted.
-  
+  replace (S n) with (Datatypes.length (e :: firstn n l)).
+  econstructor. inversion H. subst.
+  econstructor; eauto.
+  eapply Forall_firstn; eauto.
+  simpl. f_equal.
+  eapply Nat.divide_pos_le in H0; try omega.
+  eapply firstn_length_le; omega.
+
+  edestruct (IHfuel (list_drop n l)). instantiate (1 := t).
+  inversion H.
+  eapply Forall_list_drop; eauto.
+
+  instantiate (1 := S n).
+
+
+  replace (Datatypes.length (list_drop n l)) with ((S (Datatypes.length l)) - (S n))%nat.
+  eapply Nat.divide_sub_r; eauto.
+  eapply Nat.divide_refl.
+  erewrite list_drop_exact_length. omega.
+  eapply Nat.divide_pos_le in H0; eauto; try omega.
+
+  congruence.
+  remember (list_drop_length l n) as Hld; try omega.
+  inversion H1. subst.  assumption.  
+Qed.                                   
 
 Lemma type_stream_of_bytes :
   forall n l t,
     Forall (fun x => has_type x t) l ->
     Nat.divide n (Datatypes.length l) ->
     n <> O ->
-    has_type (eseq (map eseq (get_each_n n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
+    exists n',
+      has_type (eseq (map eseq (get_each_n n l))) (tseq n' (tseq n t)).
 Proof.
   intros.
   unfold get_each_n.

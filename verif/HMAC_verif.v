@@ -302,6 +302,7 @@ Proof.
     symmetry in H5.
     eapply good_hash_fully_padded in H1; try eassumption.
     eapply type_stream_of_bytes in H1; eauto.
+    
   }
   
   destruct H5.

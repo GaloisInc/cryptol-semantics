@@ -12,8 +12,6 @@ verif/GlobalExtends.v:Admitted.
  - global_extends_eager_eval: fix eager_eval_expr induction scheme
 verif/HMAC_lib.v:Admitted.
  - good_hash_eval: determinacy of eager_eval_expr
-verif/HMAC_lib.v:Admitted.
- - get_each_n'_type: just needs more pushing, used only by type_stream_of_bytes
 
 ****Below are admits that exist, but the HMAC result does not rely on 
 src/Values.v:Admitted.
