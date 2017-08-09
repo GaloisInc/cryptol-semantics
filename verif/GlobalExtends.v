@@ -54,6 +54,31 @@ Proof.
   congruence. eapply H; eauto.
 Qed.
 
+
+Lemma global_extends_bind_decl_groups :
+  forall ge GE,
+    global_extends ge GE ->
+    forall decls,
+      global_extends (bind_decl_groups decls ge) (bind_decl_groups decls GE).
+Proof.
+Admitted.
+
+Lemma eager_eval_type_swap_ge :
+  forall ge GE TE te t,
+    eager_eval_type ge TE te t ->
+    eager_eval_type GE TE te t.
+Proof.
+  induction 1; intros; econstructor; eauto.
+Admitted. (* needs special induction scheme for eager_eval_type *)
+
+Lemma strict_eval_val_swap_ge :
+  forall ge GE v sv,
+    strict_eval_val ge v sv ->
+    strict_eval_val GE v sv.
+Proof.
+  induction 1; intros; econstructor; eauto.
+Admitted. (* This could be another rabbit hole *)
+
 Lemma global_extends_eager_eval :
     forall expr v ge TE SE,
       eager_eval_expr ge TE SE expr v ->
@@ -61,7 +86,36 @@ Lemma global_extends_eager_eval :
         global_extends ge GE ->
         eager_eval_expr GE TE SE expr v.
 Proof.
-  (*   induction 1 using eager_eval_expr_useful; intros. *)
+  induction 1 using eager_eval_expr_ind_useful; intros;
+    try solve [econstructor; eauto].
+  * econstructor.
+    induction H0; intros; econstructor; inversion H; eauto.
+  * econstructor.
+    induction H0; intros; econstructor; inversion H; eauto.
+  * econstructor.
+    eapply IHeager_eval_expr; eauto.
+    eapply global_extends_bind_decl_groups; eauto.
+  * econstructor; eauto.
+    eapply eager_eval_type_swap_ge; eauto.
+  * econstructor; eauto.
+    eapply strict_eval_val_swap_ge; eauto.
+  * econstructor; eauto.
+    clear H1.
+    induction H0; intros. econstructor.
+    econstructor; eauto.
+    inversion H. eauto.
+  * econstructor; eauto.
+    admit. (* needs futzing with induction scheme *)
+    admit. (* needs futzing with induction scheme *)
+  * econstructor; eauto.
+    clear H2.
+    induction H; intros; econstructor; eauto.
+    eapply eager_eval_type_swap_ge; eauto.
+    clear H2. clear H.
+    induction H0; intros.
+    econstructor.
+    inversion H1. subst.
+    econstructor; eauto.
 Admitted.
 
 (* lowercase is concrete, uppercase is abstract *)
