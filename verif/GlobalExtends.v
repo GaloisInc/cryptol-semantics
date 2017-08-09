@@ -126,8 +126,22 @@ Lemma global_extends_eager_eval :
         global_extends ge GE ->
         eager_eval_expr GE TE SE expr v.
 Proof.
-  induction 1 using eager_eval_expr_ind_useful; intros;
-    try solve [econstructor; eauto].
+  remember (fun ge TE SE llm llidv =>
+             eager_par_match ge TE SE llm llidv ->
+             forall GE,
+               global_extends ge GE ->
+               eager_par_match GE TE SE llm llidv) as Ppm.
+  remember (fun ge TE SE lm llidv =>
+             eager_index_match ge TE SE lm llidv ->
+             forall GE,
+               global_extends ge GE ->
+               eager_index_match GE TE SE lm llidv) as Pm.
+
+  induction 1 using eager_eval_expr_ind_useful with
+      (Pm := Pm) (Ppm := Ppm); intros;
+    try solve [econstructor; eauto];
+    subst Pm Ppm.
+
   * econstructor.
     induction H0; intros; econstructor; inversion H; eauto.
   * econstructor.
@@ -145,8 +159,12 @@ Proof.
     econstructor; eauto.
     inversion H. eauto.
   * econstructor; eauto.
-    admit. (* needs futzing with induction scheme *)
-    admit. (* needs futzing with induction scheme *)
+    clear H1.
+    induction H0; intros.
+    econstructor.
+    econstructor; eauto.
+    (* Need different Ppm? *)
+    admit. 
   * econstructor; eauto.
     clear H2.
     induction H; intros; econstructor; eauto.
@@ -156,6 +174,12 @@ Proof.
     econstructor.
     inversion H1. subst.
     econstructor; eauto.
+  * intros.
+    econstructor. inversion H0. eauto.
+    congruence.
+  * intros. inversion H2. subst. econstructor.
+    
+    (* need IHeager_eval_expr strengthened *)
 Admitted.
 
 (* lowercase is concrete, uppercase is abstract *)

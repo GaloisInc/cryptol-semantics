@@ -6,10 +6,11 @@ Require Import Builtins.
 Require Import Eager.
 
 
-
 Definition eager_eval_expr_ind_total 
   (P : genv -> tenv -> senv -> Expr -> strictval -> Prop)
   (Pl : genv -> tenv -> senv -> list Expr -> list strictval -> Prop)
+  (Ppm : genv -> tenv -> senv -> list (list Match) -> list (list (ident * strictval)) -> Prop)
+  (Pm : genv -> tenv -> senv -> list Match -> list (list (ident * strictval)) -> Prop)
   (HTuple : forall (ge : genv) (TE : tenv) (E : senv) (l : list Expr)
                    (vs : list strictval),
       Forall2 (eager_eval_expr ge TE E) l vs ->
@@ -82,6 +83,7 @@ Definition eager_eval_expr_ind_total
                   (llidv : list (list (ident * strictval))) (vs : list strictval)
                   (v : strictval) (e : Expr),
       eager_par_match ge TE E llm llidv ->
+      Ppm ge TE E llm llidv ->
       Forall2 (fun senv : senv => eager_eval_expr ge TE senv e)
               (bind_senvs E llidv) vs ->
       v = strict_list vs -> P ge TE E (EComp e llm) v)
@@ -97,6 +99,30 @@ Definition eager_eval_expr_ind_total
       P ge TE E e v ->
       Pl ge TE E es vs ->
       Pl ge TE E (e :: es) (v :: vs))
+  (HParOne : forall ge TE E lm llidv,
+      eager_index_match ge TE E lm llidv ->
+      Pm ge TE E lm llidv ->
+      Ppm ge TE E (lm :: nil) llidv)
+  (HParMore : forall ge TE E lm llidv lr llidv',
+      lr <> nil ->
+      eager_index_match ge TE E lm llidv ->
+      Pm ge TE E lm llidv ->
+      eager_par_match ge TE E lr llidv' ->
+      Ppm ge TE E lr llidv' ->
+      Ppm ge TE E (lm :: lr) (zipwith (fun x y => x ++ y) llidv llidv'))
+  (HIndexLast : forall ge TE E e vs lv id,
+      eager_eval_expr ge TE E e vs ->
+      P ge TE E e vs ->
+      list_of_strictval vs = Some lv ->
+      Pm ge TE E (From id e :: nil) (map (fun sv => (id,sv) :: nil) lv))
+  (HIndexMid : forall ge TE E e vs lv llidv id r,
+      r <> nil ->
+      eager_eval_expr ge TE E e vs ->
+      P ge TE E e vs ->
+      list_of_strictval vs = Some lv ->
+      eager_index_match ge TE E r llidv ->
+      Pm ge TE E r llidv ->
+      Pm ge TE E (From id e :: r) (product (map (fun sv => (id,sv)) lv) llidv))
   (ge : genv)
   (TE : tenv)
   (E : senv)
@@ -104,6 +130,23 @@ Definition eager_eval_expr_ind_total
   (v : strictval)
   (eval : eager_eval_expr ge TE E expr v) : P ge TE E expr v  :=
   let fix go ge TE E exp v eval : P ge TE E exp v :=
+      let fix go_index ge TE E lm llidv EIM :=
+          match EIM in (eager_index_match _ TE0 E0 LM0 LLIDV0) return (Pm ge TE0 E0 LM0 LLIDV0) with
+          | eager_idx_last TE E e vs lv id eval_e lst =>
+            HIndexLast ge TE E e vs lv id eval_e (go ge TE E e vs eval_e) lst
+          | eager_idx_mid TE E e vs lv llidv id r nnil eval_e lst EIM' =>
+            HIndexMid ge TE E e vs lv llidv id r nnil eval_e (go ge TE E e vs eval_e) lst
+                      EIM' (go_index ge TE E r llidv EIM')
+          end
+      in
+        let fix go_par ge TE E llm llidv EPM :=
+            match EPM in (eager_par_match _ TE0 E0 LLM0 LLIDV0) return (Ppm ge TE0 E0 LLM0 LLIDV0) with
+            | eager_par_one TE E lm llidv EIM =>
+              HParOne ge TE E lm llidv EIM (go_index ge TE E lm llidv EIM)
+            | eager_par_more TE E lm llidv lr llidv' nnil EIM EPM =>
+              HParMore ge TE E lm llidv lr llidv' nnil EIM (go_index ge TE E lm llidv EIM)
+                       EPM (go_par ge TE E lr llidv' EPM)
+            end in
       let fix go_list ge TE E es vs f2eval : Pl ge TE E es vs :=
           match f2eval in (Forall2 _ es0 vs0) return (Pl ge TE E es0 vs0) with
           | Forall2_nil => HPlnil ge TE E
@@ -143,7 +186,7 @@ Definition eager_eval_expr_ind_total
         | eager_eval_list TE E l vs v F2 eqv =>
           HList ge TE E l vs v F2 (go_list ge TE E l vs F2) eqv
         | eager_eval_comp TE E llm llidv vs v e epm F2 eqv =>
-          HComp ge TE E llm llidv vs v e epm F2 eqv
+          HComp ge TE E llm llidv vs v e epm (go_par ge TE E llm llidv epm) F2 eqv
         | eager_eval_builtin TE E l targs args bi v F2types F2not_types bi_sem =>
           HBuiltin ge TE E l targs args bi v F2types F2not_types (go_list ge TE E (not_types l) args F2not_types) bi_sem
         end in
@@ -151,6 +194,8 @@ Definition eager_eval_expr_ind_total
 
 Definition eager_eval_expr_ind_useful
   (P : genv -> tenv -> senv -> Expr -> strictval -> Prop)
+  (Ppm : genv -> tenv -> senv -> list (list Match) -> list (list (ident * strictval)) -> Prop)
+  (Pm : genv -> tenv -> senv -> list Match -> list (list (ident * strictval)) -> Prop)
   (HTuple : forall (ge : genv) (TE : tenv) (E : senv) (l : list Expr)
                    (vs : list strictval),
       Forall2 (eager_eval_expr ge TE E) l vs ->
@@ -223,6 +268,7 @@ Definition eager_eval_expr_ind_useful
                   (llidv : list (list (ident * strictval))) (vs : list strictval)
                   (v : strictval) (e : Expr),
       eager_par_match ge TE E llm llidv ->
+      Ppm ge TE E llm llidv ->
       Forall2 (fun senv : senv => eager_eval_expr ge TE senv e)
               (bind_senvs E llidv) vs ->
       v = strict_list vs -> P ge TE E (EComp e llm) v)
@@ -233,6 +279,30 @@ Definition eager_eval_expr_ind_useful
       Forall2 (eager_eval_expr ge TE E) (not_types l) args ->
       Forall2 (P ge TE E) (not_types l) args ->
       strict_builtin_sem bi targs args = Some v -> P ge TE E (EBuiltin bi l) v)
+  (HParOne : forall ge TE E lm llidv,
+      eager_index_match ge TE E lm llidv ->
+      Pm ge TE E lm llidv ->
+      Ppm ge TE E (lm :: nil) llidv)
+  (HParMore : forall ge TE E lm llidv lr llidv',
+      lr <> nil ->
+      eager_index_match ge TE E lm llidv ->
+      Pm ge TE E lm llidv ->
+      eager_par_match ge TE E lr llidv' ->
+      Ppm ge TE E lr llidv' ->
+      Ppm ge TE E (lm :: lr) (zipwith (fun x y => x ++ y) llidv llidv'))
+  (HIndexLast : forall ge TE E e vs lv id,
+      eager_eval_expr ge TE E e vs ->
+      P ge TE E e vs ->
+      list_of_strictval vs = Some lv ->
+      Pm ge TE E (From id e :: nil) (map (fun sv => (id,sv) :: nil) lv))
+  (HIndexMid : forall ge TE E e vs lv llidv id r,
+      r <> nil ->
+      eager_eval_expr ge TE E e vs ->
+      P ge TE E e vs ->
+      list_of_strictval vs = Some lv ->
+      eager_index_match ge TE E r llidv ->
+      Pm ge TE E r llidv ->
+      Pm ge TE E (From id e :: r) (product (map (fun sv => (id,sv)) lv) llidv))
   (ge : genv)
   (TE : tenv)
   (E : senv)
@@ -241,5 +311,5 @@ Definition eager_eval_expr_ind_useful
   (eval : eager_eval_expr ge TE E expr v) : P ge TE E expr v .
 Proof.
   eapply eager_eval_expr_ind_total with (Pl := fun ge TE E => Forall2 (P ge TE E)); try eassumption;
-    intros; econstructor; eauto.
+    intros; try solve [repeat econstructor; eauto].
 Defined.

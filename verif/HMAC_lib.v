@@ -133,7 +133,6 @@ Lemma good_hash_same_eval :
         eager_eval_expr GE' TE' SE' h' v ->
         good_hash h' GE' TE' SE' hf.
 Proof.
-  induction 2 using eager_eval_expr_ind_useful; intros.
   (* needs determinacy of eager_eval_expr, which is true but unproven *)
 Admitted.
 
