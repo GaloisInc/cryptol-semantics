@@ -54,14 +54,46 @@ Proof.
   congruence. eapply H; eauto.
 Qed.
 
-
-Lemma global_extends_bind_decl_groups :
+Lemma global_extends_extend_parallel :
   forall ge GE,
     global_extends ge GE ->
-    forall decls,
-      global_extends (bind_decl_groups decls ge) (bind_decl_groups decls GE).
+    forall id e,
+      global_extends (extend ge id e) (extend GE id e).
 Proof.
-Admitted.
+  intros. unfold global_extends in *.
+  intros. unfold extend in *.
+  destruct (ident_eq id0 id); eauto.
+Qed.
+
+Lemma global_extends_declare_parallel :
+  forall l ge GE,
+    global_extends ge GE ->
+    global_extends (declare l ge) (declare l GE).
+Proof.
+  induction l; intros.
+  simpl. assumption.
+  simpl. destruct a. destruct d.
+  eapply IHl. eapply global_extends_extend_parallel; eauto.
+  destruct (lookup_prim id).
+  eapply IHl. eapply global_extends_extend_parallel; eauto.
+  eapply IHl; eauto.
+Qed.
+
+Lemma global_extends_bind_decl_groups :
+  forall decls ge GE,
+    global_extends ge GE ->
+    global_extends (bind_decl_groups decls ge) (bind_decl_groups decls GE).
+Proof.
+  induction decls; intros.
+  simpl. assumption.
+  simpl. eapply IHdecls; eauto.
+  destruct a; simpl;
+    try destruct d; try destruct d; simpl;
+      [ idtac | idtac | destruct (lookup_prim id) eqn:? ];
+      eauto;
+      try solve [eapply global_extends_extend_parallel; eauto].
+  eapply global_extends_declare_parallel; eauto.
+Qed.
 
 Lemma eager_eval_type_swap_ge :
   forall ge GE TE te t,
