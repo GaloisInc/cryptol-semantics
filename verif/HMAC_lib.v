@@ -136,9 +136,6 @@ Proof.
   (* needs determinacy of eager_eval_expr, which is true but unproven *)
 Admitted.
 
-
-
-
 (*
 Lemma extend_other_name_irrel :
   forall {A} l id0 GE,

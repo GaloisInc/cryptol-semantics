@@ -15,6 +15,8 @@ Require Import BuiltinSem.
 Require Import Semantics.
 Require Import GetEachN.
 
+
+
 Open Scope list_scope.
 
 Definition match_env (ge : genv) (E : env) (SE : senv) : Prop :=
@@ -279,10 +281,22 @@ Lemma splitAt_cons :
     splitAt_sem (tnum (Z.of_nat (Datatypes.length r))) (strict_list (r ++ x)) = Some (stuple (strict_list r :: strict_list x :: nil)) ->
     splitAt_sem (tnum (Z.of_nat (Datatypes.length (f :: r)))) (strict_list ((f :: r) ++ x)) = Some (stuple (svcons f (strict_list r) :: strict_list x :: nil)).
 Proof.
-  intros. destruct r. simpl.
-  rewrite splitAt_zero. reflexivity.
-  (* This is true *)
-Admitted.
+  intros.
+  remember ((Datatypes.length (f :: r))) as n.
+  destruct n; simpl in Heqn; try omega.
+  replace (tnum (Z.of_nat (S n))) with (tnum ((Z.of_nat n) + 1)).
+  simpl.
+  assert (exists p, Z.pos p = Z.of_nat n + 1) by 
+      (induction r; inversion Heqn; subst n; eexists; split).
+  destruct H0. rewrite <- H0.
+  rewrite H0.
+  replace (Z.of_nat n + 1 - 1) with (Z.of_nat n) by omega.
+  inversion Heqn. rewrite H. reflexivity.
+  f_equal.
+  simpl.
+  rewrite Zpos_P_of_succ_nat.
+  omega.
+Qed.
 
 Lemma splitAt_len :
   forall l1 t t' (l2 : list strictval),
