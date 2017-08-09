@@ -108,8 +108,16 @@ Lemma strict_eval_val_swap_ge :
     strict_eval_val ge v sv ->
     strict_eval_val GE v sv.
 Proof.
-  induction 1; intros; econstructor; eauto.
-Admitted. (* This could be another rabbit hole *)
+  induction 1; intros; try solve [econstructor; eauto]; subst.
+  * econstructor; eauto.
+    admit. (* strict_eval_val induction scheme *)
+  * econstructor; eauto.
+    admit. (* strict_eval_val induction scheme *)
+  * econstructor; eauto.
+    admit. (* needs ge swap for eval_expr *)
+  * econstructor; eauto.
+    admit. (* strict_eval_val induction scheme *)
+Admitted. 
 
 Lemma global_extends_eager_eval :
     forall expr v ge TE SE,

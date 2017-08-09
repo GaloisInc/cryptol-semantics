@@ -78,5 +78,4 @@ Proof.
   
 
   
-Admitted.
   *)

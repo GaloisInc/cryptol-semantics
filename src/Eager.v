@@ -539,7 +539,6 @@ Admitted.
   - admit. (* weird forall2 induction needed *)
   - admit.
     all: fail. (* make sure we have enough bullets *)
-Admitted.
 *)
 Lemma eager_eval_other_envs :
   forall ge TE Es vs exp,

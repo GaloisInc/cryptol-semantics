@@ -18,6 +18,7 @@ Require Import Bitstream.
 Require Import GlobalExtends.
 Require Import Lib.
 Require Import GetEachN.
+Require Import EagerEvalInd.
 
 Require Import EvalTac.
 
@@ -132,6 +133,7 @@ Lemma good_hash_same_eval :
         eager_eval_expr GE' TE' SE' h' v ->
         good_hash h' GE' TE' SE' hf.
 Proof.
+  induction 2 using eager_eval_expr_ind_useful; intros.
   (* needs determinacy of eager_eval_expr, which is true but unproven *)
 Admitted.
 
@@ -712,6 +714,9 @@ Proof.
   econstructor; eauto.
 Qed.
 
+(* This'll be a fun one *)
+(* if too hard, it's fine to existentially quantify the Nat.div number *)
+(* and carry that through to type_stream_of_bytes *)
 Lemma get_each_n'_type :
   forall fuel l n t,
     Forall (fun x => has_type x t) l ->
@@ -736,14 +741,15 @@ Proof.
 Admitted.
   
 
-(* This'll be a fun one *)
-(* if too hard, it's fine to existentially quantify the Nat.div number *)
 Lemma type_stream_of_bytes :
   forall n l t,
     Forall (fun x => has_type x t) l ->
     Nat.divide n (Datatypes.length l) ->
+    n <> O ->
     has_type (eseq (map eseq (get_each_n n l))) (tseq (Nat.div (Datatypes.length l) n) (tseq n t)).
 Proof.
-  
-  
-Admitted.
+  intros.
+  unfold get_each_n.
+  eapply get_each_n'_type; eauto.
+Qed.
+
