@@ -328,10 +328,38 @@ Proof.
   congruence.
 Qed.
 
+Definition Z_nat_ind 
+    (P : Z -> Prop)
+    (Hbase : P 0)
+    (Hneg : forall x, x < 0 -> P x)
+    (Hpos : forall x, x >= 0 -> P x -> P (Z.succ x))
+    (z : Z)
+  : P z.
+Proof.
+  assert (z < 0 \/ z >= 0) by omega.
+  destruct H. eauto.
+  eapply natlike_ind; intros; eauto.
+  eapply Hpos; auto; omega.
+  omega.
+Defined.
+
 Lemma Z_add_bit_n :
-  forall a b n,
+  forall n a b,
     Z.testbit (a + b) n = xorb (Z.testbit a n) (Z.testbit b n).
 Proof.
+  induction n using Z_nat_ind; intros.
+  repeat rewrite Ztestbit_base.
+  eapply Z.odd_add.
+  repeat rewrite Z.testbit_neg_r; eauto.
+  rewrite Ztestbit_eq by omega.
+  destruct (zeq (Z.succ n) 0).
+  rewrite e.
+  repeat rewrite Ztestbit_base.
+  eapply Z.odd_add.
+  repeat erewrite <- (Zpred_succ n).
+  rewrite Z.div2_spec.
+  (* This is a true property, which might take a bit of work to prove, but is necessary for the proof below *)
+  
 Admitted.
 
 Lemma frombit_tobit : forall l ws (bv : BitV ws), 
