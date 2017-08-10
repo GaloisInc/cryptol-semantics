@@ -15,10 +15,10 @@ Require Import BuiltinSyntax.
 Require Import Values.        
 Require Import Eager.
 Require Import Bitstream.
-Require Import GlobalExtends.
 Require Import Lib.
 Require Import GetEachN.
 Require Import EagerEvalInd.
+Require Import GlobalExtends.
 
 Require Import EvalTac.
 
