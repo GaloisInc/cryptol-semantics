@@ -130,11 +130,25 @@ Lemma good_hash_same_eval :
     forall v,
       eager_eval_expr GE TE SE h v ->
       forall GE' TE' SE' h',
+        global_extends GE GE' ->
         eager_eval_expr GE' TE' SE' h' v ->
         good_hash h' GE' TE' SE' hf.
 Proof.
-  (* needs determinacy of eager_eval_expr, which is true but unproven *)
-Admitted.
+  intros. unfold good_hash in *.
+  repeat match goal with
+         | [ H : exists _, _ |- _ ] => destruct H
+         | [ H : _ /\ _ |- _ ] => destruct H
+         end.
+  split.
+  eapply eager_eval_expr_determ in H; try eapply H0. subst v.
+  exists x. exists x0. exists x1. exists x2.
+  split. auto.
+  intros. eapply H4 in H; eauto.
+  destruct H; split; eauto.
+  repeat eexists; eauto.
+  eapply global_extends_eager_eval; eauto.
+  eassumption.
+Qed.
 
 (*
 Lemma extend_other_name_irrel :

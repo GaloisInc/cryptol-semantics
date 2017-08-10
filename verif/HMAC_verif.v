@@ -134,6 +134,18 @@ Proof.
 
 
   eapply good_hash_same_eval; eauto.
+  repeat (match goal with
+          | [ |- global_extends ?X ?X ] => eapply global_extends_refl
+          | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
+          | [ |- _ ] => idtac
+          end);
+    try (eapply wf_env_name_irrel_GE; eauto).
+
+  eapply HIDs. simpl. left. reflexivity.
+  eapply HIDs. simpl. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. right. left. reflexivity.
+
   e. 
 
   repeat e. repeat e.
@@ -185,9 +197,20 @@ Proof.
   all: try solve [reflexivity].
 
   exact H.
-  
-  solve [eapply good_hash_same_eval; eauto; e].
 
+  eapply good_hash_same_eval; eauto.
+  repeat (match goal with
+          | [ |- global_extends ?X ?X ] => eapply global_extends_refl
+          | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
+          | [ |- _ ] => idtac
+          end);
+    try (eapply wf_env_name_irrel_GE; eauto).
+
+  eapply HIDs. simpl. left. reflexivity.
+  eapply HIDs. simpl. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. left. reflexivity.
+  eapply HIDs. simpl. right. right. right. left. reflexivity.
+  e.
   repeat e.
   repeat e. repeat e. e.
 
