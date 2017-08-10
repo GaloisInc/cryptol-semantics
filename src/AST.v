@@ -20,6 +20,70 @@ Proof.
   eapply Pos.eq_dec. 
 Defined.
 
+Inductive ext_val :=
+| ebit (b : bool)
+| eseq (l : list ext_val)
+| etup (l : list ext_val)
+| erec (f : list (string * ext_val))
+.
+
+Definition ext_val_rect_mut_full
+           (P : ext_val -> Type)
+           (Pl : list ext_val -> Type)
+           (Pp : string * ext_val -> Type)
+           (Plp : list (string * ext_val) -> Type)
+           (Hbit : forall b, P (ebit b))
+           (Hseq : forall l, Pl l -> P (eseq l))
+           (Htup : forall l, Pl l -> P (etup l))
+           (Hrec : forall f, Plp f -> P (erec f))
+           (Hnil : Pl nil)
+           (Hcons : forall e es, P e -> Pl es -> Pl (e :: es))
+           (Hpnil : Plp nil)
+           (Hpcons : forall se ses, Pp se -> Plp ses -> Plp (se :: ses))
+           (Hpair : forall s e, P e -> Pp (s,e))
+           (e : ext_val) : P e :=
+  let fix go e :=
+      let fix go_list es :=
+          match es as es_ return Pl es_ with
+          | nil => Hnil
+          | e :: es => Hcons e es (go e) (go_list es)
+          end in
+      let go_pair p :=
+          let '(s,e) := p in
+          Hpair s e (go e) in
+      let fix go_pair_list ps :=
+          match ps as ps_ return Plp ps_ with
+          | nil => Hpnil
+          | p :: ps => Hpcons p ps (go_pair p) (go_pair_list ps)
+          end in
+      match e with
+      | ebit b => Hbit b
+      | eseq l => Hseq l (go_list l)
+      | etup l => Htup l (go_list l)
+      | erec f => Hrec f (go_pair_list f)
+      end in go e.
+
+Definition ext_val_ind_mut
+           (P : ext_val -> Prop)
+           (Hbit : forall b, P (ebit b))
+           (Hseq : forall l, Forall P l -> P (eseq l))
+           (Htup : forall l, Forall P l -> P (etup l))
+           (Hrec : forall f, Forall P (map snd f) -> P (erec f))
+           (e : ext_val) : P e.
+  
+  eapply ext_val_rect_mut_full.
+  exact Hbit.
+  exact Hseq.
+  exact Htup.
+  exact Hrec.
+  econstructor.
+  intros. econstructor; eauto.
+  simpl. econstructor.
+  simpl. intros.
+  econstructor; eauto. exact X.
+  simpl. intros. assumption.
+Defined.
+
 Definition BitV (n : nat) : Type := (@Bitvectors.Int n).
 
 Inductive Kind :=
@@ -134,7 +198,6 @@ Inductive Tval :=
 .
 
 
-
 Inductive Expr :=
 (* builtin *)
 | EBuiltin (b : builtin) (l : list Expr)
@@ -178,7 +241,7 @@ Inductive Expr :=
 (* take first n elements of a list, throw out rest *)
 | ETake (n : nat) (e : Expr)
 (* Expression that is a value *)
-| EValue (v : val)
+| EValue (v : ext_val)
 (* Lifted evaluation of unary builtin *)
 | ELiftUnary (b : builtin) (targs : list Expr) (e : Expr)
 (* Lifted evaluation of binary builtin *)             
@@ -292,7 +355,7 @@ Definition Expr_mut_rect_full
            (HEHead : forall e : Expr, P e -> P (EHead e))
            (HEDrop : forall (n : nat) (e : Expr), P e -> P (EDrop n e))
            (HETake : forall (n : nat) (e : Expr), P e -> P (ETake n e))
-           (HEValue : forall v : val, P (EValue v))
+           (HEValue : forall v : ext_val, P (EValue v))
            (HELiftUnary : forall (b : builtin) (targs : list Expr) (e : Expr), P e -> Pl targs -> P (ELiftUnary b targs e))
            (HELiftBinary : forall (b : builtin) (targs : list Expr) (e1 : Expr),
                P e1 -> forall e2 : Expr, P e2 -> forall env1 env2 : ident -> option val, Pl targs -> P (ELiftBinary b targs e1 e2 env1 env2))
@@ -458,7 +521,7 @@ Definition Expr_ind_useful
            (HEHead : forall e : Expr, P e -> P (EHead e))
            (HEDrop : forall (n : nat) (e : Expr), P e -> P (EDrop n e))
            (HETake : forall (n : nat) (e : Expr), P e -> P (ETake n e))
-           (HEValue : forall v : val, P (EValue v))
+           (HEValue : forall v : ext_val, P (EValue v))
            (HELiftUnary : forall (b : builtin) (targs : list Expr) (e : Expr), P e -> (Pl P) targs -> P (ELiftUnary b targs e))
            (HELiftBinary : forall (b : builtin) (targs : list Expr) (e1 : Expr),
                P e1 -> forall e2 : Expr, P e2 -> forall env1 env2 : ident -> option val, (Pl P) targs -> P (ELiftBinary b targs e1 e2 env1 env2))

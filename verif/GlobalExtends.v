@@ -178,16 +178,15 @@ Proof.
     subst.
     assert (t = t0) by admit. subst. (* determinacy of eager_eval_type *)
     eauto.
-  * admit. (* TODO: change EValue *)
+  * inversion H0. congruence.
   * inversion H2. subst. f_equal.
     eapply Forall2_Forall2_eq; eauto.
-  * inversion H2. subst.
+  * inversion H3. subst.
     f_equal.
     specialize (IHeager_eval_expr H).
-    eapply IHeager_eval_expr in H5. subst.
+    eapply IHeager_eval_expr in H6. subst.
     eapply Forall2_Forall2_eq; eauto.
-  (* HERE *)
-    admit.
+    simpl. eapply H1.
   * inversion H3. subst.
     admit. (* enough here to prove, get_types/not_types, need determinacy of eval_type *)
   * subst Ppm.
@@ -223,21 +222,18 @@ Proof.
   induction 1; intros; econstructor; eauto.
 Admitted. (* needs special induction scheme for eager_eval_type *)
 
-Lemma strict_eval_val_swap_ge :
-  forall ge GE v sv,
-    strict_eval_val ge v sv ->
-    strict_eval_val GE v sv.
+
+Lemma Forall2_modus_ponens :
+  forall {A B : Type} (P Q : A -> B -> Prop) (l : list A) (l' : list B),
+    Forall2 P l l' ->
+    Forall2 (fun x y => P x y -> Q x y) l l' ->
+    Forall2 Q l l'.
 Proof.
-  induction 1; intros; try solve [econstructor; eauto]; subst.
-  * econstructor; eauto.
-    admit. (* strict_eval_val induction scheme *)
-  * econstructor; eauto.
-    admit. (* strict_eval_val induction scheme *)
-  * econstructor; eauto.
-    admit. (* needs ge swap for eval_expr *)
-  * econstructor; eauto.
-    admit. (* strict_eval_val induction scheme *)
-Admitted. 
+  induction 1; intros. econstructor; eauto.
+  inversion H1. subst.
+  econstructor; eauto.
+Qed.
+
 
 Lemma global_extends_eager_eval :
     forall expr v ge TE SE,
@@ -272,19 +268,15 @@ Proof.
   * econstructor; eauto.
     eapply eager_eval_type_swap_ge; eauto.
   * econstructor; eauto.
-    eapply strict_eval_val_swap_ge; eauto.
-  * econstructor; eauto.
-    clear H1.
-    induction H0; intros. econstructor.
-    econstructor; eauto.
-    inversion H. eauto.
-  * econstructor; eauto.
     clear H1.
     induction H0; intros.
-    econstructor.
     econstructor; eauto.
-    (* Need different Ppm? *)
-    admit. 
+    inversion H. econstructor; eauto.
+  * econstructor; eauto.
+    clear H2.
+    induction H1; intros. econstructor.
+    inversion H0. subst.
+    econstructor; eauto.
   * econstructor; eauto.
     clear H2.
     induction H; intros; econstructor; eauto.
@@ -294,13 +286,16 @@ Proof.
     econstructor.
     inversion H1. subst.
     econstructor; eauto.
-  * intros.
-    econstructor. inversion H0. eauto.
-    congruence.
-  * intros. inversion H2. subst. econstructor.
     
-    (* need IHeager_eval_expr strengthened *)
-Admitted.
+  * econstructor; eauto.
+  * intros. 
+    eapply IHeager_eval_expr in H0; try eassumption.
+    eapply IHeager_eval_expr0 in H1; try eassumption.
+    econstructor; eauto.
+  * intros. eapply IHeager_eval_expr in H2.
+    econstructor; eauto.
+  * intros. econstructor; eauto.
+Qed.    
 
 (* lowercase is concrete, uppercase is abstract *)
 (* wf_env lets this proof be used over a variety of environments that meet the proper constraints *)

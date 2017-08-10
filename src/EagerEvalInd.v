@@ -11,6 +11,7 @@ Definition eager_eval_expr_ind_total
   (Pl : genv -> tenv -> senv -> list Expr -> list strictval -> Prop)
   (Ppm : genv -> tenv -> senv -> list (list Match) -> list (list (ident * strictval)) -> Prop)
   (Pm : genv -> tenv -> senv -> list Match -> list (list (ident * strictval)) -> Prop)
+  (Plse : genv -> tenv -> Expr -> list senv -> list strictval -> Prop)
   (HTuple : forall (ge : genv) (TE : tenv) (E : senv) (l : list Expr)
                    (vs : list strictval),
       Forall2 (eager_eval_expr ge TE E) l vs ->
@@ -72,8 +73,9 @@ Definition eager_eval_expr_ind_total
          eager_eval_type ge TE te t ->
          eager_eval_expr ge (extend TE' id t) E e' v ->
          P ge (extend TE' id t) E e' v -> P ge TE E (ETApp e (ETyp te)) v)
-  (HValue : forall (ge : genv) (v : val) (sv : strictval) (TE : tenv) (E : senv),
-         strict_eval_val ge v sv -> P ge TE E (EValue v) sv)
+  (HValue : forall (ge : genv) (v : ext_val) (sv : strictval) (TE : tenv) (E : senv),
+      sv = to_sval v ->
+      P ge TE E (EValue v) sv)
   (HList : forall (ge : genv) (TE : tenv) (E : senv) (l : list Expr)
            (vs : list strictval) (v : strictval),
       Forall2 (eager_eval_expr ge TE E) l vs ->
@@ -86,6 +88,7 @@ Definition eager_eval_expr_ind_total
       Ppm ge TE E llm llidv ->
       Forall2 (fun senv : senv => eager_eval_expr ge TE senv e)
               (bind_senvs E llidv) vs ->
+      Plse ge TE e (bind_senvs E llidv) vs ->
       v = strict_list vs -> P ge TE E (EComp e llm) v)
   (HBuiltin : forall (ge : genv) (TE : tenv) (E : senv) (l : list Expr)
            (targs : list Tval) (args : list strictval) 
@@ -123,6 +126,11 @@ Definition eager_eval_expr_ind_total
       eager_index_match ge TE E r llidv ->
       Pm ge TE E r llidv ->
       Pm ge TE E (From id e :: r) (product (map (fun sv => (id,sv)) lv) llidv))
+  (HPlsenil : forall ge TE e, Plse ge TE e nil nil)
+  (HPlsecons : forall ge TE e env v envs vs,
+      P ge TE env e v ->
+      Plse ge TE e envs vs ->
+      Plse ge TE e (env :: envs) (v :: vs))
   (ge : genv)
   (TE : tenv)
   (E : senv)
@@ -152,6 +160,13 @@ Definition eager_eval_expr_ind_total
           | Forall2_nil => HPlnil ge TE E
           | Forall2_cons e' v' es' vs' eval_fst forall_eval_rest =>
             HPlcons ge TE E e' v' es' vs' (go ge TE E e' v' eval_fst) (go_list ge TE E es' vs' forall_eval_rest)
+          end
+      in
+      let fix go_list_senv ge TE e envs vs f2eval : Plse ge TE e envs vs :=
+          match f2eval in (Forall2 _ envs0 vs0) return (Plse ge TE e envs0 vs0) with
+          | Forall2_nil => HPlsenil ge TE e
+          | Forall2_cons env' v' envs' vs' eval_fst forall_eval_rest =>
+            HPlsecons ge TE e env' v' envs' vs' (go ge TE env' e v' eval_fst) (go_list_senv ge TE e envs' vs' forall_eval_rest)
           end
       in
         match eval in (eager_eval_expr _ TE0 E0 exp0 v0) return (P _ TE0 E0 exp0 v0) with
@@ -186,7 +201,9 @@ Definition eager_eval_expr_ind_total
         | eager_eval_list TE E l vs v F2 eqv =>
           HList ge TE E l vs v F2 (go_list ge TE E l vs F2) eqv
         | eager_eval_comp TE E llm llidv vs v e epm F2 eqv =>
-          HComp ge TE E llm llidv vs v e epm (go_par ge TE E llm llidv epm) F2 eqv
+          HComp ge TE E llm llidv vs v e epm (go_par ge TE E llm llidv epm) F2
+                (go_list_senv ge TE e (bind_senvs E llidv) vs F2) 
+                eqv
         | eager_eval_builtin TE E l targs args bi v F2types F2not_types bi_sem =>
           HBuiltin ge TE E l targs args bi v F2types F2not_types (go_list ge TE E (not_types l) args F2not_types) bi_sem
         end in
@@ -257,8 +274,9 @@ Definition eager_eval_expr_ind_useful
          eager_eval_type ge TE te t ->
          eager_eval_expr ge (extend TE' id t) E e' v ->
          P ge (extend TE' id t) E e' v -> P ge TE E (ETApp e (ETyp te)) v)
-  (HValue : forall (ge : genv) (v : val) (sv : strictval) (TE : tenv) (E : senv),
-         strict_eval_val ge v sv -> P ge TE E (EValue v) sv)
+  (HValue : forall (ge : genv) (v : ext_val) (sv : strictval) (TE : tenv) (E : senv),
+      sv = to_sval v ->
+      P ge TE E (EValue v) sv)
   (HList : forall (ge : genv) (TE : tenv) (E : senv) (l : list Expr)
            (vs : list strictval) (v : strictval),
       Forall2 (eager_eval_expr ge TE E) l vs ->
@@ -271,6 +289,7 @@ Definition eager_eval_expr_ind_useful
       Ppm ge TE E llm llidv ->
       Forall2 (fun senv : senv => eager_eval_expr ge TE senv e)
               (bind_senvs E llidv) vs ->
+      Forall2 (fun senv : senv => P ge TE senv e) (bind_senvs E llidv) vs ->
       v = strict_list vs -> P ge TE E (EComp e llm) v)
   (HBuiltin : forall (ge : genv) (TE : tenv) (E : senv) (l : list Expr)
            (targs : list Tval) (args : list strictval) 
@@ -312,4 +331,9 @@ Definition eager_eval_expr_ind_useful
 Proof.
   eapply eager_eval_expr_ind_total with (Pl := fun ge TE E => Forall2 (P ge TE E)); try eassumption;
     intros; try solve [repeat econstructor; eauto].
+  eapply HComp; try eassumption.
+  instantiate (1 := fun ge TE e => Forall2 (fun senv => P ge TE senv e)) in H2.
+  simpl in H2. eassumption.
+  simpl. econstructor.
+  simpl in *. econstructor; eauto.
 Defined.

@@ -17,6 +17,45 @@ Require Import Lib.
 
 Open Scope list_scope.
 
+Fixpoint to_val (e : ext_val) : val :=
+  let fix to_val_list_pair (ps : list (string * ext_val)) :=
+      match ps with
+      | nil => nil
+      | (s,t) :: ps => (s, to_val t) :: (to_val_list_pair ps)
+      end in
+  match e with
+  | ebit b => bit b
+  | eseq l => thunk_list (map to_val l)
+  | etup l => tuple (map to_val l)
+  | erec f => rec (to_val_list_pair f)
+  end.
+
+Fixpoint to_val_list_pair (ps : list (string * ext_val)) :=
+  match ps with
+  | nil => nil
+  | (s,t) :: ps => (s, to_val t) :: (to_val_list_pair ps)
+  end.
+
+Fixpoint to_sval (e : ext_val) : strictval :=
+  let fix to_sval_list_pair (ps : list (string * ext_val)) :=
+      match ps with
+      | nil => nil
+      | (s,t) :: ps => (s,to_sval t) :: (to_sval_list_pair ps)
+      end in
+  match e with
+  | ebit b => sbit b
+  | eseq l => strict_list (map to_sval l)
+  | etup l => stuple (map to_sval l)
+  | erec f => srec (to_sval_list_pair f)
+  end.
+
+Fixpoint to_sval_list_pair (ps : list (string * ext_val)) :=
+  match ps with
+  | nil => nil
+  | (s,t) :: ps => (s,to_sval t) :: (to_sval_list_pair ps)
+  end.
+
+
 (* Number of bits it takes to represent number n *)
 Definition calc_width (n : Z) : Z :=
   if Z_eq_dec n 0 then 0 else
@@ -148,7 +187,7 @@ Inductive zero_val : Tval -> val -> Prop :=
       zero_val (trec lidtv) vrec
 | zero_fun :
     forall argT resT v vfun,
-      zero_val resT v ->
+      zero_val resT (to_val v) ->
       vfun = close (0,"") (EValue v) tempty empty ->
       zero_val (tfun argT resT) vfun
 .
@@ -340,7 +379,7 @@ Inductive eval_expr (ge : genv) : tenv -> env -> Expr -> val -> Prop :=
       eval_expr ge TE E (ETake (S n) e) (vcons v (ETake n e') TE' E')
 | eval_value :
     forall TE E v,
-      eval_expr ge TE E (EValue v) v
+      eval_expr ge TE E (EValue v) (to_val v)
 | eval_comp_imp_cons :
     forall TE E n llm E' e v vres,
       par_match ge TE E n llm E' ->

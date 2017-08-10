@@ -110,7 +110,7 @@ Admitted.
     rewrite single_bit_roundtrip. reflexivity.
 Qed.
 *)    
-
+(*
 Lemma xor_roundtrip_eager :
   forall n pt,
     has_type pt (tseq n byte) ->
@@ -120,6 +120,7 @@ Lemma xor_roundtrip_eager :
         eager_eval_expr ge tempty sempty (EApp (EApp decrypt (EValue k)) (EApp (EApp encrypt (EValue k)) (EValue (to_val pt)))) pt' /\ match_val pt pt'.
 Proof.
 Admitted.
+*)
 (*
   induction 1; intros.
   - repeat nb_destr; subst.

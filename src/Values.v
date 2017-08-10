@@ -338,10 +338,11 @@ Qed.
 Definition env := ident -> option val.
 Definition empty : env := fun _ => None.
 
+
 (* Conversion from fully computed finite list to lazy list via trivial thunking *)
 Fixpoint thunk_list (l : list val) : val :=
   match l with
   | nil => vnil
   | f :: r =>
-    vcons f (EValue (thunk_list r)) tempty empty
+    vcons f (EVar (0,""%string)) tempty (fun x => if ident_eq (0,""%string) x then Some (thunk_list r) else None)
   end.

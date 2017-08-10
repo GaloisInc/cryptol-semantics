@@ -45,7 +45,7 @@ Lemma Hmac_eval_keylen_is_blocklength :
         forall msg msglen unused,
           has_type msg (bytestream msglen) ->
           exists v,
-            eager_eval_expr GE TE SE (apply (tapply (EVar hmac) ((typenum (Z.of_nat msglen)) :: (typenum (Z.of_nat keylen)) :: (typenum unused) :: (typenum (Z.of_nat keylen)) :: nil)) (h :: h :: h :: (EValue (to_val key)) :: (EValue (to_val msg)) :: nil)) (to_sval v) /\ hmac_model hf key msg = Some v.
+            eager_eval_expr GE TE SE (apply (tapply (EVar hmac) ((typenum (Z.of_nat msglen)) :: (typenum (Z.of_nat keylen)) :: (typenum unused) :: (typenum (Z.of_nat keylen)) :: nil)) (h :: h :: h :: (EValue key) :: (EValue msg) :: nil)) (to_sval v) /\ hmac_model hf key msg = Some v.
 Proof.
   intros.
   rename H1 into HIDs.
@@ -87,10 +87,8 @@ Proof.
   e. eassumption.
   e. e.
 
-  eapply strict_eval_val_to_val.
 
   e. e.
-  eapply strict_eval_val_to_val.
 
   e. e. e. e. e. e. e. e.
   g. simpl. unfold extend. simpl.

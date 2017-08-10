@@ -1,4 +1,4 @@
-Require Import String.
+  Require Import String.
 Require Import List.
 Import ListNotations.
 Require Import Coq.Arith.PeanoNat.
@@ -400,8 +400,8 @@ Inductive eager_eval_expr (ge : genv) : tenv -> senv -> Expr -> strictval -> Pro
       eager_eval_expr ge (extend TE' id t) E e' v ->
       eager_eval_expr ge TE E (ETApp e (ETyp te)) v
 | eager_eval_lazyval :
-    forall v sv TE E,      
-      strict_eval_val ge v sv ->
+    forall v sv TE E,
+      sv = to_sval v ->
       eager_eval_expr ge TE E (EValue v) sv
 | eager_eval_list :
     forall TE E l vs v,

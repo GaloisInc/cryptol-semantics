@@ -7,6 +7,7 @@ Require Import Coqlib.
 
 Require Import Lib.
 Require Import Utils.
+Require Import AST.
 Require Import Bitstream.
 Require Import Eager.
 Require Import GetEachN.

@@ -91,11 +91,12 @@ Proof.
   - intros. inversion H. reflexivity.  
 Qed.
 
-Theorem otp_equiv : forall key msg l, 
+(* I think l needs to be existentially quantified *)
+Theorem otp_equiv : forall key msg l,
   has_type key byte -> 
-  has_type msg byte -> 
-      eager_eval_expr ge tempty sempty 
-        (EApp (EApp (EVar encrypt) (EValue (to_val key))) (EValue (to_val msg))) (to_sval l) /\ otp_encrypt key msg = l.
+  has_type msg byte ->
+    eager_eval_expr ge tempty sempty
+                    (EApp (EApp (EVar encrypt) (EValue key)) (EValue msg)) (to_sval l) /\ otp_encrypt key msg = l.
 Proof.
   intros; split.  inversion H. do 9 (destruct l0; simpl in H1; try omega).
   subst.
@@ -141,14 +142,18 @@ Proof.
    repeat match goal with
      | [H : [] = _ |- _] => rewrite length_cons in H end. *)
 
-  e. e. g. e. e. e. e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e.
+  e. e. g. e. e. e. e. e. e. e.
+  g.
+  e. e. e. e. e. e.
+  e. e. e. e. e. e. e.
+(*  
+  e. e. e. e. e. e. e. e. e.
   e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e.
   e. e. e. e. e. e. e. e. e. e. e. e. g. e. e. e.
   e. e. e. e. e. e. e. e. e. e. 
   simpl. f_equal. destruct (to_sval l) eqn:?.      
 
-  
+*)  
   Admitted.  
     
 (* Lemma something : forall k ge te e, 
