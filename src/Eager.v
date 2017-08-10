@@ -16,7 +16,6 @@ Require Import Semantics.
 Require Import GetEachN.
 
 
-
 Open Scope list_scope.
 
 Definition match_env (ge : genv) (E : env) (SE : senv) : Prop :=
@@ -459,101 +458,6 @@ Proof.
     rewrite H0 in *; inversion H; auto.
 Qed.
 
-Lemma eager_to_strict_lazy_type :
-  forall t tv ge TE,
-    eager_eval_type ge TE t tv ->
-    eval_type ge TE t tv.
-Proof.
-  induction t using Typ_ind_useful; intros.
-
-Admitted.
-
-Lemma eager_to_strict_lazy :
-  forall exp ge TE SE sv,
-    eager_eval_expr ge TE SE exp sv ->
-    forall E,
-      match_env ge E SE ->
-      strict_eval_expr ge TE E exp sv.
-Proof.
-  intro.
-  eapply Expr_ind_useful with (e := exp); intros.
-Admitted.
-(*
-  - inversion H0. subst.
-    unfold Pl in H.
-    eapply Lib.Forall_Forall2_implies in H4.
-    Focus 3.
-    intros. eapply eager_to_strict_lazy_type; eauto.
-    Focus 2. instantiate (1 := fun x => True).
-    admit.
-    eapply Lib.Forall_Forall2_implies in H7.
-    Focus 3.
-    intros. eapply H; eauto.
-    econstructor; eauto.
-
-    econstructor; eauto.
-    Search Forall2.
-  
-  induction 
-  induction 1; intros.
-  - admit. (* needs Forall2 induction *)
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - specialize (IHeager_eval_expr1 _ H1).
-    specialize (IHeager_eval_expr2 _ H1).
-    inversion IHeager_eval_expr1.
-    inversion IHeager_eval_expr2.
-    subst.
-    inversion H3. subst.
-    econstructor. econstructor. eassumption.
-    eassumption. eassumption.
-  - unfold match_env in *.
-    specialize (H0 id). rewrite H in H0. inv H0.
-    econstructor.
-    econstructor; eauto.
-    eauto.
-  - erewrite <- match_env_none in H by eauto.
-    eapply IHeager_eval_expr in H2. inversion H2. subst.
-    econstructor. eapply eval_global_var; eauto.
-    eassumption.
-  - econstructor; eauto. econstructor. econstructor.
-    eassumption.
-  - econstructor; eauto. econstructor. econstructor.
-    eassumption.
-  - specialize (IHeager_eval_expr1 E0 H2).
-    specialize (IHeager_eval_expr2 E0 H2).
-    inversion IHeager_eval_expr1. subst. inversion H4. subst.
-    assert (match_env ge E1 E'). unfold match_env. intros. apply H7.
-    inversion IHeager_eval_expr2. subst.
-    assert (match_env ge (extend E1 id v0) (extend E' id av)). {
-      unfold extend. unfold match_env. intros.
-      destruct (ident_eq id0 id). econstructor. assumption.
-      eapply H5.
-    } idtac.
-    eapply IHeager_eval_expr3 in H9.
-    inversion H9. subst.
-    repeat (econstructor; eauto).
-  - remember IHeager_eval_expr1 as He1. clear HeqHe1.
-    remember IHeager_eval_expr2 as He2. clear HeqHe2.
-    specialize (IHeager_eval_expr1 E0 H2).
-    specialize (IHeager_eval_expr2 E0 H2).
-    eapply eager_to_strict_lazy_type in H0.
-    inversion IHeager_eval_expr1. subst. inversion H4. subst.
-    inversion IHeager_eval_expr2. subst.
-    assert (match_env ge E1 E'). {
-      unfold match_env. intros. eapply H7.
-    } idtac.
-
-    admit. (* idk *)
-  - econstructor; eauto.
-    econstructor; eauto.
-  - admit. (* weird forall2 induction needed *)
-  - admit. (* weird forall2 induction needed *)
-  - admit.
-    all: fail. (* make sure we have enough bullets *)
-*)
 Lemma eager_eval_other_envs :
   forall ge TE Es vs exp,
     Forall2 (fun s => eager_eval_expr ge TE s exp) Es vs ->

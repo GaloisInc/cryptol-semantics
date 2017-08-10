@@ -301,9 +301,36 @@ Proof.
 Qed.
     
 Lemma from_bitv'_widen :
-  forall ws' ws bv,
+  forall ws ws',
     (ws' >= ws)%nat ->
-    from_bitv' ws' ws (@repr ws' bv) = from_bitv' ws ws (@repr ws bv).
+    forall bv,
+      from_bitv' ws' ws (@repr ws' bv) = from_bitv' ws ws (@repr ws bv).
+Proof.
+  induction ws; intros.
+  simpl. reflexivity.
+  simpl. f_equal.
+  repeat erewrite testbit_repr; eauto;
+    unfold zwordsize.
+  split. omega.
+  eapply inj_lt. omega.
+  split. omega.
+  eapply inj_lt. omega.
+  assert (S ws >= ws)%nat by omega.
+  erewrite (IHws _ H0).
+  eapply IHws; eauto. omega.
+Qed.
+
+Lemma Some_eq :
+  forall {A} (x y : A),
+    x = y ->
+    Some x = Some y.
+Proof.
+  congruence.
+Qed.
+
+Lemma Z_add_bit_n :
+  forall a b n,
+    Z.testbit (a + b) n = xorb (Z.testbit a n) (Z.testbit b n).
 Proof.
 Admitted.
 
@@ -317,14 +344,58 @@ Proof.
     + inversion H.
     + simpl in H. inversion H.
       destruct bv. replace ({| intval := intval; intrange := intrange |}) with (@repr (S ws) intval) in *.
-      erewrite (from_bitv'_widen (S ws) ws) in * by omega.
+      erewrite (from_bitv'_widen ws (S ws)) in * by omega.
       simpl.
       subst l. specialize (IHl _ _ eq_refl).
       rewrite IHl.
       simpl.
+      eapply Some_eq.
+      eapply same_bits_eq. intros.
+      destruct ws.
+      unfold two_power_nat in intrange. simpl in intrange.
+      assert (intval = 0 \/ intval = 1) by omega.
+      unfold zwordsize in H0.
+      simpl in H0.
+      assert (i = 0) by omega. subst i.
+      simpl.
+      destruct H2; subst; simpl; auto.
+      rewrite Z_mod_modulus_eq by congruence.
+      unfold modulus.
+      unfold testbit.
+      repeat rewrite unsigned_repr_eq.
+      unfold modulus.
+      repeat rewrite two_power_nat_equiv.
+      unfold zwordsize in *.
+      repeat rewrite Z.mod_pow2_bits_low; try omega; try (eapply inj_lt; omega).
+      erewrite Z_add_bit_n.
+      assert (i = Z.of_nat (S ws) \/ i < Z.of_nat (S ws)). {
+        destruct H0.
+        repeat rewrite Nat2Z.inj_succ in *.
+        omega.
+      }
+      destruct H2.
+      subst i. rewrite Z.mod_pow2_bits_high by omega.
+      rewrite xorb_false_l.
+      destruct (Z.testbit intval (Z.of_nat (S ws))).
+      eapply Z.pow2_bits_true; eauto. omega.
+      eapply Z.testbit_0_l.
+      repeat rewrite Z.mod_pow2_bits_low; try omega; try (eapply inj_lt; omega).
+      destruct (Z.testbit intval i);
+        try rewrite xorb_true_l;
+        try rewrite negb_true_iff;
+        try rewrite xorb_false_l;
+        try rewrite negb_false_iff;
+      destruct (Z.testbit intval (Z.of_nat (S ws)));
+        try solve [rewrite Z.pow2_bits_false; eauto; omega];
+        eapply Z.testbit_0_l.
       
 
-Admitted. 
+      unfold repr.
+      eapply unsigned_eq. simpl.
+      rewrite Z_mod_modulus_eq by congruence.
+      unfold modulus.
+      rewrite Zmod_small; auto. omega.
+Qed.
 
 (* Main theorem *)
 Theorem tobit_frombit_equiv : forall l ws (bv : BitV ws), 
