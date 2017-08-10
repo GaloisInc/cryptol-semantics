@@ -1,6 +1,4 @@
 src/Eager.v:Admitted.
- - splitAt_cons: relatively low hanging fruit
-src/Eager.v:Admitted.
  - eager_to_strict_lazy_type: custom induction scheme for eager_eval_type
 src/Eager.v:Admitted.
  - eager_to_strict_lazy: custom induction scheme for eager_eval_expr

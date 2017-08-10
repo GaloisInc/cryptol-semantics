@@ -95,6 +95,126 @@ Proof.
   eapply global_extends_declare_parallel; eauto.
 Qed.
 
+
+Lemma Forall_not_types :
+  forall P l,
+    Forall P l ->
+    Forall P (not_types l).
+Proof.
+  induction 1; intros.
+  simpl. econstructor.
+  destruct x; simpl; try econstructor; eauto.
+Qed.
+
+Lemma Forall2_Forall2_eq :
+  forall {A B} (P : A -> B -> Prop) (l : list A) (vs : list B),
+    Forall2 (fun (x : A) (y : B) => forall b, P x b -> y = b) l vs ->
+    forall vs',
+      Forall2 P l vs ->
+      Forall2 P l vs' ->
+      vs = vs'.
+Proof.
+  induction 1; intros.
+  inversion H. inversion H0. auto.
+  inversion H1. inversion H2.
+  subst. f_equal; eauto.
+Qed.
+
+Lemma eager_eval_expr_determ :
+  forall e ge TE SE v,
+    eager_eval_expr ge TE SE e v ->
+    forall v',
+      eager_eval_expr ge TE SE e v' ->
+      v = v'.
+Proof.
+  remember (fun ge TE SE llm llidv =>
+              eager_par_match ge TE SE llm llidv ->
+              forall llidv',
+                eager_par_match ge TE SE llm llidv' ->
+                llidv = llidv') as Ppm.
+  remember (fun ge TE SE lm llidv =>
+              eager_index_match ge TE SE lm llidv ->
+              forall llidv',
+                eager_index_match ge TE SE lm llidv' ->
+                llidv = llidv') as Pm.
+  
+  induction 1 using eager_eval_expr_ind_useful with
+      (Pm := Pm) (Ppm := Ppm); intros.
+
+  
+  * inversion H1;
+    subst.
+    f_equal.
+    eapply Forall2_Forall2_eq; eauto.
+  * inversion H1. subst.
+    assert (stuple l = stuple l0) by eauto.
+    inversion H2.
+    congruence.
+  * inversion H1. subst.
+    f_equal. f_equal.
+    eapply Forall2_Forall2_eq; eauto.
+  * inversion H1. subst.
+    assert (srec l = srec l0) by eauto.
+    inversion H2.
+    congruence.
+  * inversion H0. subst. eauto.
+  * inversion H1. subst.
+    assert (sbit b = sbit b0) by eauto.
+    inversion H2.
+    subst. destruct b0. eauto. eauto.
+  * inversion H0; try congruence.
+  * inversion H2; try congruence.
+    subst.
+    eapply IHeager_eval_expr; congruence.
+  * inversion H. subst.
+    reflexivity.
+  * inversion H. subst. reflexivity.
+  * inversion H2. subst.
+    eapply IHeager_eval_expr1 in H5. inversion H5.
+    subst. eapply IHeager_eval_expr2 in H8. subst.
+    eauto.
+  * inversion H2. subst.
+    eapply IHeager_eval_expr1 in H5. inversion H5.
+    subst.
+    assert (t = t0) by admit. subst. (* determinacy of eager_eval_type *)
+    eauto.
+  * admit. (* TODO: change EValue *)
+  * inversion H2. subst. f_equal.
+    eapply Forall2_Forall2_eq; eauto.
+  * inversion H2. subst.
+    f_equal.
+    specialize (IHeager_eval_expr H).
+    eapply IHeager_eval_expr in H5. subst.
+    eapply Forall2_Forall2_eq; eauto.
+  (* HERE *)
+    admit.
+  * inversion H3. subst.
+    admit. (* enough here to prove, get_types/not_types, need determinacy of eval_type *)
+  * subst Ppm.
+    intros.
+    inversion H0; try congruence; subst.
+    inversion H1; try congruence; subst.
+    eapply IHeager_eval_expr; eauto.
+  * subst Ppm.
+    intros.
+    inversion H2; try congruence. subst.
+    inversion H3; try congruence. subst.
+    rewrite H6 in *.
+    f_equal. eauto. eauto.
+  * subst Pm. intros.
+    inversion H2; subst; try congruence.
+    f_equal. assert (vs = vs0) by eauto.
+    congruence.
+  * subst Pm. intros.
+    inversion H4; subst; try congruence.
+    f_equal. f_equal.
+    assert (vs = vs0) by eauto. congruence.
+    eauto.
+    
+Admitted.
+
+(* TODO: change EValue to use ext_vals *)
+
 Lemma eager_eval_type_swap_ge :
   forall ge GE TE te t,
     eager_eval_type ge TE te t ->
