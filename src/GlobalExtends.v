@@ -120,6 +120,88 @@ Proof.
   subst. f_equal; eauto.
 Qed.
 
+Lemma eager_eval_type_determ :
+  forall ge TE t v,
+    eager_eval_type ge TE t v ->
+    forall v',
+      eager_eval_type ge TE t v' ->
+      v = v'.
+Proof.
+  induction 1 using eager_eval_type_ind_useful; intros;
+    try solve [match goal with
+               | [ H : eager_eval_type _ _ _ _ |- _ ] => inversion H; subst; eauto; try congruence
+               end].
+  
+  * inversion H2. subst. f_equal.
+    eapply list_pair_parts_eq. congruence.
+    eapply Forall2_Forall2_eq; eauto.
+  * inversion H2. subst. f_equal.
+    eapply Forall2_Forall2_eq; eauto.
+  * subst. inversion H2. subst.
+    inversion H3. subst.
+    f_equal; eauto.
+  * inversion H1. subst.
+    f_equal; eauto.
+    subst.
+    f_equal; eauto.
+    inversion H7.
+    inversion H9.
+  * inversion H1. subst.
+    inversion H0. inversion H9.
+    f_equal; eauto.
+  * inversion H2. subst.
+    assert (tnum a = tnum a0) by eauto.
+    assert (tnum b = tnum b0) by eauto.
+    congruence.
+  * inversion H2. subst.
+    assert (tnum a = tnum a0) by eauto.
+    assert (tnum b = tnum b0) by eauto.
+    congruence.
+  * inversion H2. subst.
+    assert (tnum a = tnum a0) by eauto.
+    assert (tnum b = tnum b0) by eauto.
+    congruence.
+  * inversion H3. subst.
+    assert (tnum a = tnum a0) by eauto.
+    assert (tnum b = tnum b0) by eauto.
+    congruence.
+  * inversion H3. subst.
+    assert (tnum a = tnum a0) by eauto.
+    assert (tnum b = tnum b0) by eauto.
+    congruence.
+  * inversion H2. subst.
+    assert (tnum a = tnum a0) by eauto.
+    assert (tnum b = tnum b0) by eauto.
+    congruence.
+  * inversion H2. subst.
+    assert (tnum a = tnum a0) by eauto.
+    assert (tnum b = tnum b0) by eauto.
+    congruence.
+  * inversion H2. subst.
+    assert (tnum a = tnum a0) by eauto.
+    assert (tnum b = tnum b0) by eauto.
+    congruence.
+  * inversion H0.
+    subst.
+    assert (tnum n = tnum n0) by eauto.
+    congruence.
+Qed.
+
+Lemma Forall2_eager_eval_type_determ :
+  forall ge TE l targs,
+    Forall2 (eager_eval_type ge TE) l targs ->
+    forall targs',
+      Forall2 (eager_eval_type ge TE) l targs' ->
+      targs = targs'.
+Proof.
+  induction 1; intros.
+  inversion H. auto.
+  inversion H1. subst.
+  f_equal.
+  eapply eager_eval_type_determ; eauto.
+  eapply IHForall2; eauto.
+Qed.
+
 Lemma eager_eval_expr_determ :
   forall e ge TE SE v,
     eager_eval_expr ge TE SE e v ->
@@ -176,8 +258,11 @@ Proof.
   * inversion H2. subst.
     eapply IHeager_eval_expr1 in H5. inversion H5.
     subst.
-    assert (t = t0) by admit. subst. (* determinacy of eager_eval_type *)
-    eauto.
+    assert (t = t0). {
+      eapply eager_eval_type_determ; eauto.
+    }
+    subst.
+    eauto. 
   * inversion H0. congruence.
   * inversion H2. subst. f_equal.
     eapply Forall2_Forall2_eq; eauto.
@@ -188,7 +273,18 @@ Proof.
     eapply Forall2_Forall2_eq; eauto.
     simpl. eapply H1.
   * inversion H3. subst.
-    admit. (* enough here to prove, get_types/not_types, need determinacy of eval_type *)
+    assert (targs = targs0) by (eapply Forall2_eager_eval_type_determ; eauto).
+    subst targs0.
+    assert (args = args0). {
+      clear H11. clear H2.
+      generalize dependent args0.
+      induction H1; intros.
+      inversion H9. auto.
+      inversion H0. subst.
+      inversion H9. subst.
+      f_equal; eauto.
+    }
+    congruence.
   * subst Ppm.
     intros.
     inversion H0; try congruence; subst.
@@ -209,18 +305,7 @@ Proof.
     f_equal. f_equal.
     assert (vs = vs0) by eauto. congruence.
     eauto.
-    
-Admitted.
-
-(* TODO: change EValue to use ext_vals *)
-
-Lemma eager_eval_type_swap_ge :
-  forall ge GE TE te t,
-    eager_eval_type ge TE te t ->
-    eager_eval_type GE TE te t.
-Proof.
-  induction 1; intros; econstructor; eauto.
-Admitted. (* needs special induction scheme for eager_eval_type *)
+Qed.    
 
 
 Lemma Forall2_modus_ponens :
@@ -234,6 +319,13 @@ Proof.
   econstructor; eauto.
 Qed.
 
+Lemma eager_eval_type_swap_ge :
+  forall ge GE TE te t,
+    eager_eval_type ge TE te t ->
+    eager_eval_type GE TE te t.
+Proof.
+  induction 1 using eager_eval_type_ind_useful; intros; econstructor; eauto.
+Qed.  
 
 Lemma global_extends_eager_eval :
     forall expr v ge TE SE,
