@@ -1,11 +1,12 @@
 src/EagerToLazy.v:Admitted.
  - eager_to_strict_lazy: conversion from eager to lazy
 src/Values.v:Admitted.
- - Z_add_bit_n: testbit of the sum of numbers, true but annoying
-src/Interp.v:Admitted.   
-verif/OTP_verif.v:  Admitted.  
-verif/OTP_verif.v:Admitted.     *)
-verif/OTP_verif.v:Admitted.
+ - Z_add_bit_n: testbit of the sum of numbers, true but annoying (Nate's on it)
+src/Interp.v:Admitted.
+ - proof that the interpreter works. needs to be built first
+
+::Below are some basic tests that don't work anymore::
+verif/Basic1.v:Admitted.
 verif/SplitA.v:Admitted.
 verif/SplitAtB.v:Admitted.
 verif/SplitAtC.v:Admitted.
@@ -14,9 +15,6 @@ verif/SplitB.v:Admitted.
 verif/SplitC.v:Admitted.
 verif/SplitD.v:Admitted.
 verif/Width1.v:Admitted.
-verif/Xor_verif.v:Admitted.
-verif/Xor_verif.v:Admitted.
-verif/Xor_verif.v:Admitted.
 verif/Zero1.v:Admitted.
 
 

@@ -77,7 +77,7 @@ Lemma xor_bits_roundtrip :
       exists halfway,
         xor_sem vx vy = Some halfway /\ xor_sem halfway vy = Some vx.
 Proof.
-Admitted.
+
 *)
 (*
   induction n; intros. congruence.
@@ -119,7 +119,7 @@ Lemma xor_roundtrip_eager :
       exists pt',
         eager_eval_expr ge tempty sempty (EApp (EApp decrypt (EValue k)) (EApp (EApp encrypt (EValue k)) (EValue (to_val pt)))) pt' /\ match_val pt pt'.
 Proof.
-Admitted.
+
 *)
 (*
   induction 1; intros.
@@ -267,7 +267,6 @@ Admitted.
       }
     * unfold match_val. auto. (* TODO *)
 
-Admitted.
     
 
 
