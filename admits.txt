@@ -1,22 +1,8 @@
-src/Eager.v:Admitted.
- - eager_to_strict_lazy_type: custom induction scheme for eager_eval_type
-src/Eager.v:Admitted.
- - eager_to_strict_lazy: custom induction scheme for eager_eval_expr
-verif/GlobalExtends.v:Admitted.
- - eager_eval_type_swap_ge:  induction scheme for eager_eval_type 
-verif/GlobalExtends.v:Admitted.
- - strict_eval_val_swap_ge: strict_eval_val induction scheme, ge_swap for eval_expr
-verif/GlobalExtends.v:Admitted.
- - global_extends_eager_eval: fix eager_eval_expr induction scheme
-verif/HMAC_lib.v:Admitted.
- - good_hash_eval: determinacy of eager_eval_expr
-
-****Below are admits that exist, but the HMAC result does not rely on 
+src/EagerToLazy.v:Admitted.
+ - eager_to_strict_lazy: conversion from eager to lazy
 src/Values.v:Admitted.
-src/Values.v:Admitted.
- - both in Values are lemmas about conversion to bitvectors
-verif/HMAC_eval.v:Admitted.
- - old file, should delete
+ - Z_add_bit_n: testbit of the sum of numbers, true but annoying
+src/Interp.v:Admitted.   
 verif/OTP_verif.v:  Admitted.  
 verif/OTP_verif.v:Admitted.     *)
 verif/OTP_verif.v:Admitted.
@@ -32,4 +18,5 @@ verif/Xor_verif.v:Admitted.
 verif/Xor_verif.v:Admitted.
 verif/Xor_verif.v:Admitted.
 verif/Zero1.v:Admitted.
-src/Interp.v:Admitted.   
+
+
