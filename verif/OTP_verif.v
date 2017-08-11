@@ -91,14 +91,24 @@ Proof.
   - intros. inversion H. reflexivity.  
 Qed.
 
+  Lemma obvi : forall (b: bool),
+      (if b then true else false) = b. 
+    Proof. 
+      destruct b; auto. 
+    Qed.
+
+  
 (* I think l needs to be existentially quantified *)
-Theorem otp_equiv : forall key msg l,
+Theorem otp_equiv : forall key msg,
   has_type key byte -> 
   has_type msg byte ->
+  exists l,  
     eager_eval_expr ge tempty sempty
-                    (EApp (EApp (EVar encrypt) (EValue key)) (EValue msg)) (to_sval l) /\ otp_encrypt key msg = l.
+                    (EApp (EApp (EVar encrypt) (EValue key)) (EValue msg)) (to_sval l)
+    /\ otp_encrypt key msg = l.
 Proof.
-  intros; split.  inversion H. do 9 (destruct l0; simpl in H1; try omega).
+  intros. inversion H. do 9 (destruct l; simpl in H1; try omega).
+
   subst.
   repeat match goal with
          | [ H : Forall _ _ |- _ ] => inversion H; clear H
@@ -131,12 +141,13 @@ Proof.
   inversion H16. symmetry in H17. rewrite <- length_zero_iff_nil in H17. 
   do 7 (rewrite <- length_cons in H2). omega. subst.
 
-  inversion H18. subst.
+  inversion H18. subst. Focus 2. subst. simpl in H2. omega. 
 
   repeat match goal with
     | [H : has_type _ tbit |- _] => inversion H; clear H end. 
-  
 
+  eexists. 
+  split. 
   (* repeat match goal with 
    | [H : Forall _ _ |- _] => inversion H; clear H end;
    repeat match goal with
@@ -145,73 +156,24 @@ Proof.
   e. e. g. e. e. e. e. e. e. e.
   g.
   e. e. e. e. e. e.
-  e. e. e. e. e. e. e.
-(*  
-  e. e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. e. e. e. e. e. e. e. e. e. e.
-  e. e. e. e. e. e. e. e. e. e. e. e. g. e. e. e.
-  e. e. e. e. e. e. e. e. e. e. 
-  simpl. f_equal. destruct (to_sval l) eqn:?.      
-
-*)  
-  Admitted.  
-    
-(* Lemma something : forall k ge te e, 
-  exists k', 
-  Forall2 (eager_eval_expr ge te e) (map EValue k) k'. 
-Proof.
-  induction k; intros.
-  - eexists. econstructor.
-  - edestruct IHk. destruct a;
-    eexists;
-    econstructor; eauto.    
-    econstructor. instantiate (1:= sbit b). econstructor.
-    econstructor. (* Can't use 'e', needs to be the same environment as E but strict *)instantiate (1:= sclose id e0 TE e). econstructor. admit. 
-    econstructor.  (* Same as above *) admit.
-    econstructor.   
-
-
-    inversion H. subst.      
-
-Admitted.     *)
-(*
-Lemma otp_equiv : forall k msg l, 
-  n_bits 8 k -> 
-  n_bits 8 msg -> 
-    strict_eval_val ge (thunk_list (otp_encrypt' k msg)) l ->
-    eager_eval_expr ge tempty sempty (EApp (EApp (EVar encrypt) (EList (map EValue k))) (EList (map EValue msg))) l. 
-Proof. 
-  intros. eapply n_bits_eval in H. destruct H. eapply n_bits_eval in H0. destruct H0.    
-  inversion H0. clear H0. inversion H. clear H. 
-  econstructor. econstructor. eapply eager_eval_global_var. 
-  unfold sempty. reflexivity.
-  unfold ge. econstructor. 
-  econstructor. eassumption.
-  econstructor. eassumption.
-
-  econstructor. econstructor.
-  econstructor. eapply eager_eval_global_var. unfold extend. simpl. unfold sempty. reflexivity.
-  unfold ge. econstructor. (* This takes like 10 seconds but solves the first goal *)
-  econstructor. econstructor. econstructor. econstructor. econstructor.  
-  econstructor. econstructor. econstructor. econstructor. econstructor.
-  econstructor. econstructor. econstructor. econstructor. econstructor.
-  econstructor. econstructor. econstructor. econstructor. econstructor.
-  econstructor. econstructor. econstructor.
-  
+  e. e. e. e. e. e.
+  e. simpl.  
+  f_equal. 
+  unfold to_sval. 
+  instantiate (1:= eseq
+                     (
+                       (ebit (if b6 then if b14 then false else true else b14)) ::
+                                                                                (ebit (if b5 then if b13 then false else true else b13)) ::
+                                                                                (ebit (if b4 then if b12 then false else true else b12)) ::
+                                                                                (ebit (if b3 then if b11 then false else true else b11)) ::
+                                                                                (ebit (if b2 then if b10 then false else true else b10)) ::
+                                                                                (ebit (if b1 then if b9 then false else true else b9)) ::
+                                                                                (ebit (if b0 then if b8 then false else true else b8)) ::
+                                                                                (ebit (if b then if b7 then false else true else b7)) :: nil )). 
   simpl. 
-  (* Since x0 and x have length 8, they must be svcons *) 
-  unfold strict_list. 
-  unfold xor_sem.  
-         
-
-  
-     
-      
-
-Admitted.
-
-
-
-
-
-*)
+  reflexivity. 
+  simpl. 
+  unfold xorb.    
+  repeat rewrite obvi. 
+  reflexivity. 
+Qed.   
