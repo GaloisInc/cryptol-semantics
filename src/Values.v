@@ -349,15 +349,14 @@ Lemma Z_add_bit_n :
 Proof.
   induction n using Z_nat_ind; intros.
   repeat rewrite Ztestbit_base.
-  eapply Z.odd_add.
+  eapply Z.odd_add.  
+
   repeat rewrite Z.testbit_neg_r; eauto.
-  rewrite Ztestbit_eq by omega.
-  destruct (zeq (Z.succ n) 0).
-  rewrite e.
-  repeat rewrite Ztestbit_base.
-  eapply Z.odd_add.
-  repeat erewrite <- (Zpred_succ n).
-  rewrite Z.div2_spec.
+  replace (Z.succ n) with (n + 1) by omega.
+  rewrite <- Z.shiftr_spec by omega.
+  
+  
+  
   (* This is a true property, which might take a bit of work to prove, but is necessary for the proof below *)
   
 Admitted.
