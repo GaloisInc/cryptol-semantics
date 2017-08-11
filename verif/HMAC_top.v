@@ -1,40 +1,57 @@
-
 Require Import HMAC_specs_equiv.
+Require Import HMAC_spec.
 Require Import HMAC_verif.
+Require Import HMAC.
+Require Import HMAC_lib.
 
+Require Import GlobalExtends.
 
-(*
+Require Import Coqlib.
+Require Import Lib.
+Require Import Utils.
+Require Import AST.
+Require Import Bitstream.
+Require Import Eager.
+Require Import GetEachN.
+Require Import Semantics.
 
-Theorem HMAC_equiv (MSGT : Set) :
-  forall keylen msglen key msg,
+Require Import Bvector.
+
+Require Import List.
+Import ListNotations.
+
+Theorem HMAC_cryptol_to_FCF (MSGT : Set) :
+  (* input to HMAC has the correct number of bits in the right shape *)
+  forall key keylen msg msglen,
     has_type key (bytestream keylen) ->
     has_type msg (bytestream msglen) ->
-    forall c p hf res HashBlock iv (splitAndPad : MSGT -> list (Bvector (b c p))),
-      hmac_model hf key msg = Some res ->
-      @correct_model_hash c p hf (h_star p HashBlock iv) ->
-      forall nmsg nkey,
-        eappend (map bv_to_extval (splitAndPad nmsg)) = msg ->
-        bv_to_extval nkey = key ->
-        forall opad ipad,
-          same_bits 92 opad ->
-          same_bits 54 ipad ->
-          forall fpad,
-            (forall x, bv_to_extval' (app_fpad fpad (h_star p HashBlock iv x)) = bv_to_extval' (h_star p HashBlock iv x)) ->
-            eseq (bv_to_extval' (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg)) = res.
-
-
-(* lemma for when the length of the key is the same as the length of the block *)
-Lemma Hmac_eval_keylen_is_blocklength :
-  forall (key : ext_val) keylen,
-    has_type key (bytestream keylen) -> 
+    (* environment is well formed *)
     forall GE TE SE, 
       wf_env ge GE TE SE ->
       (forall id, In id [(371, "ks");(372, "okey");(373, "ikey");(374, "internal")] -> GE id = None) ->
-      forall h hf,
+      (* hash function *)
+      forall h hf c p HashBlock iv ,
         good_hash h GE TE SE hf ->
-        forall msg msglen unused,
-          has_type msg (bytestream msglen) ->
-          exists v,
-            eager_eval_expr GE TE SE (apply (tapply (EVar hmac) ((typenum (Z.of_nat msglen)) :: (typenum (Z.of_nat keylen)) :: (typenum unused) :: (typenum (Z.of_nat keylen)) :: nil)) (h :: h :: h :: (EValue key) :: (EValue msg) :: nil)) (to_sval v) /\ hmac_model hf key msg = Some v.
+        @correct_model_hash c p hf (h_star p HashBlock iv) ->
+        forall (splitAndPad : MSGT -> list (Bvector (c + p))) nmsg nkey,
+          eappend (map bv_to_extval (splitAndPad nmsg)) = msg ->
+          bv_to_extval nkey = key ->
+          forall opad ipad,
+            same_bits 92 opad ->
+            same_bits 54 ipad ->
+            forall fpad,
+              (forall x, bv_to_extval' (app_fpad fpad (h_star p HashBlock iv x)) = bv_to_extval' (h_star p HashBlock iv x)) ->
+              forall unused,
+          eager_eval_expr
+            GE TE SE (apply (tapply (EVar hmac) ((typenum (Z.of_nat msglen)) :: (typenum (Z.of_nat keylen)) :: (typenum unused) :: (typenum (Z.of_nat keylen)) :: nil)) (h :: h :: h :: (EValue key) :: (EValue msg) :: nil))
+            (to_sval (eseq (bv_to_extval' (@HMAC c p HashBlock iv MSGT splitAndPad fpad opad ipad nkey nmsg)))).
 Proof.
-*)
+  intros.
+  edestruct Hmac_eval_keylen_is_blocklength. eapply H. eauto. eauto.
+  eauto. eapply H0.
+  destruct H10.
+  eapply HMAC_equiv in H11. rewrite <- H11 in H10.
+  eapply H10.
+  all: eauto.
+Qed.
+          
