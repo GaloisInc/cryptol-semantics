@@ -10,6 +10,10 @@ default: Makefile.coq
 test : Makefile.coq.test
 	$(MAKE) -f Makefile.coq.test
 
+verif : test
+
+HMAC : test
+
 Makefile.coq: _CoqProject
 	coq_makefile -f _CoqProject -o Makefile.coq
 

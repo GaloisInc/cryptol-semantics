@@ -4,7 +4,7 @@ source script/coqproject.sh
 make Makefile.coq 2> /dev/null
 mv Makefile.coq Makefile.coq.src
 
-DIRS=(src verif)
+DIRS=(src HMAC verif)
 source script/coqproject.sh
 
 make Makefile.coq 2> /dev/null 
