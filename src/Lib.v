@@ -4,6 +4,47 @@ Import ListNotations.
 Require Import Coqlib.
 
 
+Lemma Forall2_modus_ponens :
+  forall {A B : Type} (P Q : A -> B -> Prop) (l : list A) (l' : list B),
+    Forall2 P l l' ->
+    Forall2 (fun x y => P x y -> Q x y) l l' ->
+    Forall2 Q l l'.
+Proof.
+  induction 1; intros. econstructor; eauto.
+  inversion H1. subst.
+  econstructor; eauto.
+Qed.
+
+Lemma Forall2_implies_1 :
+  forall {A B C : Type} (l1 : list A) (l2 : list B) (P : C -> Prop) (Q : C -> A -> B -> Prop),
+    Forall2 (fun a b => forall x, P x -> Q x a b) l1 l2 ->
+    forall x,
+      P x ->
+      Forall2 (Q x) l1 l2.
+Proof.
+  induction 1; intros; econstructor; eauto.
+Qed.
+
+Lemma Forall2_implies_2 :
+  forall {A B C D : Type} (l1 : list A) (l2 : list B) (P : C -> D -> Prop) (Q : C -> D -> A -> B -> Prop),
+    Forall2 (fun a b => forall x y, P x y -> Q x y a b) l1 l2 ->
+    forall x y,
+      P x y ->
+      Forall2 (Q x y) l1 l2.
+Proof.
+  induction 1; intros; econstructor; eauto.
+Qed.
+
+Lemma Forall2_implies_3 :
+  forall {A B C D E : Type} (l1 : list A) (l2 : list B) (P : C -> D -> E -> Prop) (Q : C -> D -> E -> A -> B -> Prop),
+    Forall2 (fun a b => forall x y z, P x y z -> Q x y z a b) l1 l2 ->
+    forall x y z,
+      P x y z ->
+      Forall2 (Q x y z) l1 l2.
+Proof.
+  induction 1; intros; econstructor; eauto.
+Qed.
+
 Lemma Forall_Forall2_implies :
   forall {A B} (P : A -> Prop) (Q R : A -> B -> Prop) (l : list A),
     Forall P l ->

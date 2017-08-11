@@ -308,16 +308,6 @@ Proof.
 Qed.    
 
 
-Lemma Forall2_modus_ponens :
-  forall {A B : Type} (P Q : A -> B -> Prop) (l : list A) (l' : list B),
-    Forall2 P l l' ->
-    Forall2 (fun x y => P x y -> Q x y) l l' ->
-    Forall2 Q l l'.
-Proof.
-  induction 1; intros. econstructor; eauto.
-  inversion H1. subst.
-  econstructor; eauto.
-Qed.
 
 Lemma eager_eval_type_swap_ge :
   forall ge GE TE te t,
