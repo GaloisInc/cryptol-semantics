@@ -20,22 +20,29 @@ Open Scope string.
 
 Require Import Split.
 
+Require Import Eager.
 
+(*
 Lemma eval_a :
   exists v,
-    eval_expr ge tempty empty (EVar a) v /\ force_list ge tempty empty v (@from_bitv 8 (@repr 8 1)).
+    eager_eval_expr ge tempty sempty (EVar a) (* 8 *)
 Proof.
-Admitted.
-(*  init_globals ge.
+  init_globals ge.
   eexists; split.
   g.
-  repeat e. g.
-  repeat e. g.
+  e. e. e. e. e. g. e. e.
+  e. repeat e.
+  e. repeat e.
+  e. e. e. e. e. e. g.
+  e. repeat e.
+  e. repeat e.
+  e. repeat e.
+  e. g.
+  e. e. e. e. g. e.
   repeat e.
-  instantiate (2 := O). reflexivity.
-  repeat e.
-  instantiate (2 := O). reflexivity.
-  repeat e.
-  repeat e.
+  e. repeat e.
+  e. repeat e.
+  e. g.
+  
 Qed.
 *)
