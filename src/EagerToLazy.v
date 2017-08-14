@@ -47,6 +47,58 @@ Proof.
   split; simpl; auto.
 Qed.      
 
+Lemma map_fst_combine :
+  forall {A B : Type} (l : list A) (l' : list B),
+    length l = length l' ->
+    map fst (combine l l') = l.
+Proof.
+  induction l; intros; destruct l'; simpl in *; try congruence.
+  f_equal. eauto.
+Qed.
+
+Lemma map_snd_combine :
+  forall {A B : Type} (l : list A) (l' : list B),
+    length l = length l' ->
+    map snd (combine l l') = l'.
+Proof.
+  induction l; intros; destruct l'; simpl in *; try congruence.
+  f_equal. eauto.
+Qed.
+
+Lemma Forall2_length :
+  forall {A B} (P : A -> B -> Prop) l l',
+    Forall2 P l l' ->
+    length l = length l'.
+Proof.
+  induction 1; intros; simpl; eauto.
+Qed.
+
+Lemma lookup_Forall2_back :
+  forall {A B : Type} (X : list A) (Y : list B) (P : A -> B -> Prop),
+    Forall2 P X Y ->
+    forall str strs v',
+      lookup str (combine strs Y) = Some v' ->
+      exists v,
+        lookup str (combine strs X) = Some v /\ P v v'.
+Proof.
+  induction 1; intros;
+    destruct strs; try solve [simpl in *; congruence].
+  simpl in H1.
+  destruct (String.string_dec str s) eqn:?.
+  inversion H1. subst. eexists. simpl.
+  rewrite Heqs0. eauto.
+  simpl. rewrite Heqs0.
+  eapply IHForall2 in H1; eauto.
+Qed.
+
+Lemma combine_map_fst_map_snd :
+  forall {A B : Type} (l : list (A * B)),
+    combine (map fst l) (map snd l) = l.
+Proof.
+  induction l; intros; simpl; eauto.
+  destruct a; simpl; f_equal; eauto.
+Qed.
+
 Lemma eager_to_strict_lazy :
   forall exp ge TE SE sv,
     eager_eval_expr ge TE SE exp sv ->
@@ -83,9 +135,45 @@ Proof.
     destruct H0.
     
     econstructor; [econstructor | eassumption]; eassumption.
-  * 
-  
-  
+  * assert (Forall2 (strict_eval_expr ge TE E0) (map snd l) vs).
+    eapply Forall2_implies_1. eapply H0. simpl. eauto.
+    eapply Forall2_strict_eval_inv in H2.
+    destruct H2.
+    destruct H2.
+    econstructor. econstructor; eauto.
+    econstructor.
+    rewrite map_snd_combine. eauto.
+    rewrite map_length.
+    eapply Forall2_length in H2.
+    rewrite map_length in *.
+    eassumption.
+    
+    rewrite map_fst_combine. eauto.
+    rewrite map_length.
+    eapply Forall2_length in H2.
+    rewrite map_length in *.
+    eassumption.
+
+  * eapply IHeager_eval_expr in H1. inversion H1.
+    subst. inversion H3. subst.
+
+    eapply lookup_Forall2_back in H0; eauto.
+    
+    destruct H0. destruct H0.
+    rewrite combine_map_fst_map_snd in H0.
+    
+    econstructor. econstructor; eauto.
+    assumption.
+
+  * assert (match_env (bind_decl_groups decls ge) E0 (erase_decl_groups decls E)).
+    admit.
+
+    eapply IHeager_eval_expr in H1.
+    inversion H1.
+    subst.
+    econstructor. econstructor; eauto.
+    
+    
   
 Admitted.
 
