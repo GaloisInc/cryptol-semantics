@@ -255,7 +255,7 @@ Definition splitSem (t : Tval) (l : strictval) : option strictval :=
   | _,_ => None
   end.
 
-(* TODO: convert to bitvector, add, convert back *)
+(* TODO: doesn't lift over structure yet *)
 Definition plus_sem (x y : strictval) : option strictval :=
   match list_of_strictval x, list_of_strictval y with
   | Some lx, Some ly =>

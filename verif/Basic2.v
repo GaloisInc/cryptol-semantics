@@ -15,6 +15,7 @@ Require Import BuiltinSyntax.
 Require Import Values.        
 
 Require Import EvalTac.
+Require Import Eager.
 
 Require Import Basic.
 
@@ -22,6 +23,44 @@ Import HaskellListNotations.
 Open Scope string.
 
 Definition zz : ident := (247,"zz").
+
+Ltac e' := e; match goal with
+              | [ |- context[eager_eval_type] ] => repeat e
+              | [ |- _ ] => idtac
+              end.
+
+Lemma eager_eval_zz :
+    eager_eval_expr ge tempty sempty (EVar zz) (to_sval (eseq [ebit true, ebit true])).
+Proof.
+  init_globals ge.
+  g. e. e. e. g.
+  e. e. g.
+  e. e'. e. e. g.
+  e'. repeat e. 
+  reflexivity.
+  e. 
+  g. e'. repeat e.
+  reflexivity.
+  e. e. e. g. e. e. e.
+  e.
+  g. e'. repeat e.
+  reflexivity.
+  e. g. e'.
+  repeat e.
+  reflexivity.
+  e.
+  e'.
+  e. e. e; e.
+  repeat e.
+  
+  simpl. unfold plus_sem.
+  unfold list_of_strictval.
+
+  (* TODO: make lifting over structures work *)
+  
+Admitted.
+
+
 (*
 Lemma eval_z :
   exists v v',
