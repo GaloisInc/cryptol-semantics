@@ -3,12 +3,12 @@ Require Import AST.
 Require Import List.
 Require Import Values.
 Require Import Semantics.
+Require Import Bvector. 
 
 (* We need easy ways of writing down inputs to cryptol functions *)
 (* They only need base type bit, and structures *)
 
 (* make some kind of type, convertible to val and strictval *)
-
 
 Lemma map_snd_to_sval_lp :
   forall f,
@@ -144,6 +144,39 @@ Inductive has_type : ext_val -> ext_type -> Prop :=
 Definition byte : ext_type := tseq 8 tbit.
 Definition bytestream (n : nat) := tseq n byte.
 Definition word : ext_type := tseq 64 tbit.
+
+
+Fixpoint to_bvector (w : nat) (e : ext_val) : option (Bvector w) :=
+  match e,w with
+  | eseq (ebit b :: r),S n =>
+    match to_bvector n (eseq r) with
+    | Some bv => 
+      Some (Vector.cons bool b n bv)
+    | _ => None
+    end
+  | eseq nil, O => Some (Vector.nil bool)
+  | _,_ => None
+  end.
+
+Lemma to_bvector_succeeds :
+  forall l n,
+    has_type (eseq l) (tseq n tbit) ->
+    exists bv,
+      to_bvector n (eseq l) = Some bv.
+Proof.
+  induction l; intros.
+
+  * inversion H. subst. simpl.
+    eauto.
+
+  * inversion H. subst. inversion H2.
+    subst.
+    edestruct IHl. econstructor; eauto.
+    inversion H3. subst.
+    simpl. rewrite H0.
+    eauto.
+Qed.
+
 
 
 
