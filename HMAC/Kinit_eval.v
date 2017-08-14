@@ -13,11 +13,11 @@ Require Import Builtins.
 Require Import BuiltinSem.
 Require Import BuiltinSyntax.
 Require Import Values.        
-Require Import Eager.
 Require Import Bitstream.
 Require Import GlobalExtends.
 
 Require Import EvalTac.
+Require Import Eager.
 
 Import HaskellListNotations.
 Open Scope string.
@@ -27,7 +27,6 @@ Require Import HMAC.
 Require Import HMAC_spec.
 
 Require Import HMAC_lib.
-
 
 
 Lemma kinit_eval :

@@ -15,6 +15,7 @@ Require Import BuiltinSyntax.
 Require Import Values.        
 
 Require Import EvalTac.
+Require Import Eager.
 
 Require Import Basic.
 
@@ -23,6 +24,40 @@ Open Scope string.
 
 Definition z : ident := (244,"z").
 
+Ltac e' := e; match goal with
+              | [ |- context[eager_eval_type] ] => repeat e
+              | [ |- _ ] => idtac
+              end.
+
+Lemma eager_eval_z :
+    eager_eval_expr ge tempty sempty (EVar z) (to_sval (eseq [ebit true, ebit true])).
+Proof.
+  init_globals ge.
+  g. e. e. e. g.
+  e. e. g.
+  e. e'. g.
+  e'. repeat e. 
+  reflexivity.
+  e. 
+  g. e'. repeat e.
+  reflexivity.
+  e. e. g. e. e.
+  g. e'. repeat e.
+  reflexivity.
+  e. g. e'.
+  repeat e.
+  reflexivity.
+  e.
+  e'.
+  e. e. e; e.
+  
+          
+  
+
+Admitted.
+
+
+Require Import EvalTac.
 
 Lemma eval_z :
   exists v,

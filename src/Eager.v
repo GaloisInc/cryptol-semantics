@@ -12,6 +12,7 @@ Require Import AST.
 Require Import Builtins.
 Require Import Values.
 Require Import BuiltinSem.
+Require Import BuiltinSyntax.
 Require Import Semantics.
 Require Import GetEachN.
 
@@ -253,6 +254,9 @@ Definition splitSem (t : Tval) (l : strictval) : option strictval :=
   | _,_ => None
   end.
 
+(* TODO: convert to bitvector, add, convert back *)
+Definition plus_sem (x y : strictval) : option strictval := None.
+
 Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval) : option strictval :=
   match bi,t,l with
   | Xor,t::nil,(a :: b :: nil) => xor_sem a b
@@ -264,6 +268,9 @@ Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval
   | Append,(t1 :: t2 :: t3 ::nil), (l1 :: l2 :: nil) => append_sem l1 l2
   | splitAt,(t1 :: t2 :: t3 :: nil), (l :: nil) => splitAt_sem t1 l
   | split,(t1 :: t2 :: t3 :: nil),(l :: nil) => splitSem t2 l
+  | true_builtin,nil,nil => Some (sbit true)
+  | false_builtin,nil,nil => Some (sbit false)
+  | Plus,(t :: nil),(x :: y :: nil) => plus_sem x y
   | _,_,_ => None
   end.
 
@@ -491,3 +498,23 @@ Proof.
   specialize (IHa b). simpl in IHa. rewrite IHa.
   reflexivity.
 Qed.
+
+(* Eager tactics *)
+(* TODO: standardize *)
+Ltac ec := econstructor; try unfold mb; try reflexivity.
+Ltac fg := eapply eager_eval_global_var; [ reflexivity | eassumption | idtac].
+Ltac g := eapply eager_eval_global_var; try eassumption; try reflexivity.
+
+Ltac et :=
+  match goal with
+  | [ |- eager_eval_type _ _ _ _ ] => solve [repeat econstructor; eauto]
+  end.
+
+Ltac e :=
+  match goal with
+  | [ |- eager_eval_expr ?GE _ ?E (EVar ?id) _ ] =>
+    (try fg); (try reflexivity);
+    (try solve [eapply eager_eval_local_var; reflexivity]);
+    fail 1 "couldn't figure out variable"
+  | [ |- _ ] => ec; try solve [et]
+  end.

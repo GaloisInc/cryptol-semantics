@@ -13,7 +13,6 @@ Require Import Builtins.
 Require Import BuiltinSem.
 Require Import BuiltinSyntax.
 Require Import Values.        
-Require Import Eager.
 Require Import Bitstream.
 Require Import Lib.
 Require Import GetEachN.
@@ -21,6 +20,7 @@ Require Import EagerEvalInd.
 Require Import GlobalExtends.
 
 Require Import EvalTac.
+Require Import Eager.
 
 Import HaskellListNotations.
 Open Scope string.
@@ -337,30 +337,7 @@ Proof.
 Qed.
 
 
-(* Eager tactics *)
-(* TODO: standardize *)
-Ltac ec := econstructor; try unfold mb; try reflexivity.
-Ltac fg := eapply eager_eval_global_var; [ reflexivity | eassumption | idtac].
-Ltac g := eapply eager_eval_global_var; try eassumption; try reflexivity.
 Ltac ag := g; [eapply wf_env_not_local; eauto; reflexivity | eapply wf_env_global; eauto; simpl; reflexivity | idtac].
-
-Ltac et :=
-  match goal with
-  | [ |- eager_eval_type _ _ _ _ ] => solve [repeat econstructor; eauto]
-  end.
-
-Ltac e :=
-  match goal with
-  | [ |- eager_eval_expr ?GE _ ?E (EVar ?id) _ ] =>
-    (try fg); (try reflexivity);
-    (try solve [eapply eager_eval_local_var; reflexivity]);
-    fail 1 "couldn't figure out variable"
-  | [ |- _ ] => ec; try solve [et]
-  end.
-
-
-
-Definition typenum (n : Z) : Expr := ETyp (TCon (TC (TCNum n)) []).
 
 Ltac abstract_globals ge :=
   repeat match goal with
@@ -368,6 +345,7 @@ Ltac abstract_globals ge :=
          end.
 
 
+Definition typenum (n : Z) : Expr := ETyp (TCon (TC (TCNum n)) []).
 
 
 Lemma eager_eval_bind_senvs :

@@ -13,13 +13,13 @@ Require Import Builtins.
 Require Import BuiltinSem.
 Require Import BuiltinSyntax.
 Require Import Values.        
-Require Import Eager.
 Require Import Bitstream.
 Require Import Lib.
 Require Import GlobalExtends.
 Require Import GetEachN.
 
 Require Import EvalTac.
+Require Import Eager.
 
 Import HaskellListNotations.
 Open Scope string.
