@@ -45,7 +45,7 @@ NOTE: `make` will only build the coq files in the `src` directory. In order to b
 ## Using the evaluation model
 
 1. Use the cryptol fork to load your favorite cryptol program: `cryptol <filename>`
-1. In the interactive prompt type `:all` to print out an AST of every current top level declaration
+1. In the interactive prompt type `:extract-coq` to print out an AST of every current top level declaration
 1. Copy the output and paste it as the right hand side of a variable declaration in Coq
 1. Use the `eval_expr` or `eager_eval_expr` relation to construct arguments that your terms evaluate to what you want
 
