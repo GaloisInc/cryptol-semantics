@@ -18,6 +18,8 @@ Simply stated, Cryptol shows the correctness of cryptography. By presenting a fo
 ## Project Organization
 
 - **src:** contains the main development
+- **HMAC:** contains files related to verification of equivalence between cryptol HMAC and the HMAC spec from FCF
+- **verif:** contains various interesting other proofs
 - **examples:** example cryptol and microcryptol files to target
 - **script:** A script to generate makefiles, called by [configure](configure)
 
@@ -38,12 +40,12 @@ WARNING: This project is its infancy, and under active development.
 1. `./configure`
 1. `make`
 
-RECOMMENDATION: Some proofs can take a while to check, so use `make -jN` instead of simply `make` to build in parallel, where N is the number of threads you want (usually the number of cores available to you).
+NOTE: `make` will only build the coq files in the `src` directory. In order to build everything, use `make test`. When building everything, it is recommended that you build in parallel using `make -jN` for some appropriate N.
 
 ## Using the evaluation model
 
 1. Use the cryptol fork to load your favorite cryptol program: `cryptol <filename>`
 1. In the interactive prompt type `:all` to print out an AST of every current top level declaration
 1. Copy the output and paste it as the right hand side of a variable declaration in Coq
-1. Use the `eval_expr` relation to construct arguments that your terms evaluate to what you want
+1. Use the `eval_expr` or `eager_eval_expr` relation to construct arguments that your terms evaluate to what you want
 
