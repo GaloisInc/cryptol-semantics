@@ -51,11 +51,9 @@ Proof.
   e'.
   e. e. e; e.
   
-          
-  
-
-Admitted.
-
+  simpl. unfold plus_sem.
+  simpl. reflexivity.
+Qed.
 
 Require Import EvalTac.
 
@@ -73,5 +71,6 @@ Proof.
   e. g. e. e. e.
   e. g. e. e. g.
   e. e. e. g. e. e. e.
-  e.  (* need to model Plus *)
+  e.
+  (* need to model Plus *)
 Admitted.

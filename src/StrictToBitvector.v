@@ -12,10 +12,10 @@ Import ListNotations.
 (**************** Functions ****************)
 
 (* convert a forced list of bits to a bitvector *)
-Fixpoint to_bitv {ws : nat} (l : list ext_val) : option (BitV ws) :=
+Fixpoint to_bitv {ws : nat} (l : list strictval) : option (BitV ws) :=
   match l, ws with
   | nil, O => Some (@repr 0 0)
-  | (ebit b) :: r, S n =>
+  | (sbit b) :: r, S n =>
     match @to_bitv n r with
     | Some bv => Some (@repr (S n) (unsigned bv + if b then (two_power_nat n) else 0))
     | None => None
@@ -24,15 +24,14 @@ Fixpoint to_bitv {ws : nat} (l : list ext_val) : option (BitV ws) :=
   end.
 
 
-Fixpoint from_bitv' (ws : nat) (n : nat) (bv : BitV ws) : list ext_val :=
+Fixpoint from_bitv' (ws : nat) (n : nat) (bv : BitV ws) : list strictval :=
   match n with
   | O => nil
-  | S n' => (ebit (testbit bv (Z.of_nat n')) :: from_bitv' ws n' bv)
+  | S n' => (sbit (testbit bv (Z.of_nat n')) :: from_bitv' ws n' bv)
   end.
 
-Definition from_bitv {ws : nat} (bv : BitV ws) : list ext_val :=
+Definition from_bitv {ws : nat} (bv : BitV ws) : list strictval :=
   from_bitv' ws ws bv.  
-
 
 
 Lemma tobit_length :
@@ -55,8 +54,8 @@ Lemma to_bitv_width_zero : forall l (bv : BitV 0),
 Proof. 
   destruct l; intros. 
   - reflexivity. 
-  - exfalso. inversion H. 
-    destruct e; try congruence. 
+  - exfalso. inversion H.
+    destruct s; try congruence. 
 Qed. 
 
 Lemma intval_width_zero : forall (bv : BitV 0), 
@@ -191,16 +190,16 @@ Qed.
 Lemma testbit_tobitv : forall len ws l1 l2 v (bv : BitV ws), 
   len = length l1 -> 
     @to_bitv ws (l2 ++ v :: l1) = Some bv -> 
-    ebit (testbit bv (Z.of_nat len)) = v. 
+    sbit (testbit bv (Z.of_nat len)) = v. 
 Proof.
   induction ws; intros.  
-  - inversion H0. destruct l2; simpl in *; try congruence. destruct v; inversion H2. destruct e; try congruence.
+  - inversion H0. destruct l2; simpl in *; try congruence. destruct v; inversion H2. destruct s; try congruence.
   - simpl in H0. destruct l2 eqn:?; simpl in *; try congruence. destruct v eqn:?; simpl in *; try congruence. destruct (to_bitv l1) eqn:?. inversion H0. f_equal. eapply testbit_single. 
     + eauto. 
     + eauto. 
     + reflexivity. 
     + inversion H0. 
-    + remember H as Hlen. clear HeqHlen. destruct e eqn:?; try congruence. destruct (to_bitv (l++v::l1)) eqn :?. eapply IHws in H; eauto. 
+    + remember H as Hlen. clear HeqHlen. destruct s eqn:?; try congruence. destruct (to_bitv (l++v::l1)) eqn :?. eapply IHws in H; eauto. 
       * subst. inversion H0. subst.
         clear H0. f_equal.
         erewrite testbit_widen.
@@ -255,7 +254,7 @@ Proof.
     + inversion H1. eapply testbit_tobitv. instantiate (1:=l1). reflexivity. instantiate (1:=(l2++(cons v nil))). rewrite list_helper. assumption. 
     + eapply IHlen. 
       * omega. 
-      * instantiate (1:=e). instantiate (1:=l2++(cons v nil)). rewrite list_helper. assumption. 
+      * instantiate (1:=s). instantiate (1:=l2++(cons v nil)). rewrite list_helper. assumption. 
       * inversion H1. reflexivity. 
 Qed. 
 
@@ -267,7 +266,7 @@ Proof.
      + unfold from_bitv. simpl. reflexivity. 
      + inversion H. 
   - unfold from_bitv. destruct ws. 
-    + inversion H. destruct e; congruence.
+    + inversion H. destruct s; congruence.
     + simpl.
       assert (Datatypes.length l = ws). {
         eapply tobit_length in H.

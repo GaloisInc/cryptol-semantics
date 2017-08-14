@@ -1,4 +1,4 @@
-  Require Import String.
+Require Import String.
 Require Import List.
 Import ListNotations.
 Require Import Coq.Arith.PeanoNat.
@@ -10,12 +10,13 @@ Require Import Coqlib.
 Require Import Bitvectors.
 Require Import AST.
 Require Import Builtins.
-Require Import Values.
+(*Require Import Values.*)
 Require Import BuiltinSem.
 Require Import BuiltinSyntax.
 Require Import Semantics.
 Require Import GetEachN.
 
+Require Import StrictToBitvector.
 
 Open Scope list_scope.
 
@@ -255,7 +256,17 @@ Definition splitSem (t : Tval) (l : strictval) : option strictval :=
   end.
 
 (* TODO: convert to bitvector, add, convert back *)
-Definition plus_sem (x y : strictval) : option strictval := None.
+Definition plus_sem (x y : strictval) : option strictval :=
+  match list_of_strictval x, list_of_strictval y with
+  | Some lx, Some ly =>
+    match @to_bitv (length lx) lx, @to_bitv (length lx) ly with
+    | Some bvx, Some bvy => Some (strict_list (from_bitv (add bvx bvy)))
+    | _,_ => None
+    end
+  | _,_ => None
+  end.
+  
+  
 
 Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval) : option strictval :=
   match bi,t,l with
