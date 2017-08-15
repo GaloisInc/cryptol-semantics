@@ -62,6 +62,15 @@ Ltac e :=
             end; try eassumption; try et; f2).
 
 
+Ltac gex :=
+  repeat (match goal with
+          | [ |- global_extends ?X ?X ] => eapply global_extends_refl
+          | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
+          | [ |- _ ] => idtac
+          end);
+  try (eapply wf_env_name_irrel_GE; eauto).
+
+
 Ltac abstract_globals ge :=
   repeat match goal with
          | [ H : ge _ = _ |- _ ] => eapply wf_env_global in H; eauto

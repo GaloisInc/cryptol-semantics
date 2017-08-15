@@ -112,47 +112,17 @@ Proof.
   (* START *)
   {
     eapply kinit_eval.
-
     unfold bind_decl_groups.
     unfold erase_decl_groups.
-
-    repeat eapply wf_env_extend_TE.
+    repeat eapply wf_env_extend_TE; try reflexivity.
     repeat eapply wf_env_erase_SE.
-    repeat eapply wf_env_extend_SE.
-    repeat eapply wf_env_extend_GE.
+    repeat eapply wf_env_extend_SE; try reflexivity.
+    repeat eapply wf_env_extend_GE; try reflexivity.
     eassumption.
-
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
-    reflexivity.
     exact Hkeytype.
-    
     eapply good_hash_same_eval; eauto.
-    repeat (match goal with
-            | [ |- global_extends ?X ?X ] => eapply global_extends_refl
-            | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
-            | [ |- _ ] => idtac
-            end);
-      try (eapply wf_env_name_irrel_GE; eauto).
-
-    eapply HIDs. simpl. left. reflexivity.
-    eapply HIDs. simpl. right. left. reflexivity.
-    eapply HIDs. simpl. right. right. left. reflexivity.
-    eapply HIDs. simpl. right. right. right. left. reflexivity.
-
-    lv.
-    et. et. et.
-    lv.
+    gex; try solve [eapply HIDs; simpl; repeat first [left; reflexivity | right]].
+    lv. et. et. et. lv.
   }  (* END *)
   
   simpl.
@@ -192,33 +162,17 @@ Proof.
   g.
   {
     eapply kinit_eval.
-
     unfold bind_decl_groups.
     unfold erase_decl_groups.
-    repeat eapply wf_env_extend_GE.
-    repeat eapply wf_env_extend_TE.
+    repeat eapply wf_env_extend_TE; try reflexivity.
     repeat eapply wf_env_erase_SE.
-    repeat eapply wf_env_extend_SE.
-    assumption.
-
-    all: try solve [reflexivity].
-
+    repeat eapply wf_env_extend_SE; try reflexivity.
+    repeat eapply wf_env_extend_GE; try reflexivity.
+    eassumption.
     exact Hkeytype.
-
     eapply good_hash_same_eval; eauto.
-    repeat (match goal with
-            | [ |- global_extends ?X ?X ] => eapply global_extends_refl
-            | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
-            | [ |- _ ] => idtac
-            end);
-      try (eapply wf_env_name_irrel_GE; eauto).
-
-    eapply HIDs. simpl. left. reflexivity.
-    eapply HIDs. simpl. right. left. reflexivity.
-    eapply HIDs. simpl. right. right. left. reflexivity.
-    eapply HIDs. simpl. right. right. right. left. reflexivity.
-    lv. et. et. et.
-    lv.
+    gex; try solve [eapply HIDs; simpl; repeat first [left; reflexivity | right]].
+    lv. et. et. et. lv.
   }
   simpl.
   rewrite list_of_strictval_of_strictlist. 
@@ -266,19 +220,8 @@ Proof.
   unfold bind_decl_group.
   unfold declare.
 
+  gex; try solve [eapply HIDs; simpl; repeat first [left; reflexivity | right]].
 
-  repeat (match goal with
-          | [ |- global_extends ?X ?X ] => eapply global_extends_refl
-          | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
-          | [ |- _ ] => idtac
-          end);
-    try (eapply wf_env_name_irrel_GE; eauto).
-
-  eapply HIDs. simpl. left. reflexivity.
-  eapply HIDs. simpl. right. left. reflexivity.
-  eapply HIDs. simpl. right. right. left. reflexivity.
-  eapply HIDs. simpl. right. right. right. left. reflexivity.
-  
   e. lv.
 
   simpl.
@@ -329,19 +272,8 @@ Proof.
   break_exists.
   eapply H1 in H6. break_and. eassumption.
   
-  repeat (match goal with
-          | [ |- global_extends ?X ?X ] => eapply global_extends_refl
-          | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
-          | [ |- _ ] => idtac
-          end);
-    try (eapply wf_env_name_irrel_GE; eauto).
+  gex; try solve [eapply HIDs; simpl; repeat first [left; reflexivity | right]].
   
-  eapply HIDs. simpl. left. reflexivity.
-  eapply HIDs. simpl. right. left. reflexivity.
-  eapply HIDs. simpl. right. right. left. reflexivity.
-  eapply HIDs. simpl. right. right. right. left. reflexivity.
-
-
   (* our result matches the model *)
   subst hv1.
   eapply list_of_strictval_to_sval in H3.

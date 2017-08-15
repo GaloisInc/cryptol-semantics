@@ -478,3 +478,11 @@ Proof.
          end.
   destruct (H4 id); try congruence.
 Qed.
+
+Lemma wf_env_name_irrel_GE :
+  forall ge GE TE SE ,
+    wf_env ge GE TE SE ->
+    name_irrel GE.
+Proof.
+  intros. unfold wf_env in *. intuition.
+Qed.
