@@ -20,6 +20,64 @@ Import HaskellListNotations.
 Open Scope string.
 
 Require Import Comp.
+Require Import Eager.
+
+Lemma eval_t1 :
+  eager_eval_expr ge tempty sempty (EVar t1) (sbit true).
+Proof.
+  init_globals ge.
+  g. e. e. e. g.
+  repeat e. e.
+  e. e. e. e. e. g.
+  e.
+  e. e. e. g.
+  e.
+  e. congruence.
+  e. congruence. e.
+  e. e. e. g.
+  repeat e. e. e. repeat e. repeat e. simpl. reflexivity.
+  e. e. e. g. e.
+  e. e. repeat e. e. simpl. reflexivity.
+  e.
+  simpl. reflexivity.
+  e. e. e. e. e. g;
+  repeat e.
+  repeat e. repeat e.
+  e. e. e. g.
+  repeat e. repeat e. repeat e.
+  e.
+  reflexivity.
+  e. e. congruence.
+  e. e. e. e. g.
+  e. e. e. repeat e.
+  repeat e. reflexivity.
+  e. e. e. g.
+  e. e. e. repeat e.
+  simpl. e. reflexivity.
+  e. reflexivity.
+  e. e. e. e. e.
+  g. repeat e.
+  e. e. repeat e.
+  e. reflexivity.
+  e. e. e. g. e.
+  e. e. repeat e.
+  e. reflexivity.
+  e. e. e. g.
+  e. e. e. repeat e.
+  e. reflexivity.
+  e. reflexivity.
+  simpl. repeat e.
+  e. e. e. g.
+  e. e. e. repeat e.
+  e. reflexivity.
+  e. repeat e.
+  e. e. e. e. e.
+
+  (* model At *)
+
+Admitted.
+  
+  
 (*
 Lemma eval_t1 :
   eval_expr ge empty (EVar t1) (bit true).
