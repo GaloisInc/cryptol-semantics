@@ -32,24 +32,31 @@ Proof.
   init_globals ge.
   g. e. e. e. g.
   e. e. g.
-  e. e'. g.
-  e'. repeat e. 
-  reflexivity.
-  e. 
-  g. e'. repeat e.
-  reflexivity.
-  e. e. g. e. e.
-  g. e'. repeat e.
-  reflexivity.
-  e. g. e'.
-  repeat e.
-  reflexivity.
   e.
-  e'.
-  e. e. e; e.
-  
-  simpl. unfold plus_sem.
-  simpl. reflexivity.
+  ec. g. e.
+  ec; try et; try e.
+  reflexivity.
+  ec.
+  g. e.
+  ec; try et; try e.
+  reflexivity.
+  ec. 
+  e. g.
+  e. ec. g.
+  ec; try et; try e. 
+  ec; try et; try e.
+  reflexivity.
+  ec. g.
+  ec; try et; try e.
+  ec; try et; try e.
+  reflexivity.
+  ec. 
+
+  e. ec; try lv.
+  ec; try lv.
+  ec; try lv.
+
+  reflexivity.
 Qed.
 
 

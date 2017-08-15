@@ -24,10 +24,6 @@ Open Scope string.
 
 Definition zz : ident := (247,"zz").
 
-Ltac e' := e; match goal with
-              | [ |- context[eager_eval_type] ] => repeat e
-              | [ |- _ ] => idtac
-              end.
 
 Lemma eager_eval_zz :
     eager_eval_expr ge tempty sempty (EVar zz) (to_sval (eseq [ebit true, ebit true])).
@@ -35,23 +31,31 @@ Proof.
   init_globals ge.
   g. e. e. e. g.
   e. e. g.
-  e. e'. e. e. g.
-  e'. repeat e. 
-  reflexivity.
-  e. 
-  g. e'. repeat e.
-  reflexivity.
-  e. e. e. g. e. e. e.
   e.
-  g. e'. repeat e.
+  ec; try et; try e.
+  ec. g. e.
+  ec; try et; try e.
   reflexivity.
-  e. g. e'.
-  repeat e.
+  ec.
+  g. e.
+  ec; try et; try e.
   reflexivity.
-  e.
-  e'.
-  e. e. e; e.
-  repeat e.
+  ec. ec.
+  e. g.
+  e. ec. e. ec. g.
+  ec; try et; try e. 
+  ec; try et; try e.
+  reflexivity.
+  ec. g.
+  ec; try et; try e.
+  ec; try et; try e.
+  reflexivity.
+  ec. ec.
+
+  e. ec; try lv.
+  ec; try lv.
+  ec; try lv.
+  
   
   simpl. unfold plus_sem.
   unfold list_of_strictval.

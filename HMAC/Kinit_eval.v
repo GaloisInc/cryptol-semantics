@@ -22,7 +22,7 @@ Require Import Eager.
 Import HaskellListNotations.
 Open Scope string.
 
-Require Import HMAC_new.
+Require Import HMAC.
 
 Require Import HMAC_spec.
 
@@ -51,26 +51,23 @@ Proof.
   unfold bytestream in H0. inversion H0. subst.
 
   e. e. e. e. e. ag.
-  e. e. e. e.
-  eassumption.
-  e. eassumption.
-  e. e. e. e.
-
-  g. unfold extend. simpl.
-  eapply wf_env_not_local; eauto; reflexivity.
   e. e. e. e. 
+  e. 
+  e. e. e. e.
+
+  ag.
+  e. e. e. e. 
+  ag.
+
+  e. e. e.
+  ec. reflexivity. e. e. e.
+
   g. unfold extend. simpl.
   eapply wf_env_not_local; eauto; reflexivity.
 
-  e. e. e. repeat e. repeat e. reflexivity.
-  e. e. e. 
-
-  g. unfold extend. simpl.
-  eapply wf_env_not_local; eauto; reflexivity.
-
-  e. e. e. repeat e.
-  repeat e. reflexivity.
-  e. repeat e. repeat e.
+  e. e. e.
+  ec. reflexivity.
+  e. ec. lv. ec. lv. ec.
   simpl. unfold strictnum.
 
   rewrite gt_not_refl; reflexivity.
@@ -78,35 +75,26 @@ Proof.
 
   e. e. e. e.
 
-  g. unfold extend. simpl.
-  eapply wf_env_not_local; eauto; reflexivity.
-  eapply wf_env_global; eauto. reflexivity.
+  ag.
   e. e. e. e. e. e. e. e. e.
-  g. unfold extend. simpl.
-  eapply wf_env_not_local; eauto; reflexivity.
+  ag.
 
-  e. e. e. e. e. e. e. 
-  g. unfold extend. simpl.
-  eapply wf_env_not_local; eauto; reflexivity.
+  e. e. e. e. lv. e. e. 
+  ag.
 
-  e. e. repeat e.
-  repeat e.
-  reflexivity.
+  e. e.
+  ec. reflexivity. e.
+  ec. lv. ec. lv. ec. 
 
-  e. repeat e. repeat e. 
-
-  
   unfold to_sval. fold to_sval.
   rewrite append_strict_list. 
   reflexivity.
 
   e. g. e. g. e. e. e. e.
-  g. unfold extend. simpl.
-  eapply wf_env_not_local; eauto; reflexivity.
+  ag.
 
-  e. e. e. e. e. e. repeat e.
-  repeat e.
-
+  e. e. e. e. lv. e. 
+  ec. lv. ec.
   erewrite <- map_length.
   rewrite splitAt_len. reflexivity.  
 

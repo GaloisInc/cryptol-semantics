@@ -25,7 +25,7 @@ Require Import Eager.
 Lemma eval_t1 :
   eager_eval_expr ge tempty sempty (EVar t1) (sbit true).
 Proof.
-  init_globals ge.
+(*  init_globals ge.
   g. e. e. e. g.
   repeat e. e.
   e. e. e. e. e. g.
@@ -71,7 +71,7 @@ Proof.
   e. e. e. repeat e.
   e. reflexivity.
   e. repeat e.
-  e. e. e. e. e.
+  e. e. e. e. e.*)
 
   (* model At *)
 

@@ -155,9 +155,10 @@ Proof.
 
   e. e. g. e. e. e. e. e. e. e.
   g.
-  e. e. e. e. e. e.
-  e. e. e. e. e. e.
-  e. simpl.  
+  e. e. lv. e. lv. e.
+  ec. lv.
+  ec. lv.
+  ec. simpl.
   f_equal. 
   unfold to_sval. 
   instantiate (1:= eseq

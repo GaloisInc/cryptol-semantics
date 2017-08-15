@@ -292,50 +292,6 @@ Proof.
 
 Qed.
 
-Lemma wf_env_global :
-  forall ge GE TE SE,
-    wf_env ge GE TE SE ->
-    forall id exp,
-      ge id = Some exp ->
-      GE id = Some exp.
-Proof.
-  intros. unfold wf_env in *.
-  destruct H. destruct H1.
-  destruct H2. destruct H3.
-  destruct (H4 id); try congruence.
-  intuition.
-  congruence.
-Qed.
-
-Lemma wf_env_not_local :
-  forall ge GE TE SE,
-    wf_env ge GE TE SE ->
-    forall id exp,
-      ge id = Some exp ->
-      SE id = None.
-Proof.
-  intros. unfold wf_env in *.
-  repeat match goal with
-         | [ H : _ /\ _ |- _ ] => destruct H
-         end.
-  destruct (H4 id); try congruence.
-  intuition.
-Qed.
-
-Lemma wf_env_not_type :
-  forall ge GE TE SE,
-    wf_env ge GE TE SE ->
-    forall id exp,
-      ge id = Some exp ->
-      TE id = None.
-Proof.
-  intros. unfold wf_env in *.
-  repeat match goal with
-         | [ H : _ /\ _ |- _ ] => destruct H
-         end.
-  destruct (H4 id); try congruence.
-Qed.
-
 
 
 
