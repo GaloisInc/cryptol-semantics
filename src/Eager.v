@@ -510,22 +510,3 @@ Proof.
   reflexivity.
 Qed.
 
-(* Eager tactics *)
-(* TODO: standardize *)
-Ltac ec := econstructor; try unfold mb; try reflexivity.
-Ltac fg := eapply eager_eval_global_var; [ reflexivity | eassumption | idtac].
-Ltac g := eapply eager_eval_global_var; try eassumption; try reflexivity.
-
-Ltac et :=
-  match goal with
-  | [ |- eager_eval_type _ _ _ _ ] => solve [repeat econstructor; eauto]
-  end.
-
-Ltac e :=
-  match goal with
-  | [ |- eager_eval_expr ?GE _ ?E (EVar ?id) _ ] =>
-    (try fg); (try reflexivity);
-    (try solve [eapply eager_eval_local_var; reflexivity]);
-    fail 1 "couldn't figure out variable"
-  | [ |- _ ] => ec; try solve [et]
-  end.

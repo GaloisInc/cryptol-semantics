@@ -337,12 +337,6 @@ Proof.
 Qed.
 
 
-Ltac ag := g; [eapply wf_env_not_local; eauto; reflexivity | eapply wf_env_global; eauto; simpl; reflexivity | idtac].
-
-Ltac abstract_globals ge :=
-  repeat match goal with
-         | [ H : ge _ = _ |- _ ] => eapply wf_env_global in H; eauto
-         end.
 
 
 Definition typenum (n : Z) : Expr := ETyp (TCon (TC (TCNum n)) []).

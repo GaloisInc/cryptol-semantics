@@ -22,7 +22,7 @@ Require Import Eager.
 Import HaskellListNotations.
 Open Scope string.
 
-Require Import HMAC.
+Require Import HMAC_new.
 
 Require Import HMAC_spec.
 

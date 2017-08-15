@@ -24,10 +24,7 @@ Open Scope string.
 
 Definition z : ident := (244,"z").
 
-Ltac e' := e; match goal with
-              | [ |- context[eager_eval_type] ] => repeat e
-              | [ |- _ ] => idtac
-              end.
+Require Import EvalTac.
 
 Lemma eager_eval_z :
     eager_eval_expr ge tempty sempty (EVar z) (to_sval (eseq [ebit true, ebit true])).
@@ -55,8 +52,8 @@ Proof.
   simpl. reflexivity.
 Qed.
 
-Require Import EvalTac.
 
+(*
 Lemma eval_z :
   exists v,
     eval_expr ge tempty empty (EVar z) v /\ force_list ge tempty empty v ([bit true, bit true]).
@@ -74,3 +71,4 @@ Proof.
   e.
   (* need to model Plus *)
 Admitted.
+*)

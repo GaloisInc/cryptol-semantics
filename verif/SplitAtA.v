@@ -21,7 +21,7 @@ Open Scope string.
 
 Require Import SplitAt.
 
-
+(* requires lazy tactics 
 Lemma eval_a :
   exists v,
     eval_expr ge tempty empty (EVar a) v /\ force_list ge tempty empty v (@from_bitv 8 (@repr 8 1)).
@@ -49,3 +49,4 @@ Proof.
   repeat e.
   repeat e.
 Qed.
+*)
