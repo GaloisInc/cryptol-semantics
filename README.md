@@ -34,17 +34,17 @@ WARNING: This project is its infancy, and under active development.
 
 ### Instructions
 
-1. Clone and build the [cryptol fork](https://github.com/sliverdragon37/cryptol) capable of printing AST that can be imported by Coq
+1. Make sure the version of cryptol you are running is as new or newer than [this commit](https://github.com/GaloisInc/cryptol/commit/ca2136fab9cbfd1fcdb8377c50869d9240748575)
 1. Clone and enter this repository
 1. `cd cryptol-semantics`
 1. `./configure`
 1. `make`
 
-NOTE: `make` will only build the coq files in the `src` directory. In order to build everything, use `make test`. When building everything, it is recommended that you build in parallel using `make -jN` for some appropriate N.
+NOTE: `make` will only build the coq files in the `src` directory. In order to build everything, use `make verif`. When building everything, it is recommended that you build in parallel using `make -jN` for some appropriate N.
 
 ## Using the evaluation model
 
-1. Use the cryptol fork to load your favorite cryptol program: `cryptol <filename>`
+1. Use cryptol to load your favorite cryptol program: `cryptol <filename>`
 1. In the interactive prompt type `:extract-coq` to print out an AST of every current top level declaration
 1. Copy the output and paste it as the right hand side of a variable declaration in Coq
 1. Use the `eval_expr` or `eager_eval_expr` relation to construct arguments that your terms evaluate to what you want
