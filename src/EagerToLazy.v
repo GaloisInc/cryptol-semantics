@@ -99,6 +99,7 @@ Proof.
   destruct a; simpl; f_equal; eauto.
 Qed.
 
+
 Lemma eager_to_strict_lazy :
   forall exp ge TE SE sv,
     eager_eval_expr ge TE SE exp sv ->
@@ -165,9 +166,9 @@ Proof.
     econstructor. econstructor; eauto.
     assumption.
 
-  * assert (match_env (bind_decl_groups decls ge) E0 (erase_decl_groups decls E)).
+  * assert (match_env (bind_decl_groups decls ge) (erase_decl_groups decls E0) (erase_decl_groups decls E)).
     admit.
-
+    (* This case could be our downfall *)
     eapply IHeager_eval_expr in H1.
     inversion H1.
     subst.
