@@ -18,16 +18,33 @@ Ltac et :=
   | [ |- Forall2 (eager_eval_type _ _) _ _ ] => econstructor; try et
   end.
 
-Ltac ag := eapply eager_eval_global_var;
+
+Ltac f2 :=
+  repeat progress match goal with
+                  | [ |- Forall2 _ _ _ ] => econstructor
+                  | [ |- Forall _ _ ] => econstructor
+                  | [ |- _ ] => idtac
+                  end.
+
+(*Ltac ag := eapply eager_eval_global_var;
            [simpl; unfold extend; simpl; eapply wf_env_not_local; eauto; reflexivity |
             simpl; unfold extend; simpl; eapply wf_env_global; eauto; simpl; reflexivity |
-            idtac].
+            idtac].*)
 
 (* solve completely, or leave only 1 subgoal *)
 (* fail if running T generates too many subgoals *)
 Ltac solve_1 T :=
   first [ ( T; [ idtac ]) ||
           solve [T]].
+
+
+Ltac ag :=
+  let ag' := 
+      eapply eager_eval_global_var; [simpl; unfold extend; simpl; eapply wf_env_not_local; try eassumption; try reflexivity |
+                                     try eassumption; simpl; unfold extend; simpl; eapply wf_env_global; simpl; try reflexivity |
+                                     idtac]
+  in
+  ag'; try eassumption; try reflexivity.
 
 Ltac lv := eapply eager_eval_local_var; try reflexivity.
 
@@ -42,7 +59,7 @@ Ltac e :=
               | EVar _ => fail 3 "can't handle variables"
               | _ => ec
               end
-            end; try eassumption; try et).
+            end; try eassumption; try et; f2).
 
 
 Ltac abstract_globals ge :=

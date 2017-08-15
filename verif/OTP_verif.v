@@ -148,18 +148,12 @@ Proof.
 
   eexists. 
   split. 
-  (* repeat match goal with 
-   | [H : Forall _ _ |- _] => inversion H; clear H end;
-   repeat match goal with
-     | [H : [] = _ |- _] => rewrite length_cons in H end. *)
 
   e. e. g. e. e. e. e. e. e. e.
   g.
   e. e. lv. e. lv. e.
-  ec. lv.
-  ec. lv.
-  ec. simpl.
-  f_equal. 
+  lv. lv.
+  simpl. f_equal.
   unfold to_sval. 
   instantiate (1:= eseq
                      (

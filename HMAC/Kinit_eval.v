@@ -60,14 +60,14 @@ Proof.
   ag.
 
   e. e. e.
-  ec. reflexivity. e. e. e.
 
-  g. unfold extend. simpl.
-  eapply wf_env_not_local; eauto; reflexivity.
+  reflexivity. e. e. e.
+
+  ag.
 
   e. e. e.
-  ec. reflexivity.
-  e. ec. lv. ec. lv. ec.
+  reflexivity.
+  e. lv. lv.
   simpl. unfold strictnum.
 
   rewrite gt_not_refl; reflexivity.
@@ -83,8 +83,8 @@ Proof.
   ag.
 
   e. e.
-  ec. reflexivity. e.
-  ec. lv. ec. lv. ec. 
+  reflexivity. e.
+  lv. lv.
 
   unfold to_sval. fold to_sval.
   rewrite append_strict_list. 
@@ -93,8 +93,8 @@ Proof.
   e. g. e. g. e. e. e. e.
   ag.
 
-  e. e. e. e. lv. e. 
-  ec. lv. ec.
+  e. e. e. e. lv. e.
+  lv. 
   erewrite <- map_length.
   rewrite splitAt_len. reflexivity.  
 

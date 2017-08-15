@@ -32,29 +32,19 @@ Proof.
   init_globals ge.
   g. e. e. e. g.
   e. e. g.
-  e.
-  ec. g. e.
-  ec; try et; try e.
+  e. g. e.
   reflexivity.
-  ec.
   g. e.
-  ec; try et; try e.
   reflexivity.
-  ec. 
-  e. g.
-  e. ec. g.
-  ec; try et; try e. 
-  ec; try et; try e.
+  e.
+  g. e.
+  g. e.
   reflexivity.
-  ec. g.
-  ec; try et; try e.
-  ec; try et; try e.
+  g. e.
   reflexivity.
-  ec. 
 
-  e. ec; try lv.
-  ec; try lv.
-  ec; try lv.
+  e.
+  lv. lv.
 
   reflexivity.
 Qed.

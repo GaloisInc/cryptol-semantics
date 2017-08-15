@@ -29,6 +29,7 @@ Lemma eager_eval_zz :
     eager_eval_expr ge tempty sempty (EVar zz) (to_sval (eseq [ebit true, ebit true])).
 Proof.
   init_globals ge.
+(*  
   g. e. e. e. g.
   e. e. g.
   e.
@@ -58,7 +59,7 @@ Proof.
   
   
   simpl. unfold plus_sem.
-  unfold list_of_strictval.
+  unfold list_of_strictval.*)
 
   (* TODO: make lifting over structures work *)
   

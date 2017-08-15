@@ -32,7 +32,6 @@ Require Import HMAC_lib.
 
 Require Import Kinit_eval.
 
-
 (* lemma for when the length of the key is the same as the length of the block *)
 Lemma Hmac_eval_keylen_is_blocklength :
   forall (key : ext_val) keylen,
@@ -95,8 +94,8 @@ Proof.
   e. 
   lv.
   e. e. e. e. e. 
-  
-  ag. 
+
+  ag.
 
   e. e.
   e. e.
@@ -167,12 +166,9 @@ Proof.
     intros. e. e. e. g. unfold extend. simpl.
     eapply wf_env_not_local; eauto. reflexivity.
     e. e. lv. e. e. e. ag.
-    e. repeat e. repeat e.
-    econstructor; try et.
+    e. e. e. 
     reflexivity.
-    e. econstructor.
-    lv. econstructor.
-    lv. econstructor.
+    e. lv. lv. 
     simpl. 
     inversion H6. subst. simpl.
     unfold strictnum.
@@ -192,7 +188,7 @@ Proof.
   simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
   reflexivity.
   e. e. e. e. g.
-  e. ec. ec.
+  e. ec. ec. 
   g.
   {
     eapply kinit_eval.
@@ -235,15 +231,15 @@ Proof.
   e. e. lv. e. e. e. g. 
   unfold extend. simpl.
   eapply wf_env_not_local; eauto. reflexivity.
-  e. e. e. ec. reflexivity.
-  e. ec. lv. ec. lv. ec.
+  e. e. e. reflexivity.
+  e. lv. lv.
   inversion H6. subst. simpl.
   unfold strictnum.
   rewrite xor_num. reflexivity.
   rewrite H7. eassumption.
   simpl. unfold Pos.to_nat. simpl. congruence.
 
-  e. lv. e. ec. lv. ec. lv. ec.
+  e. lv. e. lv. lv. 
 
   unfold to_sval. fold to_sval.  
   rewrite append_strict_list. 
@@ -283,13 +279,13 @@ Proof.
   eapply HIDs. simpl. right. right. left. reflexivity.
   eapply HIDs. simpl. right. right. right. left. reflexivity.
   
-  e. ec. lv. ec. 
+  e. lv.
 
   simpl.
   rewrite <- Heqhv1.
   rewrite H3. reflexivity.
   
-  e. ec. lv. ec. lv. ec.
+  e. lv. lv.
 
   rewrite append_strict_list. reflexivity.
   eapply global_extends_eager_eval.
