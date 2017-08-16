@@ -25,55 +25,42 @@ Require Import Eager.
 Lemma eval_t1 :
   eager_eval_expr ge tempty sempty (EVar t1) (sbit true).
 Proof.
-(*  init_globals ge.
+  init_globals ge.
   g. e. e. e. g.
   repeat e. e.
   e. e. e. e. e. g.
   e.
   e. e. e. g.
   e.
-  e. congruence.
-  e. congruence. e.
-  e. e. e. g.
-  repeat e. e. e. repeat e. repeat e. simpl. reflexivity.
-  e. e. e. g. e.
-  e. e. repeat e. e. simpl. reflexivity.
-  e.
-  simpl. reflexivity.
-  e. e. e. e. e. g;
-  repeat e.
-  repeat e. repeat e.
-  e. e. e. g.
-  repeat e. repeat e. repeat e.
-  e.
+  ec. congruence.
+  ec. congruence. e.
+  e. e. fg. 
+  repeat e. e. e. reflexivity.
+  e. e. fg. e.
+  e. e. reflexivity. reflexivity.
+  ec.
+  e. e. e. fg. e. e. e.
   reflexivity.
-  e. e. congruence.
-  e. e. e. e. g.
-  e. e. e. repeat e.
-  repeat e. reflexivity.
-  e. e. e. g.
-  e. e. e. repeat e.
-  simpl. e. reflexivity.
-  e. reflexivity.
-  e. e. e. e. e.
-  g. repeat e.
-  e. e. repeat e.
-  e. reflexivity.
-  e. e. e. g. e.
-  e. e. repeat e.
-  e. reflexivity.
-  e. e. e. g.
-  e. e. e. repeat e.
-  e. reflexivity.
-  e. reflexivity.
-  simpl. repeat e.
-  e. e. e. g.
-  e. e. e. repeat e.
-  e. reflexivity.
-  e. repeat e.
-  e. e. e. e. e.*)
+  e. e. fg.
+  e. e. e. reflexivity. reflexivity.
+  ec. ec.
+  congruence.
+  e. e. e. fg.
+  e. e. e. reflexivity.
+  e. e. fg. e. e. e.
+  reflexivity. reflexivity.
+  ec. e. e. e. fg.
+  e. e. e. reflexivity.
+  e. e. fg.
+  e. e. e. reflexivity.
+  e. e. fg.
+  e. e. e. reflexivity. reflexivity.
+  f2; try e; try lv.
+  e. e. e. fg.
+  e. e. e. reflexivity.
+  e. lv. lv.
 
-  (* model At *)
+  (* TODO: model At *)
 
 Admitted.
   
