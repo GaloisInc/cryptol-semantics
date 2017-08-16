@@ -111,6 +111,47 @@ Proof.
   econstructor. simpl. reflexivity.
 Qed.
 
+Lemma fst_to_val_list_pair :
+  forall f,
+    map fst (to_val_list_pair f) = map fst (to_sval_list_pair f).
+Proof.
+  induction f; intros; simpl; auto.
+  destruct a. simpl. f_equal. eauto.
+Qed.
+
+Lemma strict_eval_list_pair :
+  forall ge f,
+    Forall (fun e => strict_eval_val ge (to_val e) (to_sval e)) (map snd f) ->
+    Forall2 (strict_eval_val ge) (map snd (to_val_list_pair f)) (map snd (to_sval_list_pair f)).
+Proof.
+  induction f; intros. simpl in *. econstructor.
+  simpl in H. inversion H. subst.
+  eapply IHf in H3.
+  simpl. destruct a. simpl. econstructor; eauto.
+Qed.
+
+Lemma strict_eval_ext_val :
+  forall ge e,
+    strict_eval_val ge (to_val e) (to_sval e).
+Proof.
+  induction e using ext_val_ind_mut; intros.
+  * simpl. econstructor; eauto.
+  * simpl. eapply strict_eval_list.
+    induction H; econstructor; eauto.
+  * simpl. econstructor.
+    induction H; econstructor; eauto.
+  * induction f. simpl in *. econstructor; eauto. simpl. econstructor.
+    destruct a. simpl. fold to_val_list_pair. fold to_sval_list_pair.
+    simpl in H. inversion H.
+    subst. econstructor. simpl. econstructor. eauto.
+    instantiate (1 := map snd (to_sval_list_pair f)).
+    eapply strict_eval_list_pair; eauto.
+    simpl. f_equal.
+    rewrite fst_to_val_list_pair.
+    rewrite combine_map_fst_map_snd.
+    reflexivity.
+Qed.
+    
 Lemma eager_to_strict_lazy :
   forall exp ge TE SE sv,
     eager_eval_expr ge TE SE exp sv ->
@@ -236,7 +277,7 @@ Proof.
 
   * econstructor. econstructor; eauto.
     subst.
-    admit. (* this should be true *)
+    eapply strict_eval_ext_val.
 
   * 
     assert (Forall2 (strict_eval_expr ge TE E0) l vs).
