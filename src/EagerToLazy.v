@@ -99,6 +99,17 @@ Proof.
   destruct a; simpl; f_equal; eauto.
 Qed.
 
+Lemma strict_eval_list :
+  forall ge x vs,
+    Forall2 (strict_eval_val ge) x vs ->
+    strict_eval_val ge (Values.thunk_list x) (strict_list vs).
+Proof.
+  induction 1; intros.
+  econstructor; eauto.
+  
+  simpl. econstructor; eauto.
+  econstructor. simpl. reflexivity.
+Qed.
 
 Lemma eager_to_strict_lazy :
   forall exp ge TE SE sv,
@@ -223,7 +234,27 @@ Proof.
     econstructor; eauto.
     eapply eager_to_strict_lazy_type; eauto.
 
+  * econstructor. econstructor; eauto.
+    subst.
+    admit. (* this should be true *)
+
   * 
+    assert (Forall2 (strict_eval_expr ge TE E0) l vs).
+    eapply Forall2_implies_1. eapply H0. simpl. eauto.
+    eapply Forall2_strict_eval_inv in H3.
+    destruct H3. destruct H3.
+    econstructor.
+    econstructor; eauto.
+    subst v.
+    eapply strict_eval_list; eauto.
+  * admit. (* hard case, come back when more focussed *)
+
+  * admit. (* builtins aren't even close to matching at the moment *)
+
+  * admit. (* dummy prop *)
+  * admit. (* dummy prop *)
+  * admit. (* dummy prop *)
+  * admit. (* dummy prop *)
   
 Admitted.
 
