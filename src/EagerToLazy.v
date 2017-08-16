@@ -164,7 +164,8 @@ Proof.
               eager_par_match ge TE SE llm llidv ->
               forall E,
                 match_env ge E SE ->
-                True) as Ppm.
+                exists E',
+                  par_match ge TE E 0 llm E') as Ppm.
   (* TODO *)
   remember (fun ge TE SE lm llidv =>
               eager_index_match ge TE SE lm llidv ->
@@ -288,7 +289,19 @@ Proof.
     econstructor; eauto.
     subst v.
     eapply strict_eval_list; eauto.
-  * admit. (* hard case, come back when more focussed *)
+  * 
+    subst Ppm.
+    subst v.
+    specialize (IHeager_eval_expr H _ H3).
+    destruct IHeager_eval_expr.
+    econstructor. 
+    
+    econstructor.
+    econstructor; eauto.
+    
+    (* What's the strategy here? *)
+    (* Essentially we know that *)
+    admit. admit.
 
   * admit. (* builtins aren't even close to matching at the moment *)
 
