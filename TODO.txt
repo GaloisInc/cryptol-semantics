@@ -1,0 +1,23 @@
+The goal is to make this as useful as possible. One way to do this is
+to make the tactics work as well as possible. Right now they're pretty
+good (if a little verbose).
+
+One guiding principle behind everything is that it should be hard to
+go wrong (as in, first and foremost, it should be hard to continue
+trying to prove something that's not provable). Most cases in cryptol
+execution follow this logic, with the one exception being using lemmas
+to abstract function calls. It is up to the proof engineer to not end
+up stepping into a function call that they want to use a lemma to
+reason about.
+
+In order to make the proof experience better, some of the following
+could be beneficial:
+* provide unified way to state that a coq function models a cryptol function
+* provide better composition of such facts stated above
+
+How should we start to make these things?
+* something that represents calls to primitives should make some things shorter
+
+
+
+
