@@ -256,8 +256,8 @@ Definition eager_eval_expr_ind_total
          eager_eval_expr ge TE E e (stclose id e' TE' E') ->
          P ge TE E e (stclose id e' TE' E') ->
          eager_eval_type ge TE te t ->
-         eager_eval_expr ge (extend TE' id t) E e' v ->
-         P ge (extend TE' id t) E e' v -> P ge TE E (ETApp e (ETyp te)) v)
+         eager_eval_expr ge (extend TE' id t) E' e' v ->
+         P ge (extend TE' id t) E' e' v -> P ge TE E (ETApp e (ETyp te)) v)
   (HValue : forall (ge : genv) (v : ext_val) (sv : strictval) (TE : tenv) (E : senv),
       sv = to_sval v ->
       P ge TE E (EValue v) sv)
@@ -380,7 +380,7 @@ Definition eager_eval_expr_ind_total
                eval_arg (go ge TE E a av eval_arg) eval_body (go ge TE' (extend E' id av) exp v eval_body)
         | eager_eval_tapp TE TE' E e id e' E' v t te eval_clos eval_targ eval_body =>
           HTApp ge TE TE' E e id e' E' v t te eval_clos (go ge TE E e (stclose id e' TE' E') eval_clos)
-                eval_targ eval_body (go ge (extend TE' id t) E e' v eval_body)
+                eval_targ eval_body (go ge (extend TE' id t) E' e' v eval_body)
         | eager_eval_lazyval v sv TE E seval =>
           HValue ge v sv TE E seval
         | eager_eval_list TE E l vs v F2 eqv =>
@@ -457,8 +457,8 @@ Definition eager_eval_expr_ind_useful
          eager_eval_expr ge TE E e (stclose id e' TE' E') ->
          P ge TE E e (stclose id e' TE' E') ->
          eager_eval_type ge TE te t ->
-         eager_eval_expr ge (extend TE' id t) E e' v ->
-         P ge (extend TE' id t) E e' v -> P ge TE E (ETApp e (ETyp te)) v)
+         eager_eval_expr ge (extend TE' id t) E' e' v ->
+         P ge (extend TE' id t) E' e' v -> P ge TE E (ETApp e (ETyp te)) v)
   (HValue : forall (ge : genv) (v : ext_val) (sv : strictval) (TE : tenv) (E : senv),
       sv = to_sval v ->
       P ge TE E (EValue v) sv)

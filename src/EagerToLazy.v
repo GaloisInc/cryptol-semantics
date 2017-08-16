@@ -173,8 +173,57 @@ Proof.
     inversion H1.
     subst.
     econstructor. econstructor; eauto.
+    (* Here we run into the unfortunate reality that Where uses the global environment *)
+    (* making the ge not static *)
+    admit.
+
+  * specialize (IHeager_eval_expr1 _ H1).
+    specialize (IHeager_eval_expr2 _ H1).
+    inversion IHeager_eval_expr1.
+    inversion IHeager_eval_expr2.
+    inversion H3.
+    subst.
     
+    econstructor; eauto. econstructor; eauto.
+  * unfold match_env in *.
+    specialize (H0 id). rewrite H in H0. inversion H0. 
+    econstructor.
+    econstructor; eauto.
+    eauto.
+  * specialize (IHeager_eval_expr _ H2). inversion IHeager_eval_expr. subst.
+    unfold match_env in *.
+    specialize (H2 id). rewrite H in H2. inversion H2.
     
+    econstructor.
+    eapply eval_global_var; eauto.
+    eauto.
+
+  * econstructor. econstructor; eauto. econstructor; eauto.
+  * econstructor. econstructor; eauto. econstructor; eauto.
+  * specialize (IHeager_eval_expr1 _ H2).
+    specialize (IHeager_eval_expr2 _ H2).
+    inversion IHeager_eval_expr1.
+    inversion IHeager_eval_expr2.
+    subst.
+    inversion H4. subst.
+    assert (match_env ge (extend E1 id v1) (extend E' id av)) by admit.
+    specialize (IHeager_eval_expr3 _ H5).
+    inversion IHeager_eval_expr3.
+    econstructor. econstructor; eauto.
+    eauto.
+  * specialize (IHeager_eval_expr1 _ H2).
+    inversion IHeager_eval_expr1. subst.
+    inversion H4. subst.
+    assert (match_env ge E1 E') by admit.
+    specialize (IHeager_eval_expr2 _ H5).
+    inversion IHeager_eval_expr2.
+    subst.
+
+    econstructor; eauto.
+    econstructor; eauto.
+    eapply eager_to_strict_lazy_type; eauto.
+
+  * 
   
 Admitted.
 

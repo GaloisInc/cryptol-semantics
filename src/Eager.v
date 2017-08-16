@@ -414,7 +414,7 @@ Inductive eager_eval_expr (ge : genv) : tenv -> senv -> Expr -> strictval -> Pro
     forall TE TE' E e id e' E' v t te,
       eager_eval_expr ge TE E e (stclose id e' TE' E') ->
       eager_eval_type ge TE te t -> 
-      eager_eval_expr ge (extend TE' id t) E e' v ->
+      eager_eval_expr ge (extend TE' id t) E' e' v ->
       eager_eval_expr ge TE E (ETApp e (ETyp te)) v
 | eager_eval_lazyval :
     forall v sv TE E,

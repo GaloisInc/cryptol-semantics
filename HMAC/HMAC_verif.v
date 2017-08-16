@@ -243,14 +243,11 @@ Proof.
     
   rewrite get_each_n_map_commutes.
 
-
   rewrite map_strict_list_map_map_to_sval.
   rewrite <- list_append_map.
   rewrite strict_list_map_to_sval.
 
-  (* This one will be some fun *)
   assert (exists n, has_type (eseq (map (xor_const 92) l ++ map eseq (get_each_n (Pos.to_nat 8) x4))) (bytestream n)). {
-
     eapply has_type_seq_append.
     exists (Datatypes.length (map (xor_const 92) l)).
     econstructor.
