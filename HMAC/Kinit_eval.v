@@ -81,8 +81,9 @@ Proof.
   rewrite gt_not_refl; reflexivity.
   simpl.
 
-  e. e. e. e.
 
+  
+  e. e. e. e.
 
   ag. 
   e. e. e. e. e. e. e. e. e.

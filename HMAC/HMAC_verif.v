@@ -55,7 +55,8 @@ Proof.
   init_globals ge.
   abstract_globals ge.
   edestruct good_hash_complete_eval; eauto.
-  repeat break.
+  repeat break_exists.
+  destruct H.
 
   inversion Hkeytype. subst.
   inversion Hmsgtype. subst.
@@ -78,6 +79,7 @@ Proof.
   eexists; split.
   
   e. e. e. e. e. e. e. e. e.
+  gen_global hmac.
   ag.
   
   e.
@@ -128,8 +130,8 @@ Proof.
   {
     eapply eager_eval_bind_senvs. eassumption.
     instantiate (1 := fun x => to_sval (xor_const 92 x)).  
-    intros. e. e. e. g. unfold extend. simpl.
-    eapply wf_env_not_local; eauto. reflexivity.
+    intros. e. e. e.
+    ag.
     e. e. lv. e. e. e. ag.
     e. e. e. 
     reflexivity.
@@ -146,12 +148,8 @@ Proof.
   (* End model section *)
 
   e. g.
-  e. e. e. e. g.
-  simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
-  reflexivity.
-  e. e. e. e. e. lv. e. e. e. e. e. g.
-  simpl. unfold extend. simpl. eapply wf_env_not_local; eauto.
-  reflexivity.
+  e. e. e. e. ag.
+  e. e. e. e. e. lv. e. e. e. e. e. ag.
   e. e. e. e. g.
   e. ec. ec. 
   g.
@@ -169,11 +167,8 @@ Proof.
 
   eapply eager_eval_bind_senvs. eassumption.
   instantiate (1 := fun x => to_sval (xor_const 54 x)).  
-  intros. e. e. e. g. unfold extend. simpl.
-  eapply wf_env_not_local; eauto. reflexivity.
-  e. e. lv. e. e. e. g. 
-  unfold extend. simpl.
-  eapply wf_env_not_local; eauto. reflexivity.
+  intros. e. e. e. ag. 
+  e. e. lv. e. e. e. ag. 
   e. e. e. reflexivity.
   e. lv. lv.
   inversion H6. subst. simpl.
