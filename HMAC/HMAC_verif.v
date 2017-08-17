@@ -209,7 +209,7 @@ Proof.
   unfold bind_decl_group.
   unfold declare.
 
-  gex; try solve [eapply HIDs; simpl; repeat first [left; reflexivity | right]].
+  gex.
 
   e. lv.
 

@@ -435,7 +435,7 @@ Proof.
     auto; congruence.
 Qed.
 
-Lemma wf_env_global :
+Lemma wf_env_global' :
   forall ge GE TE SE,
     wf_env ge GE TE SE ->
     forall id exp,
@@ -463,6 +463,18 @@ Proof.
          end.
   destruct (H4 id); try congruence.
   intuition.
+Qed.
+
+Lemma wf_env_global :
+  forall ge GE TE SE,
+    wf_env ge GE TE SE ->
+    forall id exp,
+      ge id = Some exp ->
+      GE id = Some exp /\ SE id = None.
+Proof.
+  intros. split.
+  eapply wf_env_global'; eauto.
+  eapply wf_env_not_local; eauto.
 Qed.
 
 Lemma wf_env_not_type :

@@ -45,18 +45,26 @@ Lemma kinit_eval :
 Proof.
   intros.
   eapply good_hash_eval in H1. do 4 destruct H1.
-  init_globals ge.
-  abstract_globals ge.
 
+  
   unfold bytestream in H0. inversion H0. subst.
-
-  e. e. e. e. e. ag.
+  gen_global (0,"demote").
+  gen_global (14,">").
+  gen_global (61,"take").
+  gen_global (34,"#").
+  gen_global (29,"zero").
+  gen_global (35,"splitAt").
+  
+  e. e. e. e. e.
+  gen_global kinit.
+  ag.
   e. e. e. e. 
   e. 
   e. e. e. e.
 
-  ag.
-  e. e. e. e. 
+  ag. 
+  
+  e. e. e. e.
   ag.
 
   e. e. e.
@@ -75,11 +83,14 @@ Proof.
 
   e. e. e. e.
 
-  ag.
+
+  ag. 
   e. e. e. e. e. e. e. e. e.
+
+
   ag.
 
-  e. e. e. e. lv. e. e. 
+  e. e. e. e. lv. e. e.
   ag.
 
   e. e.

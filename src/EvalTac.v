@@ -37,20 +37,12 @@ Ltac solve_1 T :=
   first [ ( T; [ idtac ]) ||
           solve [T]].
 
-
 Ltac ag :=
-  let ag' := 
-      eapply eager_eval_global_var; [simpl; unfold extend; simpl; eapply wf_env_not_local; try eassumption; try reflexivity |
-                                     try eassumption; simpl; unfold extend; simpl; eapply wf_env_global; simpl; try reflexivity |
-                                     idtac]
-  in
-  ag'; try eassumption; try reflexivity.
+  let ag' := intuition; unfold extend; simpl; eassumption in
+  first [(eapply eager_eval_global_var;
+         [solve [ag'] | solve [ag'] | idtac]) | fail 1 "use gen_global to get information into your context"].
 
-Ltac lv := eapply eager_eval_local_var; try reflexivity.
-
-(*            | [ |- eager_eval_expr ?GE _ ?E (EVar ?id) _ ] => solve_1 ag
-            | [ |- eager_eval_expr ?GE _ ?E (EVar ?id) _ ] => solve_1 fg
-            | [ |- eager_eval_expr ?GE _ ?E (EVar ?id) _ ] => solve_1 lv*)
+Ltac lv := eapply eager_eval_local_var; unfold extend; simpl; reflexivity.
 
 Ltac e :=
   progress (match goal with
@@ -87,10 +79,21 @@ Ltac solve_wf_env :=
          end;
   eassumption.
 
+Ltac gen_global id :=
+  match goal with
+  | [ Hwf : wf_env ?ge ?GE ?TE ?SE |- _ ] => 
+    let Hid := fresh "H" in
+    let exp := fresh "exp" in
+    evar (exp : Expr);
+    assert (Hid : ge id = Some exp) by (subst exp; reflexivity);
+    subst exp;
+    eapply wf_env_global in Hid; try eassumption
+  end.
+
 
 Ltac abstract_globals ge :=
   repeat match goal with
-         | [ H : ge _ = _ |- _ ] => eapply wf_env_global in H; eauto
+         | [ H : ge _ = _ |- _ ] => eapply wf_env_global in H; try eassumption
          end.
 
 Ltac init_globals global_env :=
