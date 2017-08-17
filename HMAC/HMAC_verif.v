@@ -253,7 +253,7 @@ Proof.
   break_exists.
   eapply H1 in H6. break_and. eassumption.
   
-  gex; try solve [eapply HIDs; simpl; repeat first [left; reflexivity | right]].
+  gex.
   
   (* our result matches the model *)
   subst hv1.

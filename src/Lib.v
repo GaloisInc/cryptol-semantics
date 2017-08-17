@@ -248,3 +248,11 @@ Proof.
   simpl. destruct n; simpl. omega.
   specialize (IHl n). omega.
 Qed.
+
+Lemma map_repeat :
+  forall {A B} (f : A -> B) n x,
+    map f (repeat x n) = repeat (f x) n.
+Proof.
+  induction n; intros; eauto.
+  simpl. f_equal. eauto.
+Qed.

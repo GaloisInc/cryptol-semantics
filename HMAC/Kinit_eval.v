@@ -1,5 +1,3 @@
-Require Import List.
-Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
@@ -18,15 +16,19 @@ Require Import GlobalExtends.
 
 Require Import EvalTac.
 Require Import Eager.
+Require Import Lib.
 
 Import HaskellListNotations.
-Open Scope string.
 
 Require Import HMAC.
 
 Require Import HMAC_spec.
 
 Require Import HMAC_lib.
+Require Import Prims.
+
+Require Import List.
+Import ListNotations.
 
 
 Lemma kinit_eval :
@@ -81,17 +83,13 @@ Proof.
   rewrite gt_not_refl; reflexivity.
   simpl.
 
-
   
-  e. e. e. e.
+  use take_eval.
 
-  ag. 
-  e. e. e. e. e. e. e. e. e.
+  e. e. e. e. e. ag. e. e. e. e. (* append *)
+  lv.
 
-
-  ag.
-
-  e. e. e. e. lv. e. e.
+  e. e.
   ag.
 
   e. e.
@@ -99,17 +97,26 @@ Proof.
   lv. lv.
 
   unfold to_sval. fold to_sval.
-  rewrite append_strict_list. 
+  rewrite append_strict_list.
+  f_equal. instantiate (1 := l ++ (repeat (eseq (repeat (ebit false) 8)) (length l))).
+  f_equal. rewrite map_app. f_equal.
+  simpl.
+
+
+  rewrite map_repeat. simpl.
+  rewrite Nat2Z.id.
   reflexivity.
+  rewrite app_length.
+  rewrite Nat2Z.inj_add. omega.
 
-  e. g. e. g. e. e. e. e.
-  ag.
+  unfold take_model.
+  rewrite Nat2Z.id.
 
-  e. e. e. e. lv. e.
-  lv. 
-  erewrite <- map_length.
-  rewrite splitAt_len. reflexivity.  
-
-  simpl. reflexivity.
+  simpl. f_equal.
+  rewrite firstn_app.
+  rewrite firstn_all.
+  replace (Datatypes.length l - Datatypes.length l)%nat with O by omega.
+  rewrite firstn_O. rewrite app_nil_r.
+  reflexivity.
 Qed.
 
