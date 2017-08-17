@@ -32,6 +32,7 @@ Require Import HMAC_lib.
 
 Require Import Kinit_eval.
 
+
 (* lemma for when the length of the key is the same as the length of the block *)
 Lemma Hmac_eval_keylen_is_blocklength :
   forall (key : ext_val) keylen,
@@ -112,16 +113,10 @@ Proof.
   (* START *)
   {
     eapply kinit_eval.
-    unfold bind_decl_groups.
-    unfold erase_decl_groups.
-    repeat eapply wf_env_extend_TE; try reflexivity.
-    repeat eapply wf_env_erase_SE.
-    repeat eapply wf_env_extend_SE; try reflexivity.
-    repeat eapply wf_env_extend_GE; try reflexivity.
-    eassumption.
+    solve_wf_env.
     exact Hkeytype.
     eapply good_hash_same_eval; eauto.
-    gex; try solve [eapply HIDs; simpl; repeat first [left; reflexivity | right]].
+    gex.
     lv. et. et. et. lv.
   }  (* END *)
   
@@ -160,18 +155,12 @@ Proof.
   e. e. e. e. g.
   e. ec. ec. 
   g.
-  {
+  { (* TODO: make this one tactic *)
     eapply kinit_eval.
-    unfold bind_decl_groups.
-    unfold erase_decl_groups.
-    repeat eapply wf_env_extend_TE; try reflexivity.
-    repeat eapply wf_env_erase_SE.
-    repeat eapply wf_env_extend_SE; try reflexivity.
-    repeat eapply wf_env_extend_GE; try reflexivity.
-    eassumption.
+    solve_wf_env.
     exact Hkeytype.
     eapply good_hash_same_eval; eauto.
-    gex; try solve [eapply HIDs; simpl; repeat first [left; reflexivity | right]].
+    gex.
     lv. et. et. et. lv.
   }
   simpl.

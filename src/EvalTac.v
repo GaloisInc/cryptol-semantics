@@ -68,7 +68,24 @@ Ltac gex :=
           | [ |- global_extends _ _ ] => eapply global_extends_extend_r; eauto
           | [ |- _ ] => idtac
           end);
-  try (eapply wf_env_name_irrel_GE; eauto).
+  try (eapply wf_env_name_irrel_GE; eauto);
+  try match goal with
+      | [ H : forall _, In _ _ -> ?GE _ = None |- ?GE _ = None ] =>
+        eapply H; simpl; repeat first [left; reflexivity | right]
+      end.
+
+Ltac solve_wf_env :=
+  repeat match goal with
+         | [ |- context[bind_decl_groups]] => unfold bind_decl_groups
+         | [ |- context[erase_decl_groups]] => unfold erase_decl_groups
+         | [ |- context[bind_decl_group]] => unfold bind_decl_group
+         | [ |- context[declare]] => unfold declare
+         | [ |- wf_env _ (extend _ _ _) _ _ ] => eapply wf_env_extend_GE; try reflexivity
+         | [ |- wf_env _ _ (extend _ _ _) _ ] => eapply wf_env_extend_TE; try reflexivity
+         | [ |- wf_env _ _ _ (extend _ _ _) ] => eapply wf_env_extend_SE; try reflexivity
+         | [ |- wf_env _ _ _ (fun x => if ident_eq x _ then None else _) ] => eapply wf_env_erase_SE
+         end;
+  eassumption.
 
 
 Ltac abstract_globals ge :=

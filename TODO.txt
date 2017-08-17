@@ -18,6 +18,7 @@ could be beneficial:
 How should we start to make these things?
 * something that represents calls to primitives should make some things shorter
 
-
+We don't need a standard definition, we already have eager_eval_expr.
+We need a tactic to apply these lemmas.
 
 

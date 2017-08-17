@@ -486,3 +486,124 @@ Lemma wf_env_name_irrel_GE :
 Proof.
   intros. unfold wf_env in *. intuition.
 Qed.
+
+Lemma wf_env_extend_GE :
+  forall ge GE TE SE,
+    wf_env ge GE TE SE ->
+    forall id exp,
+      ge id = None ->
+      wf_env ge (extend GE id exp) TE SE.
+Proof.
+  intros.
+  unfold wf_env in *.
+  intros.
+  destruct H.
+  destruct H1.
+  destruct H2. destruct H3.
+  split; auto.
+  split; auto.
+
+  eapply name_irrel_extend; eauto.
+  
+  split; auto.
+  split; auto.
+  
+  
+  intros.
+  remember H5 as Hcontra.
+  clear HeqHcontra.
+  eapply H4 in H5.
+  intuition.
+  rewrite H8.
+  edestruct (name_irrel_diff_results _ id0 id H); try congruence.
+  unfold extend. erewrite H7.
+  reflexivity.
+Qed.
+
+Lemma wf_env_extend_TE :
+  forall ge GE TE SE,
+    wf_env ge GE TE SE ->
+    forall id exp,
+      ge id = None ->
+      wf_env ge GE (extend TE id exp) SE.
+Proof.
+  intros.
+  unfold wf_env in *.
+  intros.
+  destruct H. destruct H1.
+  destruct H2. destruct H3.
+  split; auto.
+  split; auto.
+  split; auto.
+  eapply name_irrel_extend; eauto.
+  
+  split; auto.
+
+  intros.
+  
+  remember H5 as Hcontra.
+  clear HeqHcontra.
+  eapply H4 in H5.
+  intuition.
+  edestruct (name_irrel_diff_results _ id0 id H); try congruence.  
+
+  unfold extend. erewrite H7.
+  assumption.
+Qed.
+
+Lemma wf_env_extend_SE :
+  forall ge GE TE SE,
+    wf_env ge GE TE SE ->
+    forall id exp,
+      ge id = None ->
+      wf_env ge GE TE (extend SE id exp).
+Proof.
+  intros.
+  unfold wf_env in *.
+  intros.
+  destruct H. destruct H1.
+  destruct H2. destruct H3.
+  split; auto.
+  split; auto.
+  split; auto.
+  split; auto.
+  eapply name_irrel_extend; eauto.
+
+  intros.
+
+  remember H5 as Hcontra.
+  clear HeqHcontra.
+  eapply H4 in H5.
+  intuition.
+  edestruct (name_irrel_diff_results _ id0 id H); try congruence.  
+
+  unfold extend. erewrite H7.
+  assumption.
+Qed.
+
+Lemma wf_env_erase_SE :
+  forall ge GE TE SE,
+    wf_env ge GE TE SE ->
+    forall id,
+      wf_env ge GE TE (fun x => if ident_eq x id then None else SE x).
+Proof.
+  intros. unfold wf_env in *.
+  repeat match goal with
+         | [ H : _ /\ _ |- _ ] => destruct H
+         end.
+  split; auto.
+  split; auto.
+  split; auto.
+  split; auto.
+  eapply name_irrel_erase; eauto.
+
+  intros. remember H4 as Hcontra.
+  clear HeqHcontra.
+  eapply H3 in H4.
+  split; intuition.
+  
+  rewrite H4.
+
+  destruct (ident_eq id0 id); auto.
+
+Qed.
