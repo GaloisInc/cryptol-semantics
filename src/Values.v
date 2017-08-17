@@ -343,18 +343,66 @@ Proof.
   omega.
 Defined.
 
+Lemma Pos_bit0_odd : forall n,
+          Pos.testbit n 0 = Z.odd (Z.pos n). 
+Proof.
+  intros. simpl. destruct n; try reflexivity. 
+Qed. 
+
 Lemma Z_add_bit_n :
   forall n a b,
     Z.testbit (a + b) n = xorb (Z.testbit a n) (Z.testbit b n).
 Proof.
-  induction n using Z_nat_ind; intros.
+  induction n; intros. 
+  - simpl. rewrite Z.odd_add. reflexivity.   
+  -  destruct a eqn:?, b eqn:?. 
+
+    + simpl. reflexivity.
+    + simpl. destruct (Pos.testbit p0 (N.pos p)); congruence.  
+    + simpl. destruct (negb (N.testbit (Pos.pred_N p0) (N.pos p))); congruence.  
+    + simpl. destruct (Pos.testbit p0 (N.pos p)); reflexivity.    
+    + simpl.
+      destruct (N.pos p) eqn:?.
+      * repeat rewrite Pos_bit0_odd.
+        replace (Z.pos (p0 + p1)) with ((Z.pos p0) + (Z.pos p1)) by reflexivity.       
+        rewrite Z.odd_add. 
+        reflexivity.   
+      * admit. 
+    + admit. 
+    + simpl. 
+      destruct (negb (N.testbit (Pos.pred_N p0) (N.pos p))); reflexivity. 
+    + admit. 
+    +admit. 
+  -  destruct a eqn:?, b eqn:?. 
+
+    + simpl. reflexivity.
+    + simpl. destruct (Pos.testbit p0 (N.pos p)); congruence.  
+    + simpl. destruct (negb (N.testbit (Pos.pred_N p0) (N.pos p))); congruence.  
+    + simpl. destruct (Pos.testbit p0 (N.pos p)); reflexivity.    
+    + simpl.
+      destruct (N.pos p) eqn:?.
+      * repeat rewrite Pos_bit0_odd.
+        replace (Z.pos (p0 + p1)) with ((Z.pos p0) + (Z.pos p1)) by reflexivity.       
+        reflexivity.        
+      * reflexivity. 
+    + admit. 
+    + simpl. 
+      destruct (negb (N.testbit (Pos.pred_N p0) (N.pos p))); reflexivity. 
+    + admit. 
+    + admit. 
+
+
+(*      induction n using Z_nat_ind; intros.
   repeat rewrite Ztestbit_base.
   eapply Z.odd_add.  
+
+
+  
 
   repeat rewrite Z.testbit_neg_r; eauto.
   replace (Z.succ n) with (n + 1) by omega.
   rewrite <- Z.shiftr_spec by omega.
-  
+ *) 
   
   
   (* This is a true property, which might take a bit of work to prove, but is necessary for the proof below *)
