@@ -131,11 +131,73 @@ Lemma S0_eval :
       forall ex res,
         eager_eval_expr GE TE SE ex (to_sval x) ->
         res = (to_sval (S0_spec x)) ->
-        eager_eval_expr GE TE SE (EApp (EVar Maj) ex) res.
+        eager_eval_expr GE TE SE (EApp (EVar S0) ex) res.
 Proof.
   intros.
   gen_global (33,">>>").
+  gen_global (28,"^").
+  gen_global S0.
+  gen_global (0,"demote").
+  inversion H. subst.
+  e. ag.
+  e. use xor_eval.
+  use xor_eval.
+  use rotr_eval.
+  lv.
+
+  use demote_eval.
+  simpl. f_equal.
+  unfold strictnum. f_equal.
+  unfold strictval_from_bitv.
+  instantiate (1 := (ebit true) :: (ebit false) :: nil).
+  reflexivity.
+  unfold ExtToBitvector.to_bitv. simpl.
+  instantiate (2 := S (S O)).
+  simpl. reflexivity. reflexivity. eassumption.
+  solve [repeat econstructor; eauto].
+  use rotr_eval; try lv.
+  use demote_eval.
+  simpl. f_equal.
+  unfold strictnum. f_equal.
+  unfold strictval_from_bitv.
+  instantiate (1 := (ebit true) :: (ebit true) :: (ebit false) :: (ebit true) :: nil).
+  reflexivity.
+  instantiate (2 := 4%nat). reflexivity.
+  reflexivity. eassumption.
+  solve [repeat econstructor; eauto].
+  reflexivity.
+
+
+
+  eapply has_type_rotr. eassumption.
+  simpl. unfold Pos.to_nat. simpl. omega.
+  eapply has_type_rotr. eassumption.
+  simpl. unfold Pos.to_nat. simpl. omega.
+
+  use rotr_eval; try lv.
+  use demote_eval.
+  simpl. f_equal.
+  unfold strictnum. f_equal.
+  unfold strictval_from_bitv.
+  instantiate (1 := (ebit true) :: (ebit false) :: (ebit true) :: (ebit true) :: (ebit false) :: nil).
+  reflexivity.
+  unfold ExtToBitvector.to_bitv. simpl.
+  instantiate (2 := 5%nat).
+  reflexivity.
+  reflexivity.
+  eassumption.
+  solve [repeat econstructor; eauto].
+  reflexivity.
+  eapply has_type_xor.
+  eapply has_type_rotr. eassumption.
+  simpl. unfold Pos.to_nat. simpl. omega.
+
+  eapply has_type_rotr. eassumption.
+  simpl. unfold Pos.to_nat. simpl. omega.
   
-Admitted.
+  eapply has_type_rotr. eassumption.
+  simpl. unfold Pos.to_nat. simpl. omega.
+Qed.  
+
 
   

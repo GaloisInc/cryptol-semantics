@@ -64,8 +64,8 @@ Definition table : list (string * Expr) :=
   ("zero", mb 1 0 Zero) :: 
   ("<<", mb 1 2 Shiftl) :: 
   (">>", mb 1 2 Shiftr) :: 
-  ("<<<", mb 1 2 Rotl) :: 
-  (">>>", mb 1 2 Rotr) :: 
+  ("<<<", mb 3 2 Rotl) :: 
+  (">>>", mb 3 2 Rotr) :: 
   ("#", mb 3 2 Append) :: 
   ("splitAt", mb 3 1 splitAt) :: 
   ("join", mb 9 9 join) :: (* Not yet implemented *)

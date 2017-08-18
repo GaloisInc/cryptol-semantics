@@ -200,23 +200,41 @@ Qed.
 Definition shiftr_ev (l : list ext_val) (n : nat) : list ext_val :=
   firstn (length l - n)%nat l.
 
+Lemma demote_eval :
+  forall id GE TE SE,
+    GE (id, "demote") = Some (mb 2 0 Demote) ->
+    SE (id, "demote") = None ->
+    forall ta1 tr1 ta2 tr2 res,
+      eager_eval_type GE TE ta1 tr1 ->
+      eager_eval_type GE TE ta2 tr2 ->
+      demote_sem tr1 tr2 = Some res ->
+      eager_eval_expr GE TE SE (ETApp (ETApp (EVar (id,"demote")) (ETyp ta1)) (ETyp ta2)) res.
+Proof.
+  intros.
+  e. e. ag.
+  e. e. e. simpl. assumption.
+Qed.
+
 Lemma rotr_eval :
   forall id GE TE SE,
-    GE (id, ">>>") = Some (mb 1 2 Rotr) ->
+    GE (id, ">>>") = Some (mb 3 2 Rotr) ->
     SE (id, ">>>") = None ->
-    forall va1 va2 l l' ta tr res len len' (bv : BitV len'),
-      eager_eval_type GE TE ta tr ->
+    forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2 tr3 res len len' (bv : BitV len'),
+      eager_eval_type GE TE ta1 tr1 ->
+      eager_eval_type GE TE ta2 tr2 ->
+      eager_eval_type GE TE ta3 tr3 ->
       eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
       eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
       to_bitv l' = Some bv ->
       res = to_sval (eseq (rotr_ev l (Z.to_nat (unsigned bv)))) ->
       has_type (eseq l) (tseq len tbit) ->
       has_type (eseq l') (tseq len' tbit) ->
-      eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,">>>")) (ETyp ta)) va1) va2) res.
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (id,">>>")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
 Proof.
   intros.
-  e. e. e. ag.
-  e. e. e. e. lv. lv.
+  e. e. e. e. e. ag.
+  e. e. e. e. e. e.
+  lv. lv.
   (* TODO: model Rotr *)
 Admitted.
 
@@ -406,3 +424,24 @@ Proof.
   econstructor.
   simpl. reflexivity.
 Qed.
+
+Lemma has_type_rotr :
+  forall l len t,
+    has_type (eseq l) (tseq len t) ->
+    forall n,
+      (n <= (length l))%nat ->
+      has_type (eseq (rotr_ev l n)) (tseq len t).
+Proof.
+  induction l; intros.
+  assert (n = O) by (simpl in H0; omega).
+  subst n. unfold rotr_ev. simpl.
+  inversion H. subst. eauto.
+  assert (n <= length l \/ n = S (length l))%nat by (simpl in *; omega).
+  clear H0. destruct H1.
+  remember H0 as H1. clear HeqH1.
+  eapply IHl in H0. Focus 2.
+  inversion H. subst. inversion H4.
+  subst. econstructor. eassumption.
+  (* This might be the wrong path *)
+  
+Admitted.
