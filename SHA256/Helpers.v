@@ -116,7 +116,26 @@ Proof.
 Qed.
 
 
-(*
+
 Definition S0_spec (x : ext_val) : ext_val :=
-*)  
+  match x with
+  | eseq x => eseq (xor_ev (xor_ev (rotr_ev x 2) (rotr_ev x 13)) (rotr_ev x 22))
+  | _ => eseq nil
+  end.
+
+Lemma S0_eval :
+  forall x,
+    has_type x w32 ->
+    forall GE TE SE,
+      wf_env ge GE TE SE ->
+      forall ex res,
+        eager_eval_expr GE TE SE ex (to_sval x) ->
+        res = (to_sval (S0_spec x)) ->
+        eager_eval_expr GE TE SE (EApp (EVar Maj) ex) res.
+Proof.
+  intros.
+  gen_global (33,">>>").
+  
+Admitted.
+
   

@@ -21,6 +21,8 @@ Require Import GetEachN.
 Require Import EvalTac.
 Require Import Eager.
 
+Require Import ExtToBitvector.
+
 Import HaskellListNotations.
 Require Import List.
 
@@ -197,6 +199,26 @@ Qed.
 
 Definition shiftr_ev (l : list ext_val) (n : nat) : list ext_val :=
   firstn (length l - n)%nat l.
+
+Lemma rotr_eval :
+  forall id GE TE SE,
+    GE (id, ">>>") = Some (mb 1 2 Rotr) ->
+    SE (id, ">>>") = None ->
+    forall va1 va2 l l' ta tr res len len' (bv : BitV len'),
+      eager_eval_type GE TE ta tr ->
+      eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
+      eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
+      to_bitv l' = Some bv ->
+      res = to_sval (eseq (rotr_ev l (Z.to_nat (unsigned bv)))) ->
+      has_type (eseq l) (tseq len tbit) ->
+      has_type (eseq l') (tseq len' tbit) ->
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,">>>")) (ETyp ta)) va1) va2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e. lv. lv.
+  (* TODO: model Rotr *)
+Admitted.
 
 Lemma xor_sem_ev :
   forall l l' len,
