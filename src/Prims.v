@@ -161,5 +161,177 @@ Proof.
   simpl. rewrite map_app. reflexivity.
 Qed.
                                                                 
+(* bitwise operations *)
+Fixpoint bitwise_ext_val (f : bool -> bool -> bool) (l l' : list ext_val) : list ext_val :=
+  match l,l' with
+  | (ebit b :: r1),(ebit b' :: r2) =>
+    (ebit (f b b')) :: bitwise_ext_val f r1 r2
+  | _,_ => nil
+  end.
 
+Definition and_ev := bitwise_ext_val andb.
+Definition or_ev := bitwise_ext_val orb.
+Definition xor_ev := bitwise_ext_val xorb.
 
+Fixpoint not_ev (l : list ext_val) : list ext_val :=
+  match l with
+  | (ebit b) :: r => (ebit (negb b)) :: not_ev r
+  | _ => nil
+  end.
+
+Lemma xor_sem_ev :
+  forall l l' len,
+    has_type (eseq l) (tseq len tbit) ->
+    has_type (eseq l') (tseq len tbit) ->
+    xor_sem (strict_list (map to_sval l)) (strict_list (map to_sval l')) = Some (strict_list (map to_sval (xor_ev l l'))).
+Proof.
+  induction l; intros; simpl.
+  inversion H. subst. inversion H0. subst.
+  destruct l'; simpl in *; try omega.
+  reflexivity.
+  inversion H; inversion H0; subst.
+  destruct l'; simpl in H6; try congruence.
+  inversion H3. inversion H7.
+  subst.
+  inversion H4. inversion H10.
+  subst.
+  simpl.
+  erewrite IHl; eauto.
+  f_equal. f_equal. destruct b; destruct b0; simpl; auto.
+  econstructor; eauto.
+  inversion H6. econstructor; eauto.
+Qed.
+
+Lemma xor_eval :
+  forall id GE TE SE,
+    GE (id, "^") = Some (mb 1 2 Xor) ->
+    SE (id, "^") = None ->
+    forall va1 va2 l l' ta tr res len,
+      eager_eval_type GE TE ta tr ->
+      eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
+      eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
+      res = to_sval (eseq (xor_ev l l')) ->
+      has_type (eseq l) (tseq len tbit) ->
+      has_type (eseq l') (tseq len tbit) ->
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"^")) (ETyp ta)) va1) va2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e. lv. lv.
+  subst res.
+  simpl.
+  eapply xor_sem_ev; eauto.
+Qed.
+
+Lemma and_eval :
+  forall id GE TE SE,
+    GE (id, "&&") = Some (mb 1 2 And) ->
+    SE (id, "&&") = None ->
+    forall va1 va2 l l' ta tr res len,
+      eager_eval_type GE TE ta tr ->
+      eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
+      eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
+      res = to_sval (eseq (and_ev l l')) ->
+      has_type (eseq l) (tseq len tbit) ->
+      has_type (eseq l') (tseq len tbit) ->
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"&&")) (ETyp ta)) va1) va2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e; try lv.
+  subst res.
+  simpl.
+  (* TODO: model And *)
+Admitted. 
+
+Lemma or_eval :
+  forall id GE TE SE,
+    GE (id, "||") = Some (mb 1 2 Or) ->
+    SE (id, "||") = None ->
+    forall va1 va2 l l' ta tr res len,
+      eager_eval_type GE TE ta tr ->
+      eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
+      eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
+      res = to_sval (eseq (or_ev l l')) ->
+      has_type (eseq l) (tseq len tbit) ->
+      has_type (eseq l') (tseq len tbit) ->
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"||")) (ETyp ta)) va1) va2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e; try lv.
+  subst res.
+  simpl.
+  (* TODO: model Or *)
+Admitted.
+
+Lemma complement_eval :
+  forall id GE TE SE,
+    GE (id, "complement") = Some (mb 1 1 Compl) ->
+    SE (id, "complement") = None ->
+    forall va1 l ta tr res len,
+      eager_eval_type GE TE ta tr ->
+      eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
+      res = to_sval (eseq (not_ev l)) ->
+      has_type (eseq l) (tseq len tbit) ->
+      eager_eval_expr GE TE SE (EApp (ETApp (EVar (id,"complement")) (ETyp ta)) va1) res.
+Proof.
+  intros. e. e. ag.
+  e. e. e. lv.
+  simpl.
+  (* TODO: model complement *)
+Admitted.
+
+Lemma has_type_not :
+  forall l len,
+    has_type (eseq l) (tseq len tbit) ->
+    has_type (eseq (not_ev l)) (tseq len tbit).
+Proof.
+  induction l; intros;
+    try solve [simpl; auto].
+  inversion H. subst. inversion H2. subst.
+  
+  assert (has_type (eseq l) (tseq (length l) tbit)).
+  econstructor; eauto.
+  eapply IHl in H0.
+  inversion H0. subst.
+
+  replace (S (length (not_ev l))) with (length (not_ev (a :: l))).
+  econstructor.
+  inversion H3. subst.
+  simpl. econstructor. econstructor.
+  eassumption.
+
+  simpl. inversion H3.
+  simpl. reflexivity.
+Qed.
+
+Lemma has_type_and :
+  forall l l' len,
+    has_type (eseq l) (tseq len tbit) ->
+    has_type (eseq l') (tseq len tbit) ->
+    has_type (eseq (and_ev l l')) (tseq len tbit).
+Proof.
+  induction l; intros;
+    try solve [simpl; auto].
+  inversion H. inversion H0. subst.
+  destruct l'; try solve [simpl in *; omega].
+  inversion H3. inversion H7.
+  assert (has_type (eseq l) (tseq (length l) tbit)).
+  econstructor; eauto.
+  assert (has_type (eseq l') (tseq (length l') tbit)).
+  econstructor; eauto.
+  simpl in H6. inversion H6.
+  rewrite H15 in *.
+  subst.
+  eapply IHl in H13; try solve [econstructor; eauto].
+  inversion H13.
+  subst.
+  inversion H4. inversion H10.
+  subst. unfold and_ev. simpl.
+  fold and_ev.
+  replace (S (length (and_ev l l'))) with (length (ebit (b && b0) :: and_ev l l')).
+  econstructor. econstructor; eauto.
+  econstructor.
+  simpl. reflexivity.
+Qed.
