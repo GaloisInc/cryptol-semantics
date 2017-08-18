@@ -138,11 +138,28 @@ Proof.
   reflexivity.
 Qed.
 
-(*
+
 Lemma append_eval :
   forall GE TE SE,
     GE (34, "#") = Some (mb 3 2 Append) ->
     SE (34, "#") = None ->
-    forall 
+    forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2 tr3 res,
+      eager_eval_type GE TE ta1 tr1 ->
+      eager_eval_type GE TE ta2 tr2 ->
+      eager_eval_type GE TE ta3 tr3 ->
+      eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
+      eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
+      res = to_sval (eseq (l ++ l')) ->
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (34,"#")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
+Proof.
+  intros.
+  subst res.
+  e. e. e. e. e. ag.
+  e. e. e. e. e. e. lv. lv.
 
-*)
+  rewrite append_strict_list.
+  simpl. rewrite map_app. reflexivity.
+Qed.
+                                                                
+
+

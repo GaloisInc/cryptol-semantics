@@ -85,27 +85,22 @@ Proof.
 
   
   use take_eval.
+  use append_eval.
 
-  
-  e. e. e. e. e. ag. e. e. e. e. (* append *)
-  lv.
+  instantiate (1 := l). simpl. lv.
 
-  e. e.
+  e. 
   ag.
 
-  e. e.
-  reflexivity. e.
-  lv. lv.
+  e. e. 
 
-  unfold to_sval. fold to_sval.
-  rewrite append_strict_list.
-  f_equal. instantiate (1 := l ++ (repeat (eseq (repeat (ebit false) 8)) (length l))).
-  f_equal. rewrite map_app. f_equal.
   simpl.
-
-
+  f_equal. instantiate (1 := (repeat (eseq (repeat (ebit false) 8)) (length l))).
+  simpl.
+  f_equal.
   rewrite map_repeat. simpl.
   rewrite Nat2Z.id.
+  reflexivity.
   reflexivity.
   rewrite app_length.
   rewrite Nat2Z.inj_add. omega.
