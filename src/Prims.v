@@ -137,3 +137,12 @@ Proof.
   lv. unfold splitAt_model. simpl.
   reflexivity.
 Qed.
+
+(*
+Lemma append_eval :
+  forall GE TE SE,
+    GE (34, "#") = Some (mb 3 2 Append) ->
+    SE (34, "#") = None ->
+    forall 
+
+*)
