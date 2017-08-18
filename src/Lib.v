@@ -249,6 +249,13 @@ Proof.
   specialize (IHl n). omega.
 Qed.
 
+Lemma list_drop_all :
+  forall {A} (l : list A),
+    list_drop (length l) l = nil.
+Proof.
+  induction l; simpl; auto.
+Qed.
+
 Lemma map_repeat :
   forall {A B} (f : A -> B) n x,
     map f (repeat x n) = repeat (f x) n.

@@ -179,6 +179,25 @@ Fixpoint not_ev (l : list ext_val) : list ext_val :=
   | _ => nil
   end.
 
+Definition rotr_ev (l : list ext_val) (n : nat) : list ext_val :=
+  let n := (length l - n)%nat in
+  list_drop n l ++ firstn n l.
+
+(* sanity check *)
+Lemma rotr_0_id :
+  forall l,
+    rotr_ev l O = l.
+Proof.
+  intros.
+  unfold rotr_ev.
+  replace (length l - 0)%nat with (length l) by omega.
+  rewrite firstn_all.
+  rewrite list_drop_all. simpl. reflexivity.
+Qed.
+
+Definition shiftr_ev (l : list ext_val) (n : nat) : list ext_val :=
+  firstn (length l - n)%nat l.
+
 Lemma xor_sem_ev :
   forall l l' len,
     has_type (eseq l) (tseq len tbit) ->
@@ -331,6 +350,36 @@ Proof.
   subst. unfold and_ev. simpl.
   fold and_ev.
   replace (S (length (and_ev l l'))) with (length (ebit (b && b0) :: and_ev l l')).
+  econstructor. econstructor; eauto.
+  econstructor.
+  simpl. reflexivity.
+Qed.
+
+Lemma has_type_xor :
+  forall l l' len,
+    has_type (eseq l) (tseq len tbit) ->
+    has_type (eseq l') (tseq len tbit) ->
+    has_type (eseq (xor_ev l l')) (tseq len tbit).
+Proof.
+  induction l; intros;
+    try solve [simpl; auto].
+  inversion H. inversion H0. subst.
+  destruct l'; try solve [simpl in *; omega].
+  inversion H3. inversion H7.
+  assert (has_type (eseq l) (tseq (length l) tbit)).
+  econstructor; eauto.
+  assert (has_type (eseq l') (tseq (length l') tbit)).
+  econstructor; eauto.
+  simpl in H6. inversion H6.
+  rewrite H15 in *.
+  subst.
+  eapply IHl in H13; try solve [econstructor; eauto].
+  inversion H13.
+  subst.
+  inversion H4. inversion H10.
+  subst. unfold xor_ev. simpl.
+  fold xor_ev.
+  replace (S (length (xor_ev l l'))) with (length (ebit (xorb b b0) :: xor_ev l l')).
   econstructor. econstructor; eauto.
   econstructor.
   simpl. reflexivity.
