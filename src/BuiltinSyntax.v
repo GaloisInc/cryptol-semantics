@@ -62,8 +62,8 @@ Definition table : list (string * Expr) :=
   ("||", mb 1 2 Or) :: 
   ("^", mb 1 2 Xor) :: 
   ("zero", mb 1 0 Zero) :: 
-  ("<<", mb 1 2 Shiftl) :: 
-  (">>", mb 1 2 Shiftr) :: 
+  ("<<", mb 3 2 Shiftl) :: 
+  (">>", mb 3 2 Shiftr) :: 
   ("<<<", mb 3 2 Rotl) :: 
   (">>>", mb 3 2 Rotr) :: 
   ("#", mb 3 2 Append) :: 

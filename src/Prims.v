@@ -185,6 +185,11 @@ Definition rotr_ev (l : list ext_val) (n : nat) : list ext_val :=
   let n := (length l - n)%nat in
   list_drop n l ++ firstn n l.
 
+Definition shiftr_ev (l : list ext_val) (n : nat) : list ext_val :=
+  let n' := (length l - n)%nat in
+  let n := Init.Nat.min n (length l) in
+  (repeat (ebit false) n) ++ firstn n' l.
+
 (* sanity check *)
 Lemma rotr_0_id :
   forall l,
@@ -196,9 +201,6 @@ Proof.
   rewrite firstn_all.
   rewrite list_drop_all. simpl. reflexivity.
 Qed.
-
-Definition shiftr_ev (l : list ext_val) (n : nat) : list ext_val :=
-  firstn (length l - n)%nat l.
 
 Lemma demote_eval :
   forall id GE TE SE,
@@ -214,6 +216,30 @@ Proof.
   e. e. ag.
   e. e. e. simpl. assumption.
 Qed.
+
+Lemma shiftr_eval :
+  forall id GE TE SE,
+    GE (id, ">>") = Some (mb 3 2 Shiftr) ->
+    SE (id, ">>") = None ->
+    forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2 tr3 res len len' (bv : BitV len'),
+      eager_eval_type GE TE ta1 tr1 ->
+      eager_eval_type GE TE ta2 tr2 ->
+      eager_eval_type GE TE ta3 tr3 ->
+      eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
+      eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
+      to_bitv l' = Some bv ->
+      res = to_sval (eseq (shiftr_ev l (Z.to_nat (unsigned bv)))) ->
+      has_type (eseq l) (tseq len tbit) ->
+      has_type (eseq l') (tseq len' tbit) ->
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (id,">>")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
+Proof.
+  intros.
+  e. e. e. e. e. ag.
+  e. e. e. e. e.
+  e; try lv.
+  (* TODO: model Shiftr *)
+  
+Admitted.
 
 Lemma rotr_eval :
   forall id GE TE SE,
@@ -428,7 +454,6 @@ Qed.
 
 Lemma rotr_ev_length :
   forall l n,
-    (n <= length l)%nat ->
     length (rotr_ev l n) = length l.
 Proof.
   intros. unfold rotr_ev.
@@ -439,17 +464,15 @@ Proof.
   omega.
 Qed.
 
-
 Lemma rotr_ev_Forall :
   forall P l,
     Forall P l ->
     forall n,
-      (n <= length l)%nat ->
       Forall P (rotr_ev l n).
 Proof.
   induction 1; intros.
-  destruct n; simpl in H; try omega.
-  unfold rotr_ev. simpl. econstructor.
+  unfold rotr_ev.
+  destruct n; simpl; econstructor.
   unfold rotr_ev.
   rewrite Forall_app. split.
   eapply list_drop_Forall; eauto.
@@ -460,7 +483,6 @@ Lemma has_type_rotr :
   forall l len t,
     has_type (eseq l) (tseq len t) ->
     forall n,
-      (n <= (length l))%nat ->
       has_type (eseq (rotr_ev l n)) (tseq len t).
 Proof.
   intros.
@@ -468,4 +490,62 @@ Proof.
   subst.
   erewrite <- (rotr_ev_length l); try econstructor; try omega.
   eapply rotr_ev_Forall; eauto.
+Qed.
+
+Lemma repeat_Forall :
+  forall {A} (P : A -> Prop) x,
+    P x ->
+    forall n,
+      Forall P (repeat x n).
+Proof.
+  induction n; intros.
+  simpl. econstructor.
+  simpl. econstructor; eauto.
+Qed.
+
+Lemma shiftr_ev_length :
+  forall l n,
+    length (shiftr_ev l n) = length l.
+Proof.
+  intros. unfold shiftr_ev.
+  rewrite app_length.
+  rewrite firstn_length.
+  rewrite repeat_length.
+  assert (n <= length l \/ n > length l)%nat by omega.
+  destruct H.
+  repeat rewrite Min.min_l by omega. omega.
+  rewrite Min.min_r by omega.
+  rewrite Min.min_l by omega.
+  omega.
+Qed.
+
+Lemma shiftr_ev_Forall :
+  forall P l,
+    Forall P l ->
+    forall n,
+      P (ebit false) ->
+      Forall P (shiftr_ev l n).
+Proof.
+  induction 1; intros.
+  unfold shiftr_ev.
+  destruct n; simpl; econstructor; eauto.
+  
+  unfold shiftr_ev.
+  rewrite Forall_app. split.
+  eapply repeat_Forall; eauto.
+  eapply firstn_Forall; eauto.
+Qed.      
+
+Lemma has_type_shiftr :
+  forall l len,
+    has_type (eseq l) (tseq len tbit) ->
+    forall n,
+      has_type (eseq (shiftr_ev l n)) (tseq len tbit).
+Proof.
+  intros.
+  inversion H.
+  subst.
+  erewrite <- (shiftr_ev_length l); try econstructor; try omega.
+  eapply shiftr_ev_Forall; eauto.
+  econstructor; eauto.
 Qed.
