@@ -263,3 +263,43 @@ Proof.
   induction n; intros; eauto.
   simpl. f_equal. eauto.
 Qed.
+
+Lemma list_drop_Forall :
+  forall {A} P (l : list A),
+    Forall P l ->
+    forall n,
+      Forall P (list_drop n l).
+Proof.
+  induction l; intros.
+  destruct n; simpl; econstructor.
+  inversion H. subst.
+  eapply IHl with (n := n) in H3.
+  inversion H.
+  destruct n; simpl; try econstructor; eauto.
+Qed.
+
+Lemma firstn_Forall :
+  forall {A} P (l : list A),
+    Forall P l ->
+    forall n,
+      Forall P (firstn n l).
+Proof.
+  induction l; intros.
+  destruct n; simpl; econstructor.
+  inversion H. subst.
+  eapply IHl with (n := n) in H3.
+  inversion H. subst.
+  destruct n; simpl; try econstructor; eauto.
+Qed.  
+
+Lemma list_drop_length_eq :
+  forall {A} (l : list A) n,
+    (n <= length l)%nat ->
+    length (list_drop n l) = (length l - n)%nat.
+Proof.
+  induction l; intros.
+  destruct n; simpl; auto.
+  destruct n; simpl; auto.
+  simpl in H.
+  eapply IHl; eauto; omega.
+Qed.

@@ -425,6 +425,37 @@ Proof.
   simpl. reflexivity.
 Qed.
 
+
+Lemma rotr_ev_length :
+  forall l n,
+    (n <= length l)%nat ->
+    length (rotr_ev l n) = length l.
+Proof.
+  intros. unfold rotr_ev.
+  rewrite app_length.
+  rewrite firstn_length.
+  rewrite Min.min_l by omega.
+  rewrite list_drop_length_eq by omega.
+  omega.
+Qed.
+
+
+Lemma rotr_ev_Forall :
+  forall P l,
+    Forall P l ->
+    forall n,
+      (n <= length l)%nat ->
+      Forall P (rotr_ev l n).
+Proof.
+  induction 1; intros.
+  destruct n; simpl in H; try omega.
+  unfold rotr_ev. simpl. econstructor.
+  unfold rotr_ev.
+  rewrite Forall_app. split.
+  eapply list_drop_Forall; eauto.
+  eapply firstn_Forall; eauto.
+Qed.      
+
 Lemma has_type_rotr :
   forall l len t,
     has_type (eseq l) (tseq len t) ->
@@ -432,16 +463,9 @@ Lemma has_type_rotr :
       (n <= (length l))%nat ->
       has_type (eseq (rotr_ev l n)) (tseq len t).
 Proof.
-  induction l; intros.
-  assert (n = O) by (simpl in H0; omega).
-  subst n. unfold rotr_ev. simpl.
-  inversion H. subst. eauto.
-  assert (n <= length l \/ n = S (length l))%nat by (simpl in *; omega).
-  clear H0. destruct H1.
-  remember H0 as H1. clear HeqH1.
-  eapply IHl in H0. Focus 2.
-  inversion H. subst. inversion H4.
-  subst. econstructor. eassumption.
-  (* This might be the wrong path *)
-  
-Admitted.
+  intros.
+  inversion H.
+  subst.
+  erewrite <- (rotr_ev_length l); try econstructor; try omega.
+  eapply rotr_ev_Forall; eauto.
+Qed.
