@@ -6,9 +6,9 @@ Require Import Utils.
 Import HaskellListNotations.
 Open Scope string.
 
-Require Import Values.
 Require Import AST.
 Require Import Bitvectors.
+Require Import ExtToBitvector.
 
 (* Convert a hex string to a list of bits *)
 Definition hex_digits := match collect [get 0 "0",get 0 "1",get 0 "2",get 0 "3",
@@ -40,15 +40,14 @@ Fixpoint lookup_h {A : Type} (eq_dec : forall (a b : A), {a = b} + {a <> b}) (x 
 Definition lookup (a : Ascii.ascii) : option nat :=
   lookup_h Ascii.ascii_dec a hex_digits.
 
-
-Definition to_bits (a : Ascii.ascii) : option (list val) :=
+Definition to_bits (a : Ascii.ascii) : option (list ext_val) :=
   match lookup a with
   | Some n =>
     Some (@from_bitv 4 (@repr 4 (Z.of_nat n)))
   | None => None
   end.
 
-Fixpoint val_of_hex_string (s : string) : option (list val) :=
+Fixpoint val_of_hex_string (s : string) : option (list ext_val) :=
   match s with
   | EmptyString => Some nil
   | String a s' =>
@@ -63,7 +62,7 @@ Fixpoint val_of_hex_string (s : string) : option (list val) :=
   end.
 
 
-Definition val_of_hex_lit (s : string) : list val :=
+Definition val_of_hex_lit (s : string) : list ext_val :=
   match val_of_hex_string (substring 2 (String.length s) s) with
   | Some l => l
   | None => nil
