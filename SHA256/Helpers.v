@@ -317,9 +317,7 @@ Proof.
   reflexivity.
 
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
 
   use shiftr_eval; try lv.
   use demote_eval.
