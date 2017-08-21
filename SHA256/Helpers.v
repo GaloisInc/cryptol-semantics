@@ -168,11 +168,8 @@ Proof.
   reflexivity.
 
 
-
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
 
   use rotr_eval; try lv.
   use demote_eval.
@@ -190,13 +187,8 @@ Proof.
   reflexivity.
   eapply has_type_xor.
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
-
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
-  
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
 Qed.  
 
 
@@ -251,9 +243,7 @@ Proof.
   reflexivity.
 
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
 
   use rotr_eval; try lv.
   use demote_eval.
@@ -271,13 +261,8 @@ Proof.
   reflexivity.
   eapply has_type_xor.
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
-
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
-  
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
 Qed.
 
 Definition s0_spec (x : ext_val) : ext_val :=
@@ -352,11 +337,6 @@ Proof.
   reflexivity.
   eapply has_type_xor.
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
-
   eapply has_type_rotr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
-  
   eapply has_type_shiftr. eassumption.
-  simpl. unfold Pos.to_nat. simpl. omega.
 Qed.
