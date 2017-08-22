@@ -123,6 +123,7 @@ Inductive ext_type :=
 | trec (l : list (string * ext_type))
 .
 
+
 Inductive has_type : ext_val -> ext_type -> Prop :=
 | is_bit :
     forall b,

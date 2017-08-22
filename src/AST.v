@@ -189,13 +189,13 @@ Defined.
 
 (* Type level values *)
 Inductive Tval :=
-| trec (l : list (string * Tval)) (* record *)
-| ttup (l : list Tval) (* tuple *)
-| tseq (len : Tval) (elem : Tval)
-| tfun (argt : Tval) (res : Tval)
-| tnum (z : Z)
-| tbit
-| tinf (* length of infinite streams *)
+| tvrec (l : list (string * Tval)) (* record *)
+| tvtup (l : list Tval) (* tuple *)
+| tvseq (len : Tval) (elem : Tval)
+| tvfun (argt : Tval) (res : Tval)
+| tvnum (z : Z)
+| tvbit
+| tvinf (* length of infinite streams *)
 .
 
 

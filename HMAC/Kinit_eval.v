@@ -39,9 +39,9 @@ Lemma kinit_eval :
       forall h hf,
         good_hash h GE TE SE hf ->
         forall digest t1 t2 t3 kexpr,
-          eager_eval_type GE TE t1 (tnum (Z.of_nat keylen)) ->
-          eager_eval_type GE TE t2 (tnum (Z.of_nat keylen)) ->
-          eager_eval_type GE TE t3 (tnum digest) ->
+          eager_eval_type GE TE t1 (tvnum (Z.of_nat keylen)) ->
+          eager_eval_type GE TE t2 (tvnum (Z.of_nat keylen)) ->
+          eager_eval_type GE TE t3 (tvnum digest) ->
           eager_eval_expr GE TE SE kexpr (to_sval key) ->
           eager_eval_expr GE TE SE (apply (tapply (EVar kinit) (ETyp t1 :: ETyp t2 :: ETyp t3 ::  nil)) (h :: kexpr :: nil)) (to_sval key).
 Proof.

@@ -35,91 +35,91 @@ Inductive eager_eval_type (ge : genv) : tenv -> Typ -> Tval -> Prop :=
     forall E l lv,
       Forall2 (eager_eval_type ge E) (map snd l) (map snd lv) ->
       map fst l = map fst lv ->
-      eager_eval_type ge E (TRec l) (trec lv)
+      eager_eval_type ge E (TRec l) (tvrec lv)
 | eager_eval_ttup :
     forall E l lv n,
       Forall2 (eager_eval_type ge E) l lv ->
       n = length l ->
-      eager_eval_type ge E (TCon (TC (TCTuple n)) l) (ttup lv)
+      eager_eval_type ge E (TCon (TC (TCTuple n)) l) (tvtup lv)
 | eager_eval_tseq :
     forall E l len lenv elem elemv,
       l = len :: elem :: nil ->
       eager_eval_type ge E len lenv ->
       eager_eval_type ge E elem elemv ->
-      eager_eval_type ge E (TCon (TC TCSeq) l) (tseq lenv elemv)
+      eager_eval_type ge E (TCon (TC TCSeq) l) (tvseq lenv elemv)
 | eager_eval_tnum :
     forall E n,
-      eager_eval_type ge E (TCon (TC (TCNum n)) nil) (tnum n)
+      eager_eval_type ge E (TCon (TC (TCNum n)) nil) (tvnum n)
 | eager_eval_tbit :
     forall E,
-      eager_eval_type ge E (TCon (TC TCBit) nil) tbit
+      eager_eval_type ge E (TCon (TC TCBit) nil) tvbit
 | eager_eval_tinf :
     forall E,
-      eager_eval_type ge E (TCon (TC TCInf) nil) tinf
+      eager_eval_type ge E (TCon (TC TCInf) nil) tvinf
 | eager_eval_tfunction_type_base :
     forall E a arg r res,
       eager_eval_type ge E a arg ->
       eager_eval_type ge E r res ->
-      eager_eval_type ge E (TCon (TC TCFun) (a :: r :: nil)) (tfun arg res)
+      eager_eval_type ge E (TCon (TC TCFun) (a :: r :: nil)) (tvfun arg res)
 | eager_eval_tfunction_type_rec :
     forall E a r arg res,
       eager_eval_type ge E a arg ->
       eager_eval_type ge E (TCon (TC TCFun) r) res ->
-      eager_eval_type ge E (TCon (TC TCFun) (a :: r)) (tfun arg res)
+      eager_eval_type ge E (TCon (TC TCFun) (a :: r)) (tvfun arg res)
 | eager_eval_type_add :
     forall E l r a b n,
-      eager_eval_type ge E l (tnum a) ->
-      eager_eval_type ge E r (tnum b) ->
+      eager_eval_type ge E l (tvnum a) ->
+      eager_eval_type ge E r (tvnum b) ->
       n = a + b ->
-      eager_eval_type ge E (TCon (TF TCAdd) (l :: r :: nil)) (tnum n)
+      eager_eval_type ge E (TCon (TF TCAdd) (l :: r :: nil)) (tvnum n)
 | eager_eval_type_sub :
     forall E l r a b n,
-      eager_eval_type ge E l (tnum a) ->
-      eager_eval_type ge E r (tnum b) ->
+      eager_eval_type ge E l (tvnum a) ->
+      eager_eval_type ge E r (tvnum b) ->
       n = a - b ->
-      eager_eval_type ge E (TCon (TF TCSub) (l :: r :: nil)) (tnum n)
+      eager_eval_type ge E (TCon (TF TCSub) (l :: r :: nil)) (tvnum n)
 | eager_eval_type_mul :
     forall E l r a b n,
-      eager_eval_type ge E l (tnum a) ->
-      eager_eval_type ge E r (tnum b) ->
+      eager_eval_type ge E l (tvnum a) ->
+      eager_eval_type ge E r (tvnum b) ->
       n = a * b ->
-      eager_eval_type ge E (TCon (TF TCMul) (l :: r :: nil)) (tnum n)
+      eager_eval_type ge E (TCon (TF TCMul) (l :: r :: nil)) (tvnum n)
 | eager_eval_type_div :
     forall E l r a b n,
-      eager_eval_type ge E l (tnum a) ->
-      eager_eval_type ge E r (tnum b) ->
+      eager_eval_type ge E l (tvnum a) ->
+      eager_eval_type ge E r (tvnum b) ->
       b <> 0 ->
       n = a / b ->
-      eager_eval_type ge E (TCon (TF TCDiv) (l :: r :: nil)) (tnum n)
+      eager_eval_type ge E (TCon (TF TCDiv) (l :: r :: nil)) (tvnum n)
 | eager_eval_type_mod :
     forall E l r a b n,
-      eager_eval_type ge E l (tnum a) ->
-      eager_eval_type ge E r (tnum b) ->
+      eager_eval_type ge E l (tvnum a) ->
+      eager_eval_type ge E r (tvnum b) ->
       b <> 0 ->
       n = a mod b ->
-      eager_eval_type ge E (TCon (TF TCMod) (l :: r :: nil)) (tnum n)
+      eager_eval_type ge E (TCon (TF TCMod) (l :: r :: nil)) (tvnum n)
 | eager_eval_type_exp :
     forall E l r a b n,
-      eager_eval_type ge E l (tnum a) ->
-      eager_eval_type ge E r (tnum b) ->
+      eager_eval_type ge E l (tvnum a) ->
+      eager_eval_type ge E r (tvnum b) ->
       n = Z.pow a b ->
-      eager_eval_type ge E (TCon (TF TCExp) (l :: r :: nil)) (tnum n)
+      eager_eval_type ge E (TCon (TF TCExp) (l :: r :: nil)) (tvnum n)
 | eager_eval_type_min :
     forall E l r a b n,
-      eager_eval_type ge E l (tnum a) ->
-      eager_eval_type ge E r (tnum b) ->
+      eager_eval_type ge E l (tvnum a) ->
+      eager_eval_type ge E r (tvnum b) ->
       n = Z.min a b ->
-      eager_eval_type ge E (TCon (TF TCMin) (l :: r :: nil)) (tnum n)
+      eager_eval_type ge E (TCon (TF TCMin) (l :: r :: nil)) (tvnum n)
 | eager_eval_type_max :
     forall E l r a b n,
-      eager_eval_type ge E l (tnum a) ->
-      eager_eval_type ge E r (tnum b) ->
+      eager_eval_type ge E l (tvnum a) ->
+      eager_eval_type ge E r (tvnum b) ->
       n = Z.max a b ->
-      eager_eval_type ge E (TCon (TF TCMax) (l :: r :: nil)) (tnum n)
+      eager_eval_type ge E (TCon (TF TCMax) (l :: r :: nil)) (tvnum n)
 | eager_eval_type_width :
     forall E e n,
-      eager_eval_type ge E e (tnum n) ->
-      eager_eval_type ge E (TCon (TF TCWidth) (e :: nil)) (tnum (calc_width n))
+      eager_eval_type ge E e (tvnum n) ->
+      eager_eval_type ge E (TCon (TF TCWidth) (e :: nil)) (tvnum (calc_width n))
 (* | eager_eval_type_len_from_then_to : *)
 (* | eager_eval_type_len_from_then : *)
 .
@@ -204,26 +204,26 @@ Definition strictnum (value width : Z) : strictval :=
 
 Fixpoint demote_sem (tv twidth : Tval) : option strictval :=
   match tv,twidth with
-  | tnum v, tnum w => Some (strictnum v w)
+  | tvnum v, tvnum w => Some (strictnum v w)
   | _,_ => None
   end.
 
 Fixpoint zero_sem (t : Tval) : option strictval :=
   match t with
-  | trec lst => None
+  | tvrec lst => None
   (*srec (combine (map fst lst) (map zero_sem (map snd lst)))*)
-  | ttup l => None
+  | tvtup l => None
   (*stuple (map zero_sem l)*)
-  | tseq (tnum n) t' =>
+  | tvseq (tvnum n) t' =>
     match zero_sem t' with
     | Some sv => Some (strict_list (repeat sv (Z.to_nat n)))
     | None => None
     end
-  | tseq _ _ => None
-  | tfun _ _ => None
-  | tnum _ => None
-  | tbit => Some (sbit false)
-  | tinf => None
+  | tvseq _ _ => None
+  | tvfun _ _ => None
+  | tvnum _ => None
+  | tvbit => Some (sbit false)
+  | tvinf => None
   end.
 
 Fixpoint append_sem (l1 l2 : strictval) : option strictval :=
@@ -239,9 +239,9 @@ Fixpoint append_sem (l1 l2 : strictval) : option strictval :=
 
 Fixpoint splitAt_sem (t1 : Tval) (l : strictval) : option strictval :=
   match t1,l with
-  | tnum 0, _ => Some (stuple (svnil :: l :: nil))
-  | tnum n, svcons f r =>
-    match splitAt_sem (tnum (n-1)) r with
+  | tvnum 0, _ => Some (stuple (svnil :: l :: nil))
+  | tvnum n, svcons f r =>
+    match splitAt_sem (tvnum (n-1)) r with
     | Some (stuple (l1 :: l2 :: nil)) =>
       Some (stuple ((svcons f l1) :: l2 :: nil))
     | _ => None
@@ -251,11 +251,12 @@ Fixpoint splitAt_sem (t1 : Tval) (l : strictval) : option strictval :=
 
 Definition splitSem (t : Tval) (l : strictval) : option strictval :=
   match t,list_of_strictval l with
-  | tnum n,Some l' => Some (strict_list (map strict_list (get_each_n (Z.to_nat n) l')))
+  | tvnum n,Some l' => Some (strict_list (map strict_list (get_each_n (Z.to_nat n) l')))
   | _,_ => None
   end.
 
 (* TODO: doesn't lift over structure yet *)
+(* Not needed unless we need to model a program which uses that *)
 Definition plus_sem (x y : strictval) : option strictval :=
   match list_of_strictval x, list_of_strictval y with
   | Some lx, Some ly =>
@@ -265,8 +266,68 @@ Definition plus_sem (x y : strictval) : option strictval :=
     end
   | _,_ => None
   end.
+
+Fixpoint compl_sem (x : strictval) : option strictval :=
+  match x with
+  | svcons (sbit b) r =>
+    match compl_sem r with
+    | Some r' => Some (svcons (sbit (negb b)) r')
+    | None => None
+    end
+  | svnil => Some svnil
+  | _ => None
+  end.
   
-  
+Fixpoint and_sem (x y : strictval) : option strictval :=
+  match x,y with
+  | svcons (sbit b) r, svcons (sbit b') r' =>
+    match and_sem r r' with
+    | Some res => Some (svcons (sbit (andb b b')) res)
+    | None => None
+    end
+  | svnil,svnil => Some (svnil)
+  | _,_ => None
+  end.
+
+Fixpoint or_sem (x y : strictval) : option strictval :=
+  match x,y with
+  | svcons (sbit b) r, svcons (sbit b') r' =>
+    match or_sem r r' with
+    | Some res => Some (svcons (sbit (orb b b')) res)
+    | None => None
+    end
+  | svnil,svnil => Some (svnil)
+  | _,_ => None
+  end.
+
+(* since it's polymorphic over any sequence, we need one type so we can generate zero values of that type *)
+Definition shiftr_sem (t : Tval) (x y : strictval) : option strictval :=
+  match zero_sem t with
+  | Some v =>
+    match list_of_strictval y,list_of_strictval x with
+    | Some ly, Some lx =>
+      match @to_bitv (length ly) ly with
+      | Some bv =>
+        let n := Init.Nat.min (Z.to_nat (unsigned bv)) (length lx) in
+        Some (strict_list ((repeat v n) ++  (firstn ((length lx) - n)%nat lx)))
+      | _ => None
+      end
+    | _,_ => None
+    end
+  | _ => None
+  end.
+    
+Definition rotr_sem (x y : strictval) : option strictval :=
+  match list_of_strictval x, list_of_strictval y with
+  | Some lx, Some ly =>
+    match @to_bitv (length ly) ly with
+    | Some bv =>
+      let n := ((length lx) - Z.to_nat (unsigned bv))%nat in
+      Some (strict_list ((list_drop n lx) ++ (firstn n lx)))
+    | _ => None
+    end
+  | _,_ => None
+  end.
 
 Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval) : option strictval :=
   match bi,t,l with
@@ -282,26 +343,31 @@ Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval
   | true_builtin,nil,nil => Some (sbit true)
   | false_builtin,nil,nil => Some (sbit false)
   | Plus,(t :: nil),(x :: y :: nil) => plus_sem x y
+  | Shiftr,(t1 :: t2 :: t3 :: nil),(x :: y :: nil) => shiftr_sem t3 x y
+  | Rotr,(t1 :: t2 :: t3 :: nil),(x :: y :: nil) => rotr_sem x y
+  | And,(t :: nil),(x :: y :: nil) => and_sem x y
+  | Or,(t :: nil),(x :: y :: nil) => or_sem x y
+  | Complement,(t :: nil),(x :: nil) => compl_sem x
   | _,_,_ => None
   end.
 
 
 Lemma splitAt_zero :
   forall x,
-    splitAt_sem (tnum 0) x = Some (stuple (svnil :: x :: nil)).
+    splitAt_sem (tvnum 0) x = Some (stuple (svnil :: x :: nil)).
 Proof.
   destruct x; simpl; auto.
 Qed.
 
 Lemma splitAt_cons :
   forall r x f,
-    splitAt_sem (tnum (Z.of_nat (Datatypes.length r))) (strict_list (r ++ x)) = Some (stuple (strict_list r :: strict_list x :: nil)) ->
-    splitAt_sem (tnum (Z.of_nat (Datatypes.length (f :: r)))) (strict_list ((f :: r) ++ x)) = Some (stuple (svcons f (strict_list r) :: strict_list x :: nil)).
+    splitAt_sem (tvnum (Z.of_nat (Datatypes.length r))) (strict_list (r ++ x)) = Some (stuple (strict_list r :: strict_list x :: nil)) ->
+    splitAt_sem (tvnum (Z.of_nat (Datatypes.length (f :: r)))) (strict_list ((f :: r) ++ x)) = Some (stuple (svcons f (strict_list r) :: strict_list x :: nil)).
 Proof.
   intros.
   remember ((Datatypes.length (f :: r))) as n.
   destruct n; simpl in Heqn; try omega.
-  replace (tnum (Z.of_nat (S n))) with (tnum ((Z.of_nat n) + 1)).
+  replace (tvnum (Z.of_nat (S n))) with (tvnum ((Z.of_nat n) + 1)).
   simpl.
   assert (exists p, Z.pos p = Z.of_nat n + 1) by 
       (induction r; inversion Heqn; subst n; eexists; split).
@@ -317,7 +383,7 @@ Qed.
 
 Lemma splitAt_len :
   forall l1 t t' (l2 : list strictval),
-    strict_builtin_sem splitAt (tnum (Z.of_nat (Datatypes.length l1)) :: t :: t' :: nil) (strict_list (l1 ++ l2) :: nil) = Some (stuple (strict_list l1 :: strict_list l2 :: nil)).
+    strict_builtin_sem splitAt (tvnum (Z.of_nat (Datatypes.length l1)) :: t :: t' :: nil) (strict_list (l1 ++ l2) :: nil) = Some (stuple (strict_list l1 :: strict_list l2 :: nil)).
 Proof.
   induction l1; intros.
   simpl. unfold splitAt_sem. fold splitAt_sem.

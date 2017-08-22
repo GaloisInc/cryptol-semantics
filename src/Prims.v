@@ -38,7 +38,7 @@ Definition take_model (n : nat) (l : list ext_val) : ext_val :=
 Lemma splitAt_sem_res :
   forall l n,
     0 <= n <= Z.of_nat (length l) ->
-    splitAt_sem (tnum n) (strict_list (map to_sval l)) =
+    splitAt_sem (tvnum n) (strict_list (map to_sval l)) =
     Some (stuple [strict_list (map to_sval (firstn (Z.to_nat n) l)), strict_list (map to_sval (list_drop (Z.to_nat n) l))]).
 Proof.
   induction l; intros.
@@ -82,7 +82,7 @@ Lemma splitAt_eval :
     GE (35, "splitAt") = Some (mb 3 1 splitAt) ->
     SE (35, "splitAt") = None ->
     forall va ta1 ta2 ta3 l n tr2 tr3,
-      eager_eval_type GE TE ta1 (tnum n) ->
+      eager_eval_type GE TE ta1 (tvnum n) ->
       eager_eval_type GE TE ta2 tr2 ->
       eager_eval_type GE TE ta3 tr3 ->
       eager_eval_expr GE TE SE va (to_sval (eseq l)) ->
@@ -121,7 +121,7 @@ Lemma take_eval :
     GE (35, "splitAt") = Some (mb 3 1 splitAt) ->
     SE (35, "splitAt") = None ->
     forall va ta1 ta2 ta3 tr2 tr3 n l,
-      eager_eval_type GE TE ta1 (tnum n) ->
+      eager_eval_type GE TE ta1 (tvnum n) ->
       eager_eval_type GE TE ta2 tr2 ->
       eager_eval_type GE TE ta3 tr3 ->
       eager_eval_expr GE TE SE va (to_sval (eseq l)) ->
@@ -217,14 +217,31 @@ Proof.
   e. e. e. simpl. assumption.
 Qed.
 
+Lemma same_bitv :
+  forall l {w} (bv : BitV w),
+    to_bitv l = Some bv ->
+    StrictToBitvector.to_bitv (map to_sval l) = Some bv.
+Proof.
+  induction l; intros.
+  unfold to_bitv in *.
+  destruct w. simpl in *. auto. congruence.
+  destruct w; simpl in H; try congruence.
+
+  destruct a; congruence.
+  
+  simpl. destruct a; simpl in *; try congruence.
+  destruct (to_bitv l) eqn:?; try congruence.
+  erewrite IHl; eauto.
+Qed.
+
 Lemma shiftr_eval :
   forall id GE TE SE,
     GE (id, ">>") = Some (mb 3 2 Shiftr) ->
     SE (id, ">>") = None ->
-    forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2 tr3 res len len' (bv : BitV len'),
+    forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2  res len len' (bv : BitV len'),
       eager_eval_type GE TE ta1 tr1 ->
       eager_eval_type GE TE ta2 tr2 ->
-      eager_eval_type GE TE ta3 tr3 ->
+      eager_eval_type GE TE ta3 tvbit ->
       eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
       eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
       to_bitv l' = Some bv ->
@@ -234,12 +251,36 @@ Lemma shiftr_eval :
       eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (id,">>")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
 Proof.
   intros.
+  eapply same_bitv in H6.
   e. e. e. e. e. ag.
   e. e. e. e. e.
   e; try lv.
-  (* TODO: model Shiftr *)
-  
-Admitted.
+  simpl.
+  subst res.
+  unfold shiftr_sem.
+  simpl.
+  repeat rewrite list_of_strictval_of_strictlist.
+  assert (len' = length (map to_sval l')).
+  inversion H9. erewrite map_length; eauto.
+  subst len'.
+  rewrite H6.
+  f_equal.
+  unfold shiftr_ev. f_equal.
+  rewrite map_app.
+  f_equal.
+  rewrite map_repeat. simpl.
+  f_equal.
+  f_equal. erewrite map_length; eauto.
+  rewrite <- firstn_map.
+  f_equal.
+  assert (Z.to_nat (unsigned bv) <= length (map to_sval l) \/ Z.to_nat (unsigned bv) > length (map to_sval l))%nat by omega.
+  destruct H7.
+  rewrite min_l by omega. erewrite map_length; eauto.
+  erewrite min_r by omega. erewrite map_length; eauto.
+  erewrite map_length in *.
+
+  omega.
+Qed.
 
 Lemma rotr_eval :
   forall id GE TE SE,
@@ -258,11 +299,26 @@ Lemma rotr_eval :
       eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (id,">>>")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
 Proof.
   intros.
+  eapply same_bitv in H6.
   e. e. e. e. e. ag.
   e. e. e. e. e. e.
   lv. lv.
-  (* TODO: model Rotr *)
-Admitted.
+  simpl. subst res.
+  unfold rotr_ev. unfold rotr_sem.
+  repeat rewrite list_of_strictval_of_strictlist.
+  assert (len' = length (map to_sval l')) by (erewrite map_length; inversion H9; eauto).
+  subst len'.
+  rewrite H6.
+  f_equal.
+  simpl. f_equal.
+  rewrite map_app. f_equal.
+  rewrite list_map_drop. f_equal.
+  f_equal. repeat erewrite map_length in *.
+  reflexivity.
+  
+  repeat erewrite map_length in *.
+  rewrite firstn_map. reflexivity.
+Qed.
 
 Lemma xor_sem_ev :
   forall l l' len,
@@ -308,6 +364,29 @@ Proof.
   eapply xor_sem_ev; eauto.
 Qed.
 
+Lemma and_sem_ev :
+  forall l,
+    has_type (eseq l) (tseq (length l) tbit) ->
+    forall l',
+      has_type (eseq l') (tseq (length l') tbit) ->
+      length l = length l' ->
+      and_sem (strict_list (map to_sval l)) (strict_list (map to_sval l')) =
+      Some (strict_list (map to_sval (and_ev l l'))).
+Proof.
+  induction l; intros.
+  destruct l'; simpl in *; try congruence.
+  destruct l'; simpl in *; try congruence.
+  assert (has_type (eseq l') (tseq (length l') tbit)). {
+    econstructor. inversion H0. subst. inversion H4. eauto.
+  }
+  inversion H. inversion H0.
+  inversion H8. inversion H5.
+  subst. inversion H11. inversion H15.
+  subst. simpl.
+  erewrite IHl; eauto.
+  econstructor; eauto.
+Qed.
+
 Lemma and_eval :
   forall id GE TE SE,
     GE (id, "&&") = Some (mb 1 2 And) ->
@@ -326,8 +405,34 @@ Proof.
   e. e. e. e; try lv.
   subst res.
   simpl.
-  (* TODO: model And *)
-Admitted. 
+  inversion H5. inversion H6.
+  subst.
+  eapply and_sem_ev; eauto.
+  congruence.
+Qed.
+
+Lemma or_sem_ev :
+  forall l,
+    has_type (eseq l) (tseq (length l) tbit) ->
+    forall l',
+      has_type (eseq l') (tseq (length l') tbit) ->
+      length l = length l' ->
+      or_sem (strict_list (map to_sval l)) (strict_list (map to_sval l')) =
+      Some (strict_list (map to_sval (or_ev l l'))).
+Proof.
+  induction l; intros.
+  destruct l'; simpl in *; try congruence.
+  destruct l'; simpl in *; try congruence.
+  assert (has_type (eseq l') (tseq (length l') tbit)). {
+    econstructor. inversion H0. subst. inversion H4. eauto.
+  }
+  inversion H. inversion H0.
+  inversion H8. inversion H5.
+  subst. inversion H11. inversion H15.
+  subst. simpl.
+  erewrite IHl; eauto.
+  econstructor; eauto.
+Qed.
 
 Lemma or_eval :
   forall id GE TE SE,
@@ -347,8 +452,25 @@ Proof.
   e. e. e. e; try lv.
   subst res.
   simpl.
-  (* TODO: model Or *)
-Admitted.
+  inversion H5. inversion H6.
+  subst.
+  eapply or_sem_ev; eauto.
+  congruence.
+Qed.
+
+Lemma compl_sem_ev :
+  forall l len,
+    has_type (eseq l) (tseq len tbit) ->
+    compl_sem (strict_list (map to_sval l)) = Some (to_sval (eseq (not_ev l))).
+Proof.
+  induction l; intros.
+  reflexivity.
+  inversion H. subst.
+  inversion H2. subst. inversion H3.
+  subst. simpl.
+  erewrite IHl; eauto.
+  econstructor; eauto.
+Qed.
 
 Lemma complement_eval :
   forall id GE TE SE,
@@ -364,9 +486,10 @@ Proof.
   intros. e. e. ag.
   e. e. e. lv.
   simpl.
-  (* TODO: model complement *)
-Admitted.
-
+  subst res.
+  eapply compl_sem_ev; eauto.
+Qed.
+  
 Lemma has_type_not :
   forall l len,
     has_type (eseq l) (tseq len tbit) ->
@@ -549,3 +672,4 @@ Proof.
   eapply shiftr_ev_Forall; eauto.
   econstructor; eauto.
 Qed.
+

@@ -150,40 +150,40 @@ Proof.
     inversion H0. inversion H9.
     f_equal; eauto.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H3. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H3. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H0.
     subst.
-    assert (tnum n = tnum n0) by eauto.
+    assert (tvnum n = tvnum n0) by eauto.
     congruence.
 Qed.
 
