@@ -28,6 +28,39 @@ Import HaskellListNotations.
 Require Import String.
 Open Scope string.
 
+Definition H0_spec : ext_val :=
+  let l :=
+      [ "0x6a09e667", "0xbb67ae85", "0x3c6ef372", "0xa54ff53a",
+        "0x510e527f", "0x9b05688c", "0x1f83d9ab", "0x5be0cd19"] in
+  eseq (map (fun x => eseq (val_of_hex_lit x)) l).
+  
+
+Lemma H0_eval :
+  forall GE TE SE,
+    wf_env ge GE TE SE ->
+    forall res,
+      res = to_sval H0_spec ->
+      eager_eval_expr GE TE SE (EVar H0) res.
+Proof.
+  intros GE TE SE Hwf_env res Hreseq.
+  gen_global H0.
+  gen_global (0,"demote").
+  ag.
+  clear H.
+  e; try use demote_eval.
+  subst res.
+  unfold H0_spec.
+  unfold val_of_hex_lit. simpl.
+  reflexivity.
+Qed.  
+
+Lemma H0_type :
+  has_type H0_spec (tseq 8 (tseq 32 tbit)).
+Proof.
+  unfold H0_spec.
+  simpl. unfold val_of_hex_lit. simpl.
+  repeat (econstructor; eauto).
+Qed.  
 
 Definition K_spec : ext_val :=
   let l :=

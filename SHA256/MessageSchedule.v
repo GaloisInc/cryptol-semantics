@@ -24,7 +24,5 @@ Require Import Prims.
 Require Import SHA256.
 Require Import Helpers.
 
-(* TODO *)
-(* make a spec for SHA256MessageSchedule here *)
 
 
