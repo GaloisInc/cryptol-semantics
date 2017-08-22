@@ -8,6 +8,10 @@ Require Import Builtins.
 Require Import Eager.
 Require Import GlobalExtends.
 
+Ltac break_if := match goal with
+                 | [ |- context[if ?X then _ else _] ] => destruct X eqn:?
+                 end.
+
 Ltac ec := econstructor; try unfold mb; try reflexivity.
 Ltac fg := eapply eager_eval_global_var; [ reflexivity | eassumption | idtac].
 Ltac g := eapply eager_eval_global_var; try eassumption; try reflexivity.
@@ -136,7 +140,6 @@ Ltac break_and :=
 Ltac break :=
   progress (try break_exists; try break_and).
 
-(* TODO *)  
   
 
 

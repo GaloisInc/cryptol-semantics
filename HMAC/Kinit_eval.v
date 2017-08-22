@@ -84,7 +84,8 @@ Proof.
   simpl.
 
   
-  use take_eval.
+  use take_eval; try omega.
+  
   use append_eval.
 
   instantiate (1 := l). simpl. lv.

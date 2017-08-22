@@ -51,10 +51,18 @@ Proof.
   e. e. e. e. 
   all: clear H7.
 
-  (* split_eval *)
-  e. e. e. e. e. ag. e. e. e. e.
+  e.
+  use split_eval.
 
   use append_eval; try lv.
+  use append_eval; try lv.
+  simpl.
+  instantiate (1 := (ebit true) :: nil).
+  simpl. e.
+  gen_global (9,"True").
+  ag.
+  e. reflexivity. reflexivity.
+
   use append_eval; try lv.
   
   

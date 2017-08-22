@@ -25,9 +25,48 @@ Require Import ExtToBitvector.
 
 Import HaskellListNotations.
 Require Import List.
+Require Import Builtins.
 
-  
+Definition split_ev (n : nat) (l : ext_val) : ext_val :=
+  match l with
+  | eseq l =>
+    eseq (map eseq (get_each_n n l))
+  | _ => eseq nil
+  end.
 
+Lemma strict_list_to_sval_map :
+  forall l,
+    map strict_list (map (map to_sval) l) = map to_sval (map eseq l).
+Proof.
+  induction l; intros.
+  simpl. auto.
+  simpl. f_equal. auto.
+Qed.
+
+Lemma split_eval :
+  forall id GE TE SE,
+    GE (id,"split") = Some (mb 3 1 split) ->
+    SE (id,"split") = None ->
+    forall ta1 ta2 ta3 n tv1 tv3 exp v t len,
+      eager_eval_type GE TE ta1 tv1 ->
+      eager_eval_type GE TE ta2 (tvnum n) ->
+      eager_eval_type GE TE ta3 tv3 ->
+      eager_eval_expr GE TE SE exp (to_sval v) ->
+      has_type v (tseq len t) ->
+        forall res,
+          res = to_sval (split_ev (Z.to_nat n) v) ->
+          eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (id,"split")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) exp) res.
+Proof.
+  intros.
+  inversion H5. subst.
+  e. e. e. e. ag.
+  e. e. e. e. e. lv.
+  simpl.
+  rewrite list_of_strictval_of_strictlist.
+  f_equal. f_equal.
+  rewrite get_each_n_map_commutes.
+  eapply strict_list_to_sval_map.
+Qed.
 
 Definition splitAt_model (n : nat) (l : list ext_val) : list ext_val :=
   let f := firstn n l in
@@ -80,16 +119,16 @@ Qed.
 
 
 Lemma splitAt_eval :
-  forall GE TE SE,
-    GE (35, "splitAt") = Some (mb 3 1 splitAt) ->
-    SE (35, "splitAt") = None ->
+  forall id GE TE SE,
+    GE (id, "splitAt") = Some (mb 3 1 splitAt) ->
+    SE (id, "splitAt") = None ->
     forall va ta1 ta2 ta3 l n tr2 tr3,
       eager_eval_type GE TE ta1 (tvnum n) ->
       eager_eval_type GE TE ta2 tr2 ->
       eager_eval_type GE TE ta3 tr3 ->
       eager_eval_expr GE TE SE va (to_sval (eseq l)) ->
       0 <= n <= Z.of_nat (Datatypes.length l) ->
-      eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (35,"splitAt")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va)
+      eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (id,"splitAt")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va)
                       (stuple (map to_sval (splitAt_model (Z.to_nat n) l))).
 Proof.
   intros. 
@@ -100,28 +139,43 @@ Proof.
 Qed.
 
 
+
+
 Lemma take_eval :
-  forall GE TE SE,
-    GE (61, "take") =
+  forall tid sid fid bid eid p1id xid p2id p0id GE TE SE,
+    GE (tid, "take") =
     Some
-      (ETAbs (214, "front")
-             (ETAbs (215, "back")
-                    (ETAbs (216, "elem")
-                           (EAbs (212, "__p1")
-                                 (EWhere (EVar (214, "x"))
+      (ETAbs (fid, "front")
+             (ETAbs (bid, "back")
+                    (ETAbs (eid, "elem")
+                           (EAbs (p1id, "__p1")
+                                 (EWhere (EVar (xid, "x"))
                                          [NonRecursive
-                                            (Decl (213, "__p2")
+                                            (Decl (p2id, "__p2")
                                                   (DExpr
                                                      (EApp
                                                         (ETApp
-                                                           (ETApp (ETApp (EVar (35, "splitAt")) (ETyp (TVar (TVBound 214 KNum))))
-                                                                  (ETyp (TVar (TVBound 215 KNum)))) (ETyp (TVar (TVBound 216 KType))))
-                                                        (EVar (212, "__p1"))))),
-                                          NonRecursive (Decl (214, "x") (DExpr (ESel (EVar (213, "__p2")) (TupleSel 0)))),
-                                          NonRecursive (Decl (215, "__p0") (DExpr (ESel (EVar (213, "__p2")) (TupleSel 1))))]))))) ->
-    SE (61, "take") = None ->
-    GE (35, "splitAt") = Some (mb 3 1 splitAt) ->
-    SE (35, "splitAt") = None ->
+                                                           (ETApp (ETApp (EVar (sid, "splitAt")) (ETyp (TVar (TVBound fid KNum))))
+                                                                  (ETyp (TVar (TVBound bid KNum)))) (ETyp (TVar (TVBound eid KType))))
+                                                        (EVar (p1id, "__p1"))))),
+                                          NonRecursive (Decl (xid, "x") (DExpr (ESel (EVar (p2id, "__p2")) (TupleSel 0)))),
+                                          NonRecursive (Decl (p0id, "__p0") (DExpr (ESel (EVar (p2id, "__p2")) (TupleSel 1))))]))))) ->
+    SE (tid, "take") = None ->
+    GE (sid, "splitAt") = Some (mb 3 1 splitAt) ->
+    SE (sid, "splitAt") = None ->
+    xid <> p0id ->
+    p2id <> p0id ->
+    p1id <> p0id ->
+    p1id <> xid ->
+    p2id <> xid ->
+    p1id <> p2id ->
+    sid <> p0id ->
+    sid <> xid ->
+    sid <> p2id ->
+    sid <> p1id ->
+    fid <> eid ->
+    fid <> bid ->
+    bid <> eid ->
     forall va ta1 ta2 ta3 tr2 tr3 n l,
       eager_eval_type GE TE ta1 (tvnum n) ->
       eager_eval_type GE TE ta2 tr2 ->
@@ -130,23 +184,60 @@ Lemma take_eval :
       0 <= n <= Z.of_nat (Datatypes.length l) ->
       forall res,
         res = (to_sval (take_model (Z.to_nat n) l)) ->
-      eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (61,"take")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va) res.
+      eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (tid,"take")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va) res.
 Proof.
   intros. subst res.
 
   e. e. e. e. ag.
   e. e. e. e.
-  e. g. e. g.
+  e. g. simpl.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  simpl.
+  unfold extend.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  reflexivity.
+  e. g.
+  simpl.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  simpl. unfold extend.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  reflexivity.
+  
   eapply splitAt_eval; eauto; try et.
-  lv. unfold splitAt_model. simpl.
+  simpl. unfold extend.
+  repeat (break_if; simpl in *; try congruence).
+  simpl. unfold extend.
+  repeat (break_if; simpl in *; try congruence).
+  simpl. unfold extend.
+  econstructor.
+  repeat (break_if; simpl in *; try congruence).
+  simpl. unfold extend.
+  econstructor.
+  repeat (break_if; simpl in *; try congruence);
+  reflexivity.
+  simpl. unfold extend.
+  econstructor.
+  break_if; simpl in *; try congruence.
+  reflexivity.
+  simpl. unfold extend.
+  eapply eager_eval_local_var.
+  repeat (break_if; simpl in *; try congruence).
+
+  unfold splitAt_model. simpl.
   reflexivity.
 Qed.
 
 
 Lemma append_eval :
-  forall GE TE SE,
-    GE (34, "#") = Some (mb 3 2 Append) ->
-    SE (34, "#") = None ->
+  forall id GE TE SE,
+    GE (id, "#") = Some (mb 3 2 Append) ->
+    SE (id, "#") = None ->
     forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2 tr3 res,
       eager_eval_type GE TE ta1 tr1 ->
       eager_eval_type GE TE ta2 tr2 ->
@@ -154,7 +245,7 @@ Lemma append_eval :
       eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
       eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
       res = to_sval (eseq (l ++ l')) ->
-      eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (34,"#")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (id,"#")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
 Proof.
   intros.
   subst res.
