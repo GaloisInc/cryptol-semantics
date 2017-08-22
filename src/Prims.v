@@ -27,6 +27,37 @@ Import HaskellListNotations.
 Require Import List.
 Require Import Builtins.
 
+Fixpoint zero_ev (t : Tval) : ext_val :=
+  match t with
+  | tvrec lst => eseq nil
+  (*srec (combine (map fst lst) (map zero_sem (map snd lst)))*)
+  | tvtup l => eseq nil
+  (*stuple (map zero_sem l)*)
+  | tvseq (tvnum n) t' => eseq (repeat (zero_ev t') (Z.to_nat n))
+  | tvseq _ _ => eseq nil
+  | tvfun _ _ => eseq nil
+  | tvnum _ => eseq nil
+  | tvbit => (ebit false)
+  | tvinf => eseq nil
+  end.
+
+Lemma zero_eval :
+  forall id GE TE SE,
+    GE (id,"zero") = Some (mb 1 0 Zero) ->
+    SE (id,"zero") = None ->
+    forall ta n res,
+      eager_eval_type GE TE ta (tvseq (tvnum n) tvbit) ->
+      res = to_sval (zero_ev (tvseq (tvnum n) tvbit)) ->
+      eager_eval_expr GE TE SE (ETApp (EVar (id,"zero")) (ETyp ta)) res.
+Proof.
+  intros.
+  e. ag.
+  e. e.
+  subst res. simpl. f_equal. f_equal.
+  rewrite map_repeat.
+  reflexivity.
+Qed.
+
 Definition split_ev (n : nat) (l : ext_val) : ext_val :=
   match l with
   | eseq l =>
