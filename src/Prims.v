@@ -25,6 +25,30 @@ Import HaskellListNotations.
 Require Import List.
 Import ListNotations.
 Require Import Cryptol.Builtins.
+Require Import Program.
+
+Definition fromTo_ev (lo hi width : Z) : ext_val :=
+  eseq (map eseq (map from_bitv (map (@repr (Z.to_nat width)) (zrange lo (hi + 1))))).
+
+Lemma fromTo_eval :
+  forall id GE TE SE,
+    GE (id,"fromTo") = Some (mb 3 0 fromTo) ->
+    SE (id,"fromTo") = None ->
+    forall ta1 ta2 ta3 lo hi width res,
+      eager_eval_type GE TE ta1 (tvnum lo) ->
+      eager_eval_type GE TE ta2 (tvnum hi) ->
+      eager_eval_type GE TE ta3 (tvnum width) ->
+      res = to_sval (fromTo_ev lo hi width) ->
+      eager_eval_expr GE TE SE (ETApp (ETApp (ETApp (EVar (id,"fromTo")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e.
+  
+  simpl.
+  (* TODO: model fromTo *)
+  
+Admitted.
 
 Fixpoint zero_ev (t : Tval) : ext_val :=
   match t with

@@ -24,7 +24,6 @@ Require Import Cryptol.Prims.
 Require Import SHA256.SHA256.
 Require Import SHA256.Helpers.
 
-(* TODO: *)
 Definition schedule_ev (e : ext_val) : ext_val := eseq nil.
 
 Lemma SHA256MessageSchedule_eval :
@@ -52,8 +51,8 @@ Proof.
   lv.
   e.
   ec. ec.
-  e. e. e. ag.
-  (* TODO: fromTo *)
+
+
 
 
 Admitted.

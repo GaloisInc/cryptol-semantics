@@ -79,7 +79,7 @@ Definition table : list (string * Expr) :=
   ("update", mb 9 9 update) ::(* Not yet implemented *)
   ("updateEnd", mb 9 9 updateEnd) :: (* Not yet implemented *)
   ("fromThen", mb 9 9 fromThen) :: (* Not yet implemented *)
-  ("fromTo", mb 9 9 fromTo) :: (* Not yet implemented *)
+  ("fromTo", mb 3 0 fromTo) :: (* Not yet implemented *)
   ("fromThenTo", mb 9 9 fromThenTo) :: (* Not yet implemented *)
   ("infFrom", mb 9 9 infFrom) :: (* Not yet implemented *)
   ("infFromThen", mb 9 9 infFromThen) :: (* Not yet implemented *)

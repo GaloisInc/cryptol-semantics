@@ -2,7 +2,24 @@ Require Import List.
 Import ListNotations.
 
 Require Import Cryptol.Coqlib.
+Require Import Program.
+Require Import Omega.
 
+Program Fixpoint repeat_z {A} (x : A) (z : Z) {measure (Z.to_nat z)} : list A :=
+  if Z_le_dec z 0 then nil else
+    x :: (repeat_z x (z - 1)).
+Next Obligation.
+eapply Z2Nat.inj_lt; omega.
+Defined.
+
+(* generate a list of Zs including lo up to hi-1 *)
+Program Fixpoint zrange (lo hi : Z) {measure (Z.to_nat (hi - lo))} : list Z :=
+  if Z_lt_dec lo hi then 
+    lo :: zrange (lo + 1) hi
+  else nil.
+Next Obligation.
+eapply Z2Nat.inj_lt; omega.
+Defined.
 
 Lemma Forall2_modus_ponens :
   forall {A B : Type} (P Q : A -> B -> Prop) (l : list A) (l' : list B),
@@ -303,3 +320,5 @@ Proof.
   simpl in H.
   eapply IHl; eauto; omega.
 Qed.
+
+
