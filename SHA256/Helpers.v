@@ -2,26 +2,26 @@ Require Import List.
 Import ListNotations.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Values.        
-Require Import Bitstream.
-Require Import Lib.
-Require Import GlobalExtends.
-Require Import GetEachN.
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Values.        
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.Lib.
+Require Import Cryptol.GlobalExtends.
+Require Import Cryptol.GetEachN.
 
-Require Import EvalTac.
-Require Import Eager.
+Require Import Cryptol.EvalTac.
+Require Import Cryptol.Eager.
 
-Require Import Prims.
-Require Import SHA256.
+Require Import Cryptol.Prims.
+Require Import SHA256.SHA256.
 
 Definition Ch_spec (x y z : ext_val) : ext_val :=
   match x,y,z with

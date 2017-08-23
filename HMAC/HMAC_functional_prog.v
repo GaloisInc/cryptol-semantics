@@ -5,8 +5,8 @@
 (* 3. It has had relevant definitions copied from general_lemmas.v, just below *)
 (* 4. The import paths have changed *)
 
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 Require Import List. Import ListNotations.
 
 (* copied from sha.general_lemmas *)

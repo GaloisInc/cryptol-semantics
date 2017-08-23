@@ -1,5 +1,9 @@
 DIRS=(src)
 CANARIES=()
+NAMESPACE_src=Cryptol
+NAMESPACE_HMAC=HMAC
+NAMESPACE_verif=CryptolVerif
+NAMESPACE_SHA256=SHA256
 source script/coqproject.sh
 make Makefile.coq 2> /dev/null
 mv Makefile.coq Makefile.coq.src

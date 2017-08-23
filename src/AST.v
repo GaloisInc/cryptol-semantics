@@ -3,9 +3,9 @@ Require Import List.
 Import ListNotations.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
-Require Import Builtins.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
 
 (* An identifier is both a unique identifier and a name, but the name is meaningless *)

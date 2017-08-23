@@ -1,12 +1,12 @@
 Require Import List.
 Require Import String.
 
-Require Import Coqlib.
+Require Import Cryptol.Coqlib.
 
-Require Import AST.
-Require Import Builtins.
-Require Import Values.
-Require Import Bitvectors.
+Require Import Cryptol.AST.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.Values.
+Require Import Cryptol.Bitvectors.
 
 Open Scope string.
 

@@ -3,20 +3,20 @@ Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Values.        
-Require Import Eager.
-Require Import Bitstream.
-Require Import Lib.
-Require Import EagerEvalInd.
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Values.        
+Require Import Cryptol.Eager.
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.Lib.
+Require Import Cryptol.EagerEvalInd.
 
 Definition global_extends (ge ge' : genv) : Prop :=
   forall id v,

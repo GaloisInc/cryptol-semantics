@@ -3,28 +3,28 @@ Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Values.        
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Values.        
 
-Require Import EvalTac.
-Require Import Eager.
+Require Import Cryptol.EvalTac.
+Require Import Cryptol.Eager.
 
-Require Import Basic.
+Require Import CryptolVerif.Basic.
 
 Import HaskellListNotations.
 Open Scope string.
 
 Definition z : ident := (244,"z").
 
-Require Import EvalTac.
+Require Import Cryptol.EvalTac.
 
 Lemma eager_eval_z :
     eager_eval_expr ge tempty sempty (EVar z) (to_sval (eseq [ebit true, ebit true])).

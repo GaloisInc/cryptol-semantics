@@ -1,9 +1,9 @@
 Require Import List.
 Import ListNotations.
 
-Require Import Lib.
+Require Import Cryptol.Lib.
 
-Require Import Coqlib.
+Require Import Cryptol.Coqlib.
 
 
 (* Works as long as you pass in enough fuel *)

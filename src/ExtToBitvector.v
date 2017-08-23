@@ -1,11 +1,11 @@
 Require Import String.
 Require Import Omega.
 
-Require Import Coqlib.
+Require Import Cryptol.Coqlib.
 
-Require Import AST.
-Require Import Bitvectors.
-Require Import Utils. 
+Require Import Cryptol.AST.
+Require Import Cryptol.Bitvectors.
+Require Import Cryptol.Utils. 
 
 Import ListNotations.
 

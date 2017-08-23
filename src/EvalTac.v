@@ -1,12 +1,12 @@
-Require Import Semantics.
-Require Import BuiltinSyntax.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.BuiltinSyntax.
 
-Require Import AST.
+Require Import Cryptol.AST.
 
-Require Import Coqlib.
-Require Import Builtins.
-Require Import Eager.
-Require Import GlobalExtends.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.Eager.
+Require Import Cryptol.GlobalExtends.
 
 Ltac break_if := match goal with
                  | [ |- context[if ?X then _ else _] ] => destruct X eqn:?

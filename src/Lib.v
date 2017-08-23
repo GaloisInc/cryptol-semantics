@@ -1,7 +1,7 @@
 Require Import List.
 Import ListNotations.
 
-Require Import Coqlib.
+Require Import Cryptol.Coqlib.
 
 
 Lemma Forall2_modus_ponens :

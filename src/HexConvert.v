@@ -1,14 +1,14 @@
 Require Import String.
 
-Require Import Coqlib.
+Require Import Cryptol.Coqlib.
 
-Require Import Utils.
+Require Import Cryptol.Utils.
 Import HaskellListNotations.
 Open Scope string.
 
-Require Import AST.
-Require Import Bitvectors.
-Require Import ExtToBitvector.
+Require Import Cryptol.AST.
+Require Import Cryptol.Bitvectors.
+Require Import Cryptol.ExtToBitvector.
 
 (* Convert a hex string to a list of bits *)
 Definition hex_digits := match collect [get 0 "0",get 0 "1",get 0 "2",get 0 "3",

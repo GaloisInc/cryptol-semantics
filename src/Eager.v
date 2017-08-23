@@ -4,19 +4,19 @@ Import ListNotations.
 Require Import Coq.Arith.PeanoNat.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
+Require Import Cryptol.Coqlib.
 
 (*Require Import Integers.*)
-Require Import Bitvectors.
-Require Import AST.
-Require Import Builtins.
-(*Require Import Values.*)
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Semantics.
-Require Import GetEachN.
+Require Import Cryptol.Bitvectors.
+Require Import Cryptol.AST.
+Require Import Cryptol.Builtins.
+(*Require Import Cryptol.Values.*)
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.GetEachN.
 
-Require Import StrictToBitvector.
+Require Import Cryptol.StrictToBitvector.
 
 Open Scope list_scope.
 

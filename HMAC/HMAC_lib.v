@@ -3,29 +3,29 @@ Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Values.        
-Require Import Bitstream.
-Require Import Lib.
-Require Import GetEachN.
-Require Import EagerEvalInd.
-Require Import GlobalExtends.
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Values.        
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.Lib.
+Require Import Cryptol.GetEachN.
+Require Import Cryptol.EagerEvalInd.
+Require Import Cryptol.GlobalExtends.
 
-Require Import EvalTac.
-Require Import Eager.
+Require Import Cryptol.EvalTac.
+Require Import Cryptol.Eager.
 
 Import HaskellListNotations.
 Open Scope string.
 
-Require Import HMAC.
+Require Import HMAC.HMAC.
 
 
 

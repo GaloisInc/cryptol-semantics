@@ -1,9 +1,9 @@
-Require Import AST.
+Require Import Cryptol.AST.
 Require Import List.
-Require Import Semantics.
+Require Import Cryptol.Semantics.
 Require Import String.
-Require Import Builtins.
-Require Import Eager.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.Eager.
 
 
 Definition eager_eval_type_ind_total
