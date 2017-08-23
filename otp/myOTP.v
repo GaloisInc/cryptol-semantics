@@ -1,7 +1,7 @@
 Set Implicit Arguments.
 
 (* Import the core FCF definitions and theory. *)
-Require Import FCF.
+Require Import otp.FCF.
 (* We will use a construction that produces a random group element.  
   This functionality is provided in the RndGrpElem module. *)
 (* Require Import RndGrpElem.
@@ -18,18 +18,34 @@ Definition OTPKeyGen (SP : nat) : Comp (Bvector SP) :=
   k <-$ {0,1}^SP;
   ret k.
 
+(* Standard textbook OTP,
+ but utilizes random selection from a distribution*)
 Definition OTPEnc (m : Bvector SP) : Comp (Bvector SP) := 
   k <-$ {0,1}^SP; 
   ret (BVxor SP k m).
 
+(* Matches our OTP definition 
+ as seen in OTP.v and OTP_equiv.v *)
+Definition OTP_encrypt (key msg : Bvector SP) : Bvector SP :=
+  BVxor SP key msg.  
+                                                      
 (* bind : a -> (b -> Comp b) -> Comp a *) 
  
+Definition rand_indist (x : Comp (Bvector SP)) {n : Bvector SP} :=
+  D x n == D ({0,1}^SP) n. 
 
+(*
+(* Want to be able to rewrite like this somehow *)
+Lemma rand_equiv : forall k x n,
+    @rand_indist k n ->
+    k = ret (x <-$ {0,1}^SP). 
+*)
 
-Theorem OTP_rand : forall (m n : Bvector SP), 
-   D (OTPEnc m) n == D ({0,1}^SP) n.
+Theorem OTPEnc_indist : forall (m n : Bvector SP), 
+   @rand_indist (OTPEnc m) n.   
 Proof. 
   intros. 
+  unfold rand_indist.
   unfold OTPEnc.
   symmetry.    
   rewrite <- evalDist_right_ident. 
@@ -42,7 +58,27 @@ Proof.
 Qed.         
 
 
-       
+Theorem OTP_indist : forall (key msg n : Bvector SP),
+    @rand_indist (ret key) n -> 
+    @rand_indist (ret (OTP_encrypt key msg)) n. 
+Proof. 
+  intros. 
+  inversion H.
+  unfold OTP_encrypt.
+  unfold rand_indist. 
+
+  symmetry.    
+  rewrite <- evalDist_right_ident. 
+  Admitted. (* 
+  eapply (evalDist_iso (BVxor SP key) (BVxor SP key)); try intuition. 
+
+   - rewrite <- BVxor_assoc. rewrite BVxor_same_id. rewrite BVxor_id_l. reflexivity. 
+   - rewrite <- BVxor_assoc. rewrite BVxor_same_id. rewrite BVxor_id_l. reflexivity. 
+   - simpl. apply in_getAllBvectors. 
+   - simpl. reflexivity.
+   - rewrite BVxor_comm. reflexivity. 
+Qed.         
+      *) 
 
 (* 
 evalDist_iso:
