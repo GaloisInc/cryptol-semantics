@@ -30,6 +30,54 @@ Require Import Program.
 Definition fromTo_ev (lo hi width : Z) : ext_val :=
   eseq (map eseq (map from_bitv (map (@repr (Z.to_nat width)) (zrange lo (hi + 1))))).
 
+
+Lemma strict_list_to_sval_map :
+  forall l,
+    map strict_list (map (map to_sval) l) = map to_sval (map eseq l).
+Proof.
+  induction l; intros.
+  simpl. auto.
+  simpl. f_equal. auto.
+Qed.
+
+Lemma same_bitv :
+  forall l {w} (bv : BitV w),
+    to_bitv l = Some bv ->
+    StrictToBitvector.to_bitv (map to_sval l) = Some bv.
+Proof.
+  induction l; intros.
+  unfold to_bitv in *.
+  destruct w. simpl in *. auto. congruence.
+  destruct w; simpl in H; try congruence.
+
+  destruct a; congruence.
+  
+  simpl. destruct a; simpl in *; try congruence.
+  destruct (to_bitv l) eqn:?; try congruence.
+  erewrite IHl; eauto.
+Qed.
+
+Lemma same_from_bitv :
+  forall {w} (l : BitV w),
+    StrictToBitvector.from_bitv l = map to_sval (from_bitv l).
+Proof.
+  intros. remember (from_bitv l) as x.
+  symmetry in Heqx.
+  rewrite <- tobit_frombit_equiv in Heqx.
+  rewrite <- StrictToBitvector.tobit_frombit_equiv.
+  eapply same_bitv; eauto.
+Qed.
+
+Lemma strict_from_bitv :
+  forall w (l : list (BitV w)),
+    map StrictToBitvector.from_bitv l = map (map to_sval) (map from_bitv l).
+Proof.
+  induction l; intros;
+    simpl; auto.
+  f_equal; eauto.
+  eapply same_from_bitv; eauto.
+Qed.
+      
 Lemma fromTo_eval :
   forall id GE TE SE,
     GE (id,"fromTo") = Some (mb 3 0 fromTo) ->
@@ -46,9 +94,13 @@ Proof.
   e. e. e. e.
   
   simpl.
-  (* TODO: model fromTo *)
-  
-Admitted.
+  subst res. unfold fromTo_sem.
+  unfold fromTo_ev.
+  f_equal.
+  simpl. f_equal.
+  rewrite <- strict_list_to_sval_map. f_equal.
+  rewrite strict_from_bitv; eauto.
+Qed.
 
 Fixpoint zero_ev (t : Tval) : ext_val :=
   match t with
@@ -88,14 +140,6 @@ Definition split_ev (n : nat) (l : ext_val) : ext_val :=
   | _ => eseq nil
   end.
 
-Lemma strict_list_to_sval_map :
-  forall l,
-    map strict_list (map (map to_sval) l) = map to_sval (map eseq l).
-Proof.
-  induction l; intros.
-  simpl. auto.
-  simpl. f_equal. auto.
-Qed.
 
 Lemma split_eval :
   forall id GE TE SE,
@@ -364,22 +408,6 @@ Proof.
   e. e. e. simpl. assumption.
 Qed.
 
-Lemma same_bitv :
-  forall l {w} (bv : BitV w),
-    to_bitv l = Some bv ->
-    StrictToBitvector.to_bitv (map to_sval l) = Some bv.
-Proof.
-  induction l; intros.
-  unfold to_bitv in *.
-  destruct w. simpl in *. auto. congruence.
-  destruct w; simpl in H; try congruence.
-
-  destruct a; congruence.
-  
-  simpl. destruct a; simpl in *; try congruence.
-  destruct (to_bitv l) eqn:?; try congruence.
-  erewrite IHl; eauto.
-Qed.
 
 Lemma shiftr_eval :
   forall id GE TE SE,

@@ -15,6 +15,7 @@ Require Import Cryptol.BuiltinSem.
 Require Import Cryptol.BuiltinSyntax.
 Require Import Cryptol.Semantics.
 Require Import Cryptol.GetEachN.
+Require Import Cryptol.Lib.
 
 Require Import Cryptol.StrictToBitvector.
 
@@ -329,6 +330,9 @@ Definition rotr_sem (x y : strictval) : option strictval :=
   | _,_ => None
   end.
 
+Definition fromTo_sem (lo hi width : Z) : option strictval :=
+  Some (strict_list (map strict_list (map from_bitv (map (@repr (Z.to_nat width)) (zrange lo (hi + 1)))))).
+
 Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval) : option strictval :=
   match bi,t,l with
   | Xor,t::nil,(a :: b :: nil) => xor_sem a b
@@ -348,9 +352,9 @@ Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval
   | And,(t :: nil),(x :: y :: nil) => and_sem x y
   | Or,(t :: nil),(x :: y :: nil) => or_sem x y
   | Complement,(t :: nil),(x :: nil) => compl_sem x
+  | fromTo,(tvnum lo :: tvnum hi :: tvnum width :: nil),nil => fromTo_sem lo hi width
   | _,_,_ => None
   end.
-
 
 Lemma splitAt_zero :
   forall x,
