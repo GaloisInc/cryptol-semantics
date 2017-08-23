@@ -26,6 +26,7 @@ Require Import SHA256.Helpers.
 
 Definition schedule_ev (e : ext_val) : ext_val := eseq nil.
 
+(* This one is fun, since it has a recursive list comprehension in it *)
 Lemma SHA256MessageSchedule_eval :
   forall GE TE SE,
     wf_env ge GE TE SE ->
@@ -43,17 +44,24 @@ Proof.
   gen_global (34,"#").
   gen_global (40,"@").
   gen_global (49,"fromTo").
-  inversion H1. subst v t.
+(*  inversion H1. subst v t.
+  remember (zrange 16 64) as rng.
+  remember rng as rng2. rewrite Heqrng2 in Heqrng.
+  rewrite Heqrng in Heqrng2.
+  assert (rng = rng2) by congruence.
+  repeat (rewrite zrange_eq in Heqrng;
+          match goal with
+          | [ H : context[Z_lt_dec ?X ?Y] |- _ ] => destruct (Z_lt_dec X Y) eqn:?; try omega; [idtac]
+          end).
+  clear -GE TE SE H a res l rng Heqrng H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H12 H10 H11 Heqrng2.
+  simpl in Heqrng.
   e. ag.
   all: clear H3.
-  e. e. g.
-  use append_eval.
-  lv.
-  e.
-  ec. ec.
+  e. e. g.*)
 
 
 
-
+  
+  
 Admitted.
 

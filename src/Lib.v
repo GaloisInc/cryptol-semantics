@@ -21,6 +21,24 @@ Next Obligation.
 eapply Z2Nat.inj_lt; omega.
 Defined.
 
+
+Lemma zrange_eq :
+  forall lo hi,
+    zrange lo hi = if Z_lt_dec lo hi then 
+                     lo :: zrange (lo + 1) hi
+                   else nil.
+Proof.
+  intros.
+  unfold zrange at 1.
+  unfold zrange_func.
+  rewrite fix_sub_eq.
+  reflexivity.
+  intros.
+  destruct (Z_lt_dec (projT1 x) (projT2 x)); auto.
+  f_equal. f_equal.
+Qed.
+
+
 Lemma Forall2_modus_ponens :
   forall {A B : Type} (P Q : A -> B -> Prop) (l : list A) (l' : list B),
     Forall2 P l l' ->
