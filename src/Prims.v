@@ -143,32 +143,55 @@ Definition plus_ev (l r : ext_val) : ext_val :=
   | _,_ => eseq nil
   end.
 
+Lemma to_bitv_succeeds :
+  forall l,
+    has_type (eseq l) (tseq (Datatypes.length l) tbit) ->
+    exists (bv : BitV (Datatypes.length l)),
+      to_bitv l = Some bv.
+Proof.
+  induction l; intros.
+  simpl. eauto.
+  simpl. edestruct IHl.
+  inversion H. inversion H2.
+  econstructor; eauto.
+  inversion H. subst. inversion H3.
+  subst.
+  inversion H4. subst.
+  rewrite H0. eauto.
+Qed.
+
 Lemma plus_eval :
   forall id GE TE SE,
     GE (id,"+") = Some (mb 1 2 Plus) ->
     SE (id,"+") = None ->
-    forall ta tv a1 a2 v1 v2 bv1 bv2,
+    forall ta tv a1 a2 v1 v2 len,
       eager_eval_type GE TE ta tv ->
-      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
-      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
-      @to_bitv (length v1) v1 = Some bv1 ->
-      @to_bitv (length v1) v2 = Some bv2 ->
+      eager_eval_expr GE TE SE a1 (to_sval v1) ->
+      eager_eval_expr GE TE SE a2 (to_sval v2) ->
+      has_type v1 (tseq len tbit) ->
+      has_type v2 (tseq len tbit) ->
       forall res,
-        res = to_sval (eseq (from_bitv (add bv1 bv2))) ->
+        res = to_sval (plus_ev v1 v2) ->
         eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"+")) (ETyp ta)) a1) a2) res.
 Proof.
   intros.
+
+  inversion H4. inversion H5. subst.
   e. e. e. ag.
   e. e. e. e; try lv.
   simpl. unfold plus_sem.
   repeat rewrite list_of_strictval_of_strictlist.
-  repeat rewrite map_length.
-  repeat erewrite same_bitv by eassumption.
-  f_equal. subst.
-  simpl.
-  erewrite same_from_bitv; eauto.
-Qed.
+  destruct (to_bitv l) eqn:?.
+  Focus 2.
+  edestruct (to_bitv_succeeds l); try congruence.
+  destruct (to_bitv l0) eqn:?.
+  Focus 2.
+  edestruct (to_bitv_succeeds l0); try congruence.
+  exfalso.
+  rewrite <- H11 in Heqo0. congruence.
 
+  (* dependent types are terrible *)
+Admitted.
 
 Definition minus_ev (l r : ext_val) : ext_val :=
   match l,r with
