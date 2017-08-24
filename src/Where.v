@@ -100,20 +100,21 @@ Definition where_test : Expr :=
                                  (ETyp (TCon (TC (TCNum 8)) []))))]]))))])])).
 
 Lemma test_eval :
-  forall GE TE SE n x xv,
+  forall GE TE SE,
     GE (34, "#") = Some (mb 3 2 Append) /\ SE (34,"#") = None ->
     GE (49, "fromTo") = Some (mb 3 0 fromTo) /\ SE (49,"fromTo") = None ->
-    eager_eval_expr GE TE SE x (to_sval xv) ->
+    forall n xv,
     has_type xv (tseq n (tseq 8 tbit)) ->
+    forall x,
+    eager_eval_expr GE TE SE x (to_sval xv) ->
     exists v,
       eager_eval_expr GE TE SE (EApp where_test x) v.
 Proof.
   induction n; intros.
-  inversion H2. subst.
+  inversion H1. subst.
   destruct l; try solve [simpl in *; congruence].
-
   
-  eexists.
+(*  eexists.
   unfold where_test.
   e. e.
   e. g.
@@ -130,7 +131,10 @@ Proof.
   unfold fromTo_ev. unfold to_sval. fold to_sval.
   rewrite list_of_strictval_of_strictlist.
   reflexivity.
-  repeat fold to_sval.
+  repeat fold to_sval.*)
+
+  Focus 2.
+  
   
   
   
