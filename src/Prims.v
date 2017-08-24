@@ -27,9 +27,59 @@ Import ListNotations.
 Require Import Cryptol.Builtins.
 Require Import Program.
 
+Fixpoint eq_ev (l r : ext_val) : ext_val :=
+  let fix list_eq_ev x y :=
+      match x,y with
+      | nil,nil => ebit true
+      | a :: aa, b :: bb =>
+        match eq_ev a b, list_eq_ev aa bb with
+        | ebit true, ebit true => ebit true
+        | _ , _ => ebit false
+        end
+      | _ , _ => ebit false
+      end in
+  let fix list_pair_eq_ev x y :=
+      match x,y with
+      | nil,nil => ebit true
+      | (_,a) :: aa, (_,b) :: bb =>
+        match eq_ev a b, list_pair_eq_ev aa bb with
+        | ebit true, ebit true => ebit true
+        | _ , _ => ebit false
+        end
+      | _ , _ => ebit false
+      end in
+  match l,r with
+  | ebit b, ebit b' => ebit (eqb b b')
+  | eseq l', eseq r' => list_eq_ev l' r'
+  | etup l', etup r' => list_eq_ev l' r'
+  | erec sl', erec sr' => list_pair_eq_ev sl' sr'
+  | _,_ => ebit false
+  end.
 
+(* TODO: update eq_sem so this is true *)
+Lemma eq_sem_equiv :
+  forall ev1 ev2,
+    eq_sem (to_sval ev1) (to_sval ev2) = Some (to_sval (eq_ev ev1 ev2)).
+Proof.
+Admitted.
 
-  
+Lemma eq_eval :
+  forall id GE TE SE,
+    GE (id,"==") = Some (mb 1 2 Eq) ->
+    SE (id,"==") = None ->
+    forall ta tv a1 a2 v1 v2,
+      eager_eval_type GE TE ta tv ->
+      eager_eval_expr GE TE SE a1 (to_sval v1) ->
+      eager_eval_expr GE TE SE a2 (to_sval v2) ->
+      forall res,
+        res = to_sval (eq_ev v1 v2) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"==")) (ETyp ta)) a1) a2) res.
+Proof.
+  intros. e. e. e. ag.
+  e. e. e. e; try lv.
+  simpl. subst res.
+  eapply eq_sem_equiv; eauto.
+Qed.
 
 Definition fromTo_ev (lo hi width : Z) : ext_val :=
   eseq (map eseq (map from_bitv (map (@repr (Z.to_nat width)) (zrange lo (hi + 1))))).
@@ -81,7 +131,85 @@ Proof.
   f_equal; eauto.
   eapply same_from_bitv; eauto.
 Qed.
-      
+
+Definition plus_ev (l r : ext_val) : ext_val :=
+  match l,r with
+  | eseq l', eseq r' =>
+    match @to_bitv (length l') l', @to_bitv (length l') r' with
+    | Some bv, Some bv' =>
+      eseq (from_bitv (add bv bv'))
+    | _,_ => eseq nil
+    end
+  | _,_ => eseq nil
+  end.
+
+Lemma plus_eval :
+  forall id GE TE SE,
+    GE (id,"+") = Some (mb 1 2 Plus) ->
+    SE (id,"+") = None ->
+    forall ta tv a1 a2 v1 v2 bv1 bv2,
+      eager_eval_type GE TE ta tv ->
+      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
+      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
+      @to_bitv (length v1) v1 = Some bv1 ->
+      @to_bitv (length v1) v2 = Some bv2 ->
+      forall res,
+        res = to_sval (eseq (from_bitv (add bv1 bv2))) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"+")) (ETyp ta)) a1) a2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e; try lv.
+  simpl. unfold plus_sem.
+  repeat rewrite list_of_strictval_of_strictlist.
+  repeat rewrite map_length.
+  repeat erewrite same_bitv by eassumption.
+  f_equal. subst.
+  simpl.
+  erewrite same_from_bitv; eauto.
+Qed.
+
+
+Definition minus_ev (l r : ext_val) : ext_val :=
+  match l,r with
+  | eseq l', eseq r' =>
+    match @to_bitv (length l') l', @to_bitv (length l') r' with
+    | Some bv, Some bv' =>
+      eseq (from_bitv (sub bv bv'))
+    | _,_ => eseq nil
+    end
+  | _,_ => eseq nil
+  end.
+
+Lemma minus_eval :
+  forall id GE TE SE,
+    GE (id,"-") = Some (mb 1 2 Minus) ->
+    SE (id,"-") = None ->
+    forall ta tv a1 a2 v1 v2 bv1 bv2,
+      eager_eval_type GE TE ta tv ->
+      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
+      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
+      @to_bitv (length v1) v1 = Some bv1 ->
+      @to_bitv (length v1) v2 = Some bv2 ->
+      forall res,
+        res = to_sval (eseq (from_bitv (sub bv1 bv2))) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"-")) (ETyp ta)) a1) a2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e; try lv.
+  simpl.
+
+  (* Proof should work once minus_sem is implemented *)
+(*  unfold minus_sem.
+  repeat rewrite list_of_strictval_of_strictlist.
+  repeat rewrite map_length.
+  repeat erewrite same_bitv by eassumption.
+  f_equal. subst.
+  simpl.
+  erewrite same_from_bitv; eauto.*)
+Admitted.
+
 Lemma fromTo_eval :
   forall id GE TE SE,
     GE (id,"fromTo") = Some (mb 3 0 fromTo) ->

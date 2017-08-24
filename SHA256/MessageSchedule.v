@@ -24,19 +24,21 @@ Require Import Cryptol.Prims.
 Require Import SHA256.SHA256.
 Require Import SHA256.Helpers.
 
-Definition schedule_ev (e : ext_val) : ext_val := eseq nil.
+Definition schedule_ev (fuel : nat) (e : ext_val) : ext_val := eseq nil.
+
+
 
 (* This one is fun, since it has a recursive list comprehension in it *)
 Lemma SHA256MessageSchedule_eval :
-  forall GE TE SE,
+  forall n GE TE SE,
     wf_env ge GE TE SE ->
     forall a v res,
       eager_eval_expr GE TE SE a (to_sval v) ->
       has_type v (tseq 16 (tseq 32 tbit)) ->
-      res = to_sval (schedule_ev v) ->
+      res = to_sval (schedule_ev n v) ->
       eager_eval_expr GE TE SE (EApp (EVar SHA256MessageSchedule) a) res.
 Proof.
-  intros.
+  induction n; intros.
   gen_global SHA256MessageSchedule.
   gen_global (0,"demote").
   gen_global (1,"+").

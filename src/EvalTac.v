@@ -119,12 +119,12 @@ Ltac e' := e; match goal with
               | [ |- _ ] => idtac
               end.
 
-  Ltac use lm := eapply lm; try et;
-                 match goal with
-                 | [ |- _ _ = Some _ ] => intuition; eassumption
-                 | [ |- _ _ = None ] => intuition; eassumption
-                 | [ |- _ ] => idtac
-                 end.
+Ltac use lm := eapply lm; try et;
+               match goal with
+               | [ |- _ _ = Some _ ] => intuition; eassumption
+               | [ |- _ _ = None ] => intuition; eassumption
+               | [ |- _ ] => idtac
+               end.
 
 
 Ltac break_exists :=
