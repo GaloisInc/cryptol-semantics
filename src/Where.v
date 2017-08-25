@@ -1,3 +1,5 @@
+(* This file serves no purpose *)
+(* Just a playground for a thing to try out *)
 Require Import Cryptol.Coqlib.
 Require Import Cryptol.Bitvectors.
 
@@ -91,8 +93,6 @@ Fixpoint rec_model (fuel : nat) (e : ext_val) : ext_val :=
     end
   end.
 
-Definition extnum (val width : Z) : list ext_val :=
-  ExtToBitvector.from_bitv (@repr (Z.to_nat width) val).
 
 Lemma tobit_frombit_id :
   forall {w} (bv : BitV w),

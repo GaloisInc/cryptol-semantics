@@ -262,7 +262,7 @@ with DeclGroup :=
      | NonRecursive (d : Declaration)
 with Selector :=
      | TupleSel (n : nat)
-     | ListSel (e : Expr)
+     | ListSel (n : nat)
      | RecordSel (s : string)
 with val :=
      | bit (b : bool) (* Can we ever get this now? *)

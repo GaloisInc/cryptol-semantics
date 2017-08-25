@@ -332,13 +332,13 @@ Inductive eval_expr (ge : genv) : tenv -> env -> Expr -> val -> Prop :=
     forall TE E exp decls v, 
       eval_expr (bind_decl_groups decls ge) TE (erase_decl_groups decls E) exp v ->
       eval_expr ge TE E (EWhere exp decls) v
-| eval_list_sel :
+(*| eval_list_sel :
     forall TE E idx vidx {w : nat} (i : BitV w) e v vs,
       eval_expr ge TE E idx vidx ->
       force_list ge TE E vidx vs ->
       to_bitv vs = Some i ->
       select_list ge TE E (Z.to_nat (unsigned i)) e v ->
-      eval_expr ge TE E (ESel e (ListSel idx)) v
+      eval_expr ge TE E (ESel e (ListSel idx)) v*)
 | eval_tapp : 
     forall E e id e' E' v t te TE' TE,
       eval_expr ge TE E e (tclose id e' TE' E') ->

@@ -27,6 +27,40 @@ Import ListNotations.
 Require Import Cryptol.Builtins.
 Require Import Program.
 
+Fixpoint lt_ev (l r : ext_val) : ext_val :=
+  match l, r with
+  | eseq l, eseq r =>
+    match to_bitv l, to_bitv r with
+    | Some bv, Some bv' =>
+      if zlt (@unsigned (length l) bv) (@unsigned (length r) bv') then ebit true else ebit false
+    | _,_ => eseq nil
+    end
+  | _,_ => eseq nil
+  end.
+
+Lemma lt_eval :
+  forall id GE TE SE,
+    GE (id,"<") = Some (mb 1 2 Lt) ->
+    SE (id,"<") = None ->
+    forall ta tv a1 a2 v1 v2,
+      eager_eval_type GE TE ta tv ->
+      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
+      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
+      has_type (eseq v1) (tseq (length v1) tbit) ->
+      has_type (eseq v2) (tseq (length v2) tbit) ->
+      forall res,
+        res = to_sval (lt_ev (eseq v1) (eseq v2)) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"<")) (ETyp ta)) a1) a2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e; try lv; try congruence.
+  simpl. subst res.
+
+  (* TODO: rewrite lt_sem to not suck *)
+Admitted.
+  
+
 Fixpoint eq_ev (l r : ext_val) : ext_val :=
   let fix list_eq_ev x y :=
       match x,y with
@@ -79,6 +113,7 @@ Proof.
   e. e. e. e; try lv.
   simpl. subst res.
   eapply eq_sem_equiv; eauto.
+  congruence.
 Qed.
 
 Definition fromTo_ev (lo hi width : Z) : ext_val :=
@@ -255,6 +290,7 @@ Proof.
   simpl. f_equal.
   rewrite <- strict_list_to_sval_map. f_equal.
   rewrite strict_from_bitv; eauto.
+  congruence.
 Qed.
 
 Fixpoint zero_ev (t : Tval) : ext_val :=
@@ -286,6 +322,7 @@ Proof.
   subst res. simpl. f_equal. f_equal.
   rewrite map_repeat.
   reflexivity.
+  congruence.
 Qed.
 
 Definition split_ev (n : nat) (l : ext_val) : ext_val :=
@@ -319,6 +356,7 @@ Proof.
   f_equal. f_equal.
   rewrite get_each_n_map_commutes.
   eapply strict_list_to_sval_map.
+  congruence.
 Qed.
 
 Definition splitAt_model (n : nat) (l : list ext_val) : list ext_val :=
@@ -389,6 +427,7 @@ Proof.
   e. e. e. e. e. lv.
   simpl.
   eapply splitAt_sem_res; eauto.
+  congruence.
 Qed.
 
 
@@ -507,6 +546,7 @@ Proof.
 
   rewrite append_strict_list.
   simpl. rewrite map_app. reflexivity.
+  congruence.
 Qed.
                                                                 
 (* bitwise operations *)
@@ -561,6 +601,7 @@ Proof.
   intros.
   e. e. ag.
   e. e. e. simpl. assumption.
+  congruence.
 Qed.
 
 
@@ -610,6 +651,7 @@ Proof.
   erewrite map_length in *.
 
   omega.
+  congruence.
 Qed.
 
 Lemma rotr_eval :
@@ -648,6 +690,7 @@ Proof.
   
   repeat erewrite map_length in *.
   rewrite firstn_map. reflexivity.
+  congruence.
 Qed.
 
 Lemma xor_sem_ev :
@@ -692,6 +735,7 @@ Proof.
   subst res.
   simpl.
   eapply xor_sem_ev; eauto.
+  congruence.
 Qed.
 
 Lemma and_sem_ev :
@@ -738,6 +782,7 @@ Proof.
   inversion H5. inversion H6.
   subst.
   eapply and_sem_ev; eauto.
+  congruence.
   congruence.
 Qed.
 
@@ -786,6 +831,7 @@ Proof.
   subst.
   eapply or_sem_ev; eauto.
   congruence.
+  congruence.
 Qed.
 
 Lemma compl_sem_ev :
@@ -818,6 +864,7 @@ Proof.
   simpl.
   subst res.
   eapply compl_sem_ev; eauto.
+  congruence.
 Qed.
   
 Lemma has_type_not :

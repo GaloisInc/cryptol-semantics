@@ -94,7 +94,7 @@ Proof.
   instantiate (1 := (ebit true) :: nil).
   simpl. e.
   ag.
-  e. reflexivity. reflexivity.
+  e. reflexivity. congruence. reflexivity.
 
   use append_eval; try lv.
   use zero_eval; try lv.

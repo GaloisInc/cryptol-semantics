@@ -273,15 +273,16 @@ Proof.
     eapply Forall2_Forall2_eq; eauto.
     simpl. eapply H1.
   * inversion H3. subst.
+    simpl in H2. congruence.
     assert (targs = targs0) by (eapply Forall2_eager_eval_type_determ; eauto).
     subst targs0.
     assert (args = args0). {
-      clear H11. clear H2.
+      clear H10. clear H2.
       generalize dependent args0.
       induction H1; intros.
-      inversion H9. auto.
+      inversion H7. auto.
       inversion H0. subst.
-      inversion H9. subst.
+      inversion H7. subst.
       f_equal; eauto.
     }
     congruence.
@@ -305,8 +306,7 @@ Proof.
     f_equal. f_equal.
     assert (vs = vs0) by eauto. congruence.
     eauto.
-Qed.    
-
+Qed.
 
 
 Lemma eager_eval_type_swap_ge :
@@ -359,7 +359,8 @@ Proof.
     induction H1; intros. econstructor.
     inversion H0. subst.
     econstructor; eauto.
-  * econstructor; eauto.
+  * 
+    econstructor; eauto.
     clear H2.
     induction H; intros; econstructor; eauto.
     eapply eager_eval_type_swap_ge; eauto.
@@ -368,7 +369,7 @@ Proof.
     econstructor.
     inversion H1. subst.
     econstructor; eauto.
-    
+    intro. subst bi. simpl in *. congruence.
   * econstructor; eauto.
   * intros. 
     eapply IHeager_eval_expr in H0; try eassumption.
