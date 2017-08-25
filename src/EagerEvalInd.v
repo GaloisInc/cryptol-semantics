@@ -321,9 +321,8 @@ Definition eager_eval_expr_ind_total
   (E : senv)
   (expr : Expr)
   (v : strictval)
-  (eval : eager_eval_expr ge TE E expr v) : P ge TE E expr v .
-Admitted.
-(*  let fix go ge TE E exp v eval : P ge TE E exp v :=
+  (eval : eager_eval_expr ge TE E expr v) : P ge TE E expr v  :=
+  let fix go ge TE E exp v eval : P ge TE E exp v :=
       let fix go_index ge TE E lm llidv EIM :=
           match EIM in (eager_index_match _ TE0 E0 LM0 LLIDV0) return (Pm ge TE0 E0 LM0 LLIDV0) with
           | eager_idx_last TE E e vs lv id eval_e lst =>
@@ -390,11 +389,11 @@ Admitted.
           HComp ge TE E llm llidv vs v e epm (go_par ge TE E llm llidv epm) F2
                 (go_list_senv ge TE e (bind_senvs E llidv) vs F2) 
                 eqv
-        | eager_eval_builtin TE E l targs args bi v F2types F2not_types bi_sem bi_neq =>
+        | eager_eval_builtin TE E l targs args bi v F2types F2not_types bi_sem =>
           HBuiltin ge TE E l targs args bi v F2types F2not_types (go_list ge TE E (not_types l) args F2not_types) bi_sem
         end in
         go ge TE E expr v eval.
-*)
+
 Definition eager_eval_expr_ind_useful
   (P : genv -> tenv -> senv -> Expr -> strictval -> Prop)
   (Ppm : genv -> tenv -> senv -> list (list Match) -> list (list (ident * strictval)) -> Prop)

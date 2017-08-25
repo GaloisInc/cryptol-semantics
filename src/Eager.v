@@ -333,6 +333,22 @@ Definition rotr_sem (x y : strictval) : option strictval :=
 Definition fromTo_sem (lo hi width : Z) : option strictval :=
   Some (strict_list (map strict_list (map from_bitv (map (@repr (Z.to_nat width)) (zrange lo (hi + 1)))))).
 
+
+Definition at_sem (lst idx : strictval) : option strictval :=
+  match list_of_strictval lst, list_of_strictval idx with
+  | Some l, Some idxl =>
+    match to_bitv idxl with
+    | Some idxbv =>
+      match nth_error l (Z.to_nat (@unsigned (length idxl) idxbv)) with
+      | Some sv => Some sv
+      | _ => None
+      end
+    | _ => None
+    end
+  | _,_ => None
+  end.
+    
+
 Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval) : option strictval :=
   match bi,t,l with
   | Xor,t::nil,(a :: b :: nil) => xor_sem a b
@@ -353,6 +369,7 @@ Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval
   | Or,(t :: nil),(x :: y :: nil) => or_sem x y
   | Compl,(t :: nil),(x :: nil) => compl_sem x
   | fromTo,(tvnum lo :: tvnum hi :: tvnum width :: nil),nil => fromTo_sem lo hi width
+  | At,(t1 :: t2 :: t3 :: nil),(lst :: idx :: nil) => at_sem lst idx
   | _,_,_ => None
   end.
 
@@ -501,28 +518,11 @@ Inductive eager_eval_expr (ge : genv) : tenv -> senv -> Expr -> strictval -> Pro
       Forall2 (fun senv => eager_eval_expr ge TE senv e) (bind_senvs E llidv) vs ->
       v = strict_list vs ->
       eager_eval_expr ge TE E (EComp e llm) v
-| eager_eval_at :
-    forall t1 t2 t3 ta1 ta2 ta3 lst lv idxl idx idxv TE E idxbv n v llv,
-      eager_eval_type ge TE t1 ta1 ->
-      eager_eval_type ge TE t2 ta2 ->
-      eager_eval_type ge TE t3 ta3 ->
-      eager_eval_expr ge TE E lst lv ->
-      eager_eval_expr ge TE E idx idxv ->
-      list_of_strictval idxv = Some idxl ->
-      @to_bitv (length idxl) idxl = Some idxbv ->
-      n = Z.to_nat (@unsigned (length idxl) idxbv) ->
-      list_of_strictval lv = Some llv ->
-      nth_error llv n = Some v ->
-      eager_eval_expr ge TE E (EBuiltin At ((ETyp t1) :: (ETyp t2) :: (ETyp t3) :: lst :: idx :: nil)) v
 | eager_eval_builtin :
     forall TE E l targs args bi v,
       Forall2 (eager_eval_type ge TE) (get_types l) targs ->
       Forall2 (eager_eval_expr ge TE E) (not_types l) args ->
       strict_builtin_sem bi targs args = Some v ->
-      bi <> At -> (* list selection needs special handling *)
-      (* TODO: maybe put all list selection in separate space *)
-      (* this is for reasoning purposes, to get fold-like list comprehensions *)
-      (* to be easier to reason about *)
       eager_eval_expr ge TE E (EBuiltin bi l) v
 with eager_par_match (ge : genv) : tenv -> senv -> list (list Match) -> list (list (ident * strictval)) -> Prop :=
      | eager_par_one :
