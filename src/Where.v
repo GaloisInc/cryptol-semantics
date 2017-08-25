@@ -163,8 +163,8 @@ Proof.
     et.
     use demote_eval.
     simpl.
-
-    instantiate (1 := (extnum 1 8)).
+Admitted.
+(*    instantiate (1 := (extnum 1 8)).
     reflexivity.
 
     eapply IHn.
@@ -203,7 +203,7 @@ Proof.
     admit.
 
     f_equal.
-    unfold rec_model.
+    unfold rec_model.*)
 
     (* It all works, modulo bit widths being terrible *)
     (* dependent types are kinda the worst *)
@@ -211,7 +211,6 @@ Proof.
     (* TODO: rewrite semantics of add/sub/mul/etc to not use BitV *)
     (* BitV makes reasoning about these programs too complicated *)
     (* It would be much easier with simple types and options *)
-Admitted.
 
 
 Lemma eval_rec_id :
@@ -274,7 +273,7 @@ Proof.
     use demote_eval.
     simpl.
 
-    instantiate (1 := (extnum 1 8)).
+(*    instantiate (1 := (extnum 1 8)).
     reflexivity.
 
     e. g. e.
@@ -289,13 +288,10 @@ Proof.
     rewrite Hlen. reflexivity.
     reflexivity.
     
-    
+  *)  
 
-    
+Admitted.    
   
-Qed.
-    
-
 
 
 
