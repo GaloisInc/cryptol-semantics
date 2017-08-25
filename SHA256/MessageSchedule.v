@@ -182,13 +182,32 @@ Fixpoint W_ev (fuel : nat) (M : ext_val) {struct fuel} : ext_val :=
     | _ => base_case M fuel
   end.
 
+Fixpoint ext_to_nat (l : list ext_val) : nat :=
+  match ExtToBitvector.to_bitv l with
+  | Some bv => Z.to_nat (@unsigned (Datatypes.length l) bv)
+  | _ => O
+  end.
 
-(*
+(* we can evaluate W @ n to an answer modeled by W_ev *)
 Lemma W_eval :
   forall n wid GE TE SE,
+    wf_env ge GE TE SE ->
     GE (wid,"W") = Some W_expr ->
     SE (wid,"W") = None ->
-*)    
+    forall M idx l,
+      has_type M (tseq 16 (tseq 32 tbit)) ->
+      eager_eval_expr GE TE SE idx (to_sval (eseq l)) ->
+      n = ext_to_nat l ->
+      (n <= 64)%nat ->
+      forall ta1 ta2 ta3 tv1 tv2 tv3,
+        eager_eval_type GE TE ta1 tv1 ->
+        eager_eval_type GE TE ta2 tv2 ->
+        eager_eval_type GE TE ta3 tv3 ->
+        forall res,
+        res = to_sval (W_ev n M) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (40,"@")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) (EVar (wid,"W"))) idx) res.
+Proof.
+Admitted.
 
 
 
