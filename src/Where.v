@@ -94,17 +94,7 @@ Fixpoint rec_model (fuel : nat) (e : ext_val) : ext_val :=
   end.
 
 
-Lemma tobit_frombit_id :
-  forall {w} (bv : BitV w),
-    to_bitv (from_bitv bv) = Some bv.
-Proof.
-Admitted.
 
-Lemma from_bitv_length :
-  forall w (bv : BitV w),
-    Datatypes.length (@from_bitv w bv) = w.
-Proof.
-Admitted.
 
 Lemma eval_W_id :
   forall n GE TE SE,

@@ -180,46 +180,56 @@ Definition ext_to_nat (l : list ext_val) : option nat :=
 Definition extnum (val width : Z) : list ext_val :=
   ExtToBitvector.from_bitv (@repr (Z.to_nat width) val).
 
+Lemma tobit_frombit_id :
+  forall {w} (bv : BitV w),
+    ExtToBitvector.to_bitv (ExtToBitvector.from_bitv bv) = Some bv.
+Proof.
+Admitted.
+
+Lemma from_bitv_length :
+  forall w (bv : BitV w),
+    Datatypes.length (@from_bitv w bv) = w.
+Proof.
+Admitted.
+
 (* we can evaluate W @ n to an answer modeled by W_ev *)
 Lemma W_eval_inductive :
-  forall GE TE SE,
+  forall k GE TE SE,
     wf_env ge GE TE SE ->
     GE (355,"W") = Some (W_expr) ->
     SE (355,"W") = None ->
-    forall k n M idx l,
+    forall n M idx l,
       (n < k)%nat ->
       SE (354,"M") = Some (to_sval M) ->
-      SE (357,"n") = Some (to_sval (eseq l)) ->
       has_type M (tseq 16 (tseq 32 tbit)) ->
-      has_type (eseq l) (tseq (length l) tbit) ->
+      has_type (eseq l) (tseq 8 tbit) ->
       eager_eval_expr GE TE SE idx (to_sval (eseq l)) ->
       ext_to_nat l = Some n ->
       forall res,
         res = to_sval (W_elt_ev n M) ->
         eager_eval_expr GE TE SE (EApp (EVar (355,"W")) idx) res.
 Proof.
-  intros GE TE SE Hwf HgeW HseW.
+  (* strong induction *)
+  induction k; intros GE TE SE Hwf HgeW HseW n M idx l Hbound Hm HtypeM HtypeN HevalN Hext_to_nat res Hres; try omega.
   gen_global (13,"<").
+  gen_global (40,"@").
   gen_global (0,"demote").
   gen_global (1,"+").
   gen_global (2,"-").
-  (* strong induction *)
-  induction k; intros n M idx l Hbound Hm Hn HtypeM HtypeN HevalN Hext_to_nat res Hres; try omega.
-  
+  unfold ext_to_nat in *.
+  destruct (ExtToBitvector.to_bitv l) eqn:?; try congruence.
   assert (Hcases : (n < 16 \/ n >= 16)%nat) by omega.
   destruct Hcases.
 
   * (* base case *)
     clear IHk.
-    unfold ext_to_nat in *.
-    destruct (ExtToBitvector.to_bitv l) eqn:?; try congruence.
-    inversion Hext_to_nat.
     e. ag. e. e.
     use lt_eval.
     lv.
     use demote_eval.
     instantiate (1 := extnum 16 8).
     reflexivity.
+    inversion HtypeN. rewrite H6.
     assumption.
     unfold extnum. simpl.
     repeat (econstructor; eauto).
@@ -228,7 +238,8 @@ Proof.
     destruct (zlt (unsigned b) 16); auto.
     assert (Z.to_nat 16 <= Z.to_nat (unsigned b))%nat.
     eapply Z2Nat.inj_le; try omega.
-    rewrite H5 in H4. simpl in H4. unfold Pos.to_nat in *.
+    inversion Hext_to_nat.
+    rewrite H7 in H5. simpl in *. unfold Pos.to_nat in *.
     simpl in *. omega.
     simpl.
     subst res.
@@ -243,7 +254,7 @@ Proof.
     use demote_eval.
     instantiate (1 := extnum 16 8).
     reflexivity.
-    assumption.
+    inversion HtypeN. congruence.
     unfold extnum. simpl.
     repeat (econstructor; eauto).
     unfold lt_ev.
@@ -265,11 +276,48 @@ Proof.
     intuition; eassumption.
     intuition; eassumption.
     et.
+    
 
+    use s1_eval.
+    instantiate (1 := eseq (extnum (Z.of_nat ((n-2)%nat)) 8)).
+    admit. (* lemma *)
+
+    eapply wf_env_extend_SE; try reflexivity; try eassumption.
+
+    all: try reflexivity.
+    
+    eapply IHk.
+    eapply wf_env_extend_SE; try reflexivity; try eassumption.
+    assumption.
+    unfold extend. simpl. assumption.
+    Focus 5.
+    eapply minus_eval.
+    intuition; eassumption.
+    intuition; eassumption.
+    et. lv.
+    use demote_eval.
+    instantiate (1 := extnum 2 8).
+    reflexivity.
+    eassumption.
+    unfold extnum.
+    inversion HtypeN.
+
+    unfold Z.to_nat. unfold Pos.to_nat.
+    simpl. rewrite <- H6.
+    erewrite tobit_frombit_id.
+    reflexivity.
+
+    reflexivity.
+    all: try reflexivity.
+    Focus 2. intuition; eassumption.
+    Focus 2. assumption.
+    Focus 2.
+    admit. (* lemmas *)
     
     
     
-    idtac.
+      
+    idtac.      
 Admitted.
 
 
