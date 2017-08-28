@@ -179,6 +179,8 @@ Definition binop_ev (op : Z -> Z -> Z) (l r : ext_val) : ext_val :=
 
 Definition plus_ev := binop_ev Z.add.
 
+  
+
 Lemma to_bitv_succeeds :
   forall l,
     has_type (eseq l) (tseq (Datatypes.length l) tbit) ->
@@ -231,6 +233,62 @@ Proof.
   rewrite H0. eauto.
 Qed.
 
+Lemma has_type_seq :
+  forall l len t,
+    Forall (fun x => has_type x t) l ->
+    len = length l ->
+    has_type (eseq l) (tseq len t).
+Proof.
+  intros. subst. econstructor; eauto.
+Qed.
+
+Lemma binop_ev_succeeds :
+  forall l l',
+    has_type (eseq l) (tseq (length l) tbit) ->
+    has_type (eseq l') (tseq (length l) tbit) ->
+    forall op,
+    exists l0,
+      binop_ev op (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit).
+Proof.
+  induction l; intros.
+  simpl in *. inversion H0. subst.
+  destruct l'; simpl in *; try congruence.
+  eauto.
+  inversion H. inversion H0.
+  subst.
+  destruct l'; simpl in *; try congruence.
+  inversion H3. inversion H6. subst.
+  unfold binop. simpl.
+  inversion H4. subst. simpl.
+  inversion H10. subst.
+  edestruct to_bitlist_succeeds.
+  Focus 2. erewrite H1.
+  edestruct to_bitlist_succeeds.
+  Focus 2.
+  inversion H5.
+  erewrite H2.
+  eexists; split. reflexivity.
+  simpl.
+  eapply has_type_seq.
+  econstructor. econstructor.
+  admit. (* it's true *)
+  simpl. f_equal.
+  admit. (* also true *)
+Admitted.  
+  
+  
+Lemma plus_ev_succeeds :
+  forall l l',
+    has_type (eseq l) (tseq (length l) tbit) ->
+    has_type (eseq l') (tseq (length l) tbit) ->
+    exists l0,
+      plus_ev (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit).
+Proof.
+  unfold plus_ev.
+  intros.
+  eapply binop_ev_succeeds; eauto.
+Qed.
+
 Lemma plus_eval :
   forall id GE TE SE,
     GE (id,"+") = Some (mb 1 2 Plus) ->
@@ -275,7 +333,19 @@ Proof.
   (* that will let us prove this for lots of things *)
 Admitted.
 
+
 Definition minus_ev := binop_ev Z.sub.
+
+Lemma minus_ev_succeeds :
+  forall l l',
+    has_type (eseq l) (tseq (length l) tbit) ->
+    has_type (eseq l') (tseq (length l) tbit) ->
+    exists l0,
+      minus_ev (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit).
+Proof.
+  intros.
+  eapply binop_ev_succeeds; eauto.
+Qed.
 
 Lemma minus_eval :
   forall id GE TE SE,
