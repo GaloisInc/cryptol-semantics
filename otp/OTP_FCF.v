@@ -23,7 +23,8 @@ Definition OTP {SP : nat} (msg : Bvector SP) : Comp (Bvector SP) :=
 Definition rand_indist {SP : nat} (x : Comp (Bvector SP)) {n : Bvector SP} :=
   D x n == D ({0,1}^SP) n. 
 
-
+(* Assuming the key is drawn uniformly at random (assumption added by OTP), 
+ OTP_encrypt is indistinguishable from random bits *)
 Theorem OTP_indist : forall SP (msg n : Bvector SP),
     @rand_indist SP (OTP msg) n. 
 Proof. 
