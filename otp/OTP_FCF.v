@@ -3,78 +3,60 @@ Set Implicit Arguments.
 (* Import the core FCF definitions and theory. *)
 Require Import otp.FCF.
 
-
-
 Definition D := evalDist. 
-Variable SP : nat. 
-
-Definition OTPKeyGen (SP : nat) : Comp (Bvector SP) := 
-  k <-$ {0,1}^SP;
-  ret k.
 
 (* Standard textbook OTP,
  but utilizes random selection from a distribution*)
-Definition OTPEnc (m : Bvector SP) : Comp (Bvector SP) := 
+Definition OTPEnc {SP : nat} (m : Bvector SP) : Comp (Bvector SP) := 
   k <-$ {0,1}^SP; 
   ret (BVxor SP k m).
 
-(* Matches our OTP definition 
- as seen in OTP.v and OTP_equiv.v *)
-Definition OTP_encrypt (key msg : Bvector SP) : Bvector SP :=
+(* Matches our OTP definition in OTP_verif.v *)
+Definition OTP_encrypt {SP : nat} (key msg : Bvector SP) : Bvector SP :=
   BVxor SP key msg.  
                                                       
-Definition OTP (msg : Bvector SP) : Comp (Bvector SP) :=
+Definition OTP {SP : nat} (msg : Bvector SP) : Comp (Bvector SP) :=
   key <-$ {0,1}^SP;
   ret (OTP_encrypt key msg). 
  
-Definition rand_indist (x : Comp (Bvector SP)) {n : Bvector SP} :=
+(* Indistinguishability security property *)
+Definition rand_indist {SP : nat} (x : Comp (Bvector SP)) {n : Bvector SP} :=
   D x n == D ({0,1}^SP) n. 
 
-(*
-(* Want to be able to rewrite like this somehow *)
-Lemma rand_equiv : forall k x n,
-    @rand_indist k n ->
-    k = ret (x <-$ {0,1}^SP). 
-*)
 
-Theorem OTPEnc_indist : forall (m n : Bvector SP), 
-   @rand_indist (OTPEnc m) n.   
+Theorem OTP_indist : forall SP (msg n : Bvector SP),
+    @rand_indist SP (OTP msg) n. 
 Proof. 
   intros. 
   unfold rand_indist.
-  unfold OTPEnc.
-  symmetry.    
-  rewrite <- evalDist_right_ident. 
-  eapply (evalDist_iso (BVxor SP m) (BVxor SP m)); try intuition. 
-   - rewrite <- BVxor_assoc. rewrite BVxor_same_id. rewrite BVxor_id_l. reflexivity. 
-   - rewrite <- BVxor_assoc. rewrite BVxor_same_id. rewrite BVxor_id_l. reflexivity. 
-   - simpl. apply in_getAllBvectors. 
-   - simpl. reflexivity.
-   - rewrite BVxor_comm. reflexivity. 
-Qed.         
-
-
-Theorem OTP_indist : forall (key msg n : Bvector SP),
-    @rand_indist (ret key) n -> 
-    @rand_indist (ret (OTP_encrypt key msg)) n. 
-Proof. 
-  intros. 
-  inversion H.
+  unfold OTP.
   unfold OTP_encrypt.
-  unfold rand_indist. 
 
   symmetry.    
   rewrite <- evalDist_right_ident. 
-  Admitted. (* 
-  eapply (evalDist_iso (BVxor SP key) (BVxor SP key)); try intuition. 
-
-   - rewrite <- BVxor_assoc. rewrite BVxor_same_id. rewrite BVxor_id_l. reflexivity. 
-   - rewrite <- BVxor_assoc. rewrite BVxor_same_id. rewrite BVxor_id_l. reflexivity. 
-   - simpl. apply in_getAllBvectors. 
-   - simpl. reflexivity.
-   - rewrite BVxor_comm. reflexivity. 
-Qed.         
-      *) 
+  eapply evalDist_iso. 
+  - intuition. 
+  - instantiate (1:= BVxor SP msg). 
+    instantiate (1:= BVxor SP msg). 
+    intros. 
+    rewrite <- BVxor_assoc. 
+    rewrite BVxor_same_id. 
+    rewrite BVxor_id_l. 
+    reflexivity. 
+  - intros. 
+    rewrite <- BVxor_assoc. 
+    rewrite BVxor_same_id. 
+    rewrite BVxor_id_l. 
+    reflexivity. 
+  - intros. 
+    simpl. 
+    apply in_getAllBvectors. 
+  - intros. 
+    simpl. reflexivity. 
+  - intros. 
+    rewrite BVxor_comm. 
+    reflexivity. 
+Qed. 
 
 (* 
 evalDist_iso:
