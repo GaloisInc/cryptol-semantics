@@ -260,7 +260,19 @@ Proof.
     (* TODO: at_eval *)
     admit.
     
-  * (* inductive case *)
+  * assert (Hlen8 : length l = 8%nat) by (inversion HtypeN; congruence).
+    assert (HtypeN' : has_type (eseq l) (tseq (length l) tbit)) by (inversion HtypeN; econstructor; eauto).
+    
+    edestruct (minus_ev_succeeds l (extnum 2 8)); eauto.
+    rewrite Hlen8. unfold extnum. simpl. repeat (econstructor; eauto).
+    edestruct (minus_ev_succeeds l (extnum 7 8)); eauto.
+    rewrite Hlen8. unfold extnum. simpl. repeat (econstructor; eauto).
+    edestruct (minus_ev_succeeds l (extnum 15 8)); eauto.
+    rewrite Hlen8. unfold extnum. simpl. repeat (econstructor; eauto).
+    edestruct (minus_ev_succeeds l (extnum 16 8)); eauto.
+    rewrite Hlen8. unfold extnum. simpl. repeat (econstructor; eauto).
+    
+    (* inductive case *)
     e. ag. e.
 
     e. instantiate (1 := false).
@@ -315,9 +327,20 @@ Proof.
     all: try assumption.
     Focus 3. eassumption.
     
-    
+    Focus 3. unfold extnum. simpl. rewrite Hlen8. repeat (econstructor; eauto).
+    Focus 9. unfold extnum. simpl. repeat (econstructor; eauto).
+    Focus 8. simpl. eauto.
+    Focus 3. destruct H5. rewrite e. reflexivity.
+    Focus 2. intuition; congruence.
+    Focus 6. destruct H6. rewrite e. reflexivity.
+    Focus 5. intuition; congruence.
+    Focus 15. destruct H7. rewrite e. reflexivity.
+    Focus 12. intuition; congruence.
+    Focus 23. destruct H8. rewrite e. reflexivity.
+
     
 
+    
     idtac.
 Admitted.
 
