@@ -271,6 +271,16 @@ Proof.
     rewrite Hlen8. unfold extnum. simpl. repeat (econstructor; eauto).
     edestruct (minus_ev_succeeds l (extnum 16 8)); eauto.
     rewrite Hlen8. unfold extnum. simpl. repeat (econstructor; eauto).
+    pose ( fun x => match x with | ebit b => Some b | _ => None end).
+    edestruct (to_bitlist_succeeds ext_val o x).
+    admit.
+    edestruct (to_bitlist_succeeds ext_val o x0).
+    admit.
+    edestruct (to_bitlist_succeeds ext_val o x1).
+    admit.
+    edestruct (to_bitlist_succeeds ext_val o x2).
+    admit.
+
     
     (* inductive case *)
     e. ag. e.
@@ -337,9 +347,17 @@ Proof.
     Focus 15. destruct H7. rewrite e. reflexivity.
     Focus 12. intuition; congruence.
     Focus 23. destruct H8. rewrite e. reflexivity.
-
+    Focus 20. intuition; congruence.
+    Focus 12. rewrite Hlen8 in *. eassumption.
+    Focus 12. unfold extnum. simpl. repeat (econstructor; eauto).
+    Focus 18. rewrite Hlen8 in *. eassumption.
+    Focus 18. unfold extnum. simpl. repeat (econstructor; eauto).
+    Focus 2. subst o. rewrite H9. reflexivity.
+    Focus 4. subst o. rewrite H10. reflexivity.
+    Focus 10. subst o. rewrite H11. reflexivity.
+    Focus 15. subst o. rewrite H12. reflexivity.
+    (* This looks doable. We'll be able to finish this proof *)
     
-
     
     idtac.
 Admitted.
