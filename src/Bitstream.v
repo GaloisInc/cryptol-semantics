@@ -1,8 +1,8 @@
 Require Import String.
-Require Import AST.
+Require Import Cryptol.AST.
 Require Import List.
-Require Import Values.
-Require Import Semantics.
+Require Import Cryptol.Values.
+Require Import Cryptol.Semantics.
 Require Import Bvector. 
 
 (* We need easy ways of writing down inputs to cryptol functions *)
@@ -123,6 +123,7 @@ Inductive ext_type :=
 | trec (l : list (string * ext_type))
 .
 
+
 Inductive has_type : ext_val -> ext_type -> Prop :=
 | is_bit :
     forall b,
@@ -199,7 +200,7 @@ Inductive n_bits : nat -> list val -> Prop :=
       n_bits (S n) (bit b :: l).
 *)
 
-Require Import Eager.
+Require Import Cryptol.Eager.
 Require Import List.
 
 

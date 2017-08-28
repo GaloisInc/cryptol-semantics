@@ -1,6 +1,6 @@
-Require Import Coqlib.
+Require Import Cryptol.Coqlib.
 Require Import String.
-Require Import Lib.
+Require Import Cryptol.Lib.
 Definition ident : Type := Z * string.
 
 Definition ident_eq :

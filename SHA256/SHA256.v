@@ -3,21 +3,20 @@ Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import Values.        
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.Values.        
 
-Require Import EvalTac.
+Require Import Cryptol.EvalTac.
 
 Import HaskellListNotations.
 Open Scope string.
-
 
 Definition whole_prog := [ (NonRecursive
    (Decl (0,"demote")
@@ -551,9 +550,9 @@ Definition whole_prog := [ (NonRecursive
 , (NonRecursive
    (Decl (242,"Ch")
     (DExpr
-     (EAbs (257,"x")
-      (EAbs (258,"y")
-       (EAbs (259,"z")
+     (EAbs (270,"x")
+      (EAbs (271,"y")
+       (EAbs (272,"z")
         (EApp
          (EApp
           (ETApp
@@ -564,8 +563,8 @@ Definition whole_prog := [ (NonRecursive
             (ETApp
              (EVar (26,"&&"))
              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-            (EVar (257,"x")))
-           (EVar (258,"y"))))
+            (EVar (270,"x")))
+           (EVar (271,"y"))))
          (EApp
           (EApp
            (ETApp
@@ -575,14 +574,14 @@ Definition whole_prog := [ (NonRecursive
             (ETApp
              (EVar (12,"complement"))
              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-            (EVar (257,"x"))))
-          (EVar (259,"z"))))))))))
+            (EVar (270,"x"))))
+          (EVar (272,"z"))))))))))
 , (NonRecursive
    (Decl (243,"Maj")
     (DExpr
-     (EAbs (260,"x")
-      (EAbs (261,"y")
-       (EAbs (262,"z")
+     (EAbs (273,"x")
+      (EAbs (274,"y")
+       (EAbs (275,"z")
         (EApp
          (EApp
           (ETApp
@@ -598,26 +597,26 @@ Definition whole_prog := [ (NonRecursive
               (ETApp
                (EVar (26,"&&"))
                (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-              (EVar (260,"x")))
-             (EVar (261,"y"))))
+              (EVar (273,"x")))
+             (EVar (274,"y"))))
            (EApp
             (EApp
              (ETApp
               (EVar (26,"&&"))
               (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-             (EVar (260,"x")))
-            (EVar (262,"z")))))
+             (EVar (273,"x")))
+            (EVar (275,"z")))))
          (EApp
           (EApp
            (ETApp
             (EVar (26,"&&"))
             (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-           (EVar (261,"y")))
-          (EVar (262,"z"))))))))))
+           (EVar (274,"y")))
+          (EVar (275,"z"))))))))))
 , (NonRecursive
    (Decl (244,"S0")
     (DExpr
-     (EAbs (263,"x")
+     (EAbs (276,"x")
       (EApp
        (EApp
         (ETApp
@@ -637,7 +636,7 @@ Definition whole_prog := [ (NonRecursive
                (ETyp (TCon (TC (TCNum 32)) [])))
               (ETyp (TCon (TC (TCNum 2)) [])))
              (ETyp (TCon (TC TCBit) [])))
-            (EVar (263,"x")))
+            (EVar (276,"x")))
            (ETApp
             (ETApp
              (EVar (0,"demote"))
@@ -652,7 +651,7 @@ Definition whole_prog := [ (NonRecursive
               (ETyp (TCon (TC (TCNum 32)) [])))
              (ETyp (TCon (TC (TCNum 4)) [])))
             (ETyp (TCon (TC TCBit) [])))
-           (EVar (263,"x")))
+           (EVar (276,"x")))
           (ETApp
            (ETApp
             (EVar (0,"demote"))
@@ -667,7 +666,7 @@ Definition whole_prog := [ (NonRecursive
             (ETyp (TCon (TC (TCNum 32)) [])))
            (ETyp (TCon (TC (TCNum 5)) [])))
           (ETyp (TCon (TC TCBit) [])))
-         (EVar (263,"x")))
+         (EVar (276,"x")))
         (ETApp
          (ETApp
           (EVar (0,"demote"))
@@ -676,7 +675,7 @@ Definition whole_prog := [ (NonRecursive
 , (NonRecursive
    (Decl (245,"S1")
     (DExpr
-     (EAbs (264,"x")
+     (EAbs (277,"x")
       (EApp
        (EApp
         (ETApp
@@ -696,7 +695,7 @@ Definition whole_prog := [ (NonRecursive
                (ETyp (TCon (TC (TCNum 32)) [])))
               (ETyp (TCon (TC (TCNum 3)) [])))
              (ETyp (TCon (TC TCBit) [])))
-            (EVar (264,"x")))
+            (EVar (277,"x")))
            (ETApp
             (ETApp
              (EVar (0,"demote"))
@@ -711,7 +710,7 @@ Definition whole_prog := [ (NonRecursive
               (ETyp (TCon (TC (TCNum 32)) [])))
              (ETyp (TCon (TC (TCNum 4)) [])))
             (ETyp (TCon (TC TCBit) [])))
-           (EVar (264,"x")))
+           (EVar (277,"x")))
           (ETApp
            (ETApp
             (EVar (0,"demote"))
@@ -726,7 +725,7 @@ Definition whole_prog := [ (NonRecursive
             (ETyp (TCon (TC (TCNum 32)) [])))
            (ETyp (TCon (TC (TCNum 5)) [])))
           (ETyp (TCon (TC TCBit) [])))
-         (EVar (264,"x")))
+         (EVar (277,"x")))
         (ETApp
          (ETApp
           (EVar (0,"demote"))
@@ -735,7 +734,7 @@ Definition whole_prog := [ (NonRecursive
 , (NonRecursive
    (Decl (246,"s0")
     (DExpr
-     (EAbs (265,"x")
+     (EAbs (278,"x")
       (EApp
        (EApp
         (ETApp
@@ -755,7 +754,7 @@ Definition whole_prog := [ (NonRecursive
                (ETyp (TCon (TC (TCNum 32)) [])))
               (ETyp (TCon (TC (TCNum 3)) [])))
              (ETyp (TCon (TC TCBit) [])))
-            (EVar (265,"x")))
+            (EVar (278,"x")))
            (ETApp
             (ETApp
              (EVar (0,"demote"))
@@ -770,7 +769,7 @@ Definition whole_prog := [ (NonRecursive
               (ETyp (TCon (TC (TCNum 32)) [])))
              (ETyp (TCon (TC (TCNum 5)) [])))
             (ETyp (TCon (TC TCBit) [])))
-           (EVar (265,"x")))
+           (EVar (278,"x")))
           (ETApp
            (ETApp
             (EVar (0,"demote"))
@@ -785,7 +784,7 @@ Definition whole_prog := [ (NonRecursive
             (ETyp (TCon (TC (TCNum 32)) [])))
            (ETyp (TCon (TC (TCNum 2)) [])))
           (ETyp (TCon (TC TCBit) [])))
-         (EVar (265,"x")))
+         (EVar (278,"x")))
         (ETApp
          (ETApp
           (EVar (0,"demote"))
@@ -794,7 +793,7 @@ Definition whole_prog := [ (NonRecursive
 , (NonRecursive
    (Decl (247,"s1")
     (DExpr
-     (EAbs (266,"x")
+     (EAbs (279,"x")
       (EApp
        (EApp
         (ETApp
@@ -814,7 +813,7 @@ Definition whole_prog := [ (NonRecursive
                (ETyp (TCon (TC (TCNum 32)) [])))
               (ETyp (TCon (TC (TCNum 5)) [])))
              (ETyp (TCon (TC TCBit) [])))
-            (EVar (266,"x")))
+            (EVar (279,"x")))
            (ETApp
             (ETApp
              (EVar (0,"demote"))
@@ -829,7 +828,7 @@ Definition whole_prog := [ (NonRecursive
               (ETyp (TCon (TC (TCNum 32)) [])))
              (ETyp (TCon (TC (TCNum 5)) [])))
             (ETyp (TCon (TC TCBit) [])))
-           (EVar (266,"x")))
+           (EVar (279,"x")))
           (ETApp
            (ETApp
             (EVar (0,"demote"))
@@ -844,7 +843,7 @@ Definition whole_prog := [ (NonRecursive
             (ETyp (TCon (TC (TCNum 32)) [])))
            (ETyp (TCon (TC (TCNum 4)) [])))
           (ETyp (TCon (TC TCBit) [])))
-         (EVar (266,"x")))
+         (EVar (279,"x")))
         (ETApp
          (ETApp
           (EVar (0,"demote"))
@@ -1181,7 +1180,7 @@ Definition whole_prog := [ (NonRecursive
       (ETAbs (404,"contentLen")
        (ETAbs (405,"chunks")
         (ETAbs (406,"padding")
-         (EAbs (271,"msg")
+         (EAbs (284,"msg")
           (EApp
            (ETApp
             (ETApp
@@ -1199,7 +1198,7 @@ Definition whole_prog := [ (NonRecursive
                 (ETyp (TVar (TVBound 403 KNum))))
                (ETyp (TCon (TF TCAdd) [TCon (TC (TCNum 65)) [],TVar (TVBound 406 KNum)])))
               (ETyp (TCon (TC TCBit) [])))
-             (EVar (271,"msg")))
+             (EVar (284,"msg")))
             (EApp
              (EApp
               (ETApp
@@ -1274,11 +1273,11 @@ Definition whole_prog := [ (NonRecursive
 , (NonRecursive
    (Decl (251,"SHA256MessageSchedule")
     (DExpr
-     (EAbs (272,"M")
+     (EAbs (285,"M")
       (EWhere
-       (EVar (273,"W"))
+       (EVar (286,"W"))
        [(Recursive
-         [(Decl (273,"W")
+         [(Decl (286,"W")
            (DExpr
             (EApp
              (EApp
@@ -1289,7 +1288,7 @@ Definition whole_prog := [ (NonRecursive
                  (ETyp (TCon (TC (TCNum 16)) [])))
                 (ETyp (TCon (TC (TCNum 48)) [])))
                (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-              (EVar (272,"M")))
+              (EVar (285,"M")))
              (EComp
               (EApp
                (EApp
@@ -1317,13 +1316,13 @@ Definition whole_prog := [ (NonRecursive
                           (ETyp (TCon (TC (TCNum 64)) [])))
                          (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                         (ETyp (TCon (TC (TCNum 8)) [])))
-                       (EVar (273,"W")))
+                       (EVar (286,"W")))
                       (EApp
                        (EApp
                         (ETApp
                          (EVar (2,"-"))
                          (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
-                        (EVar (274,"j")))
+                        (EVar (287,"j")))
                        (ETApp
                         (ETApp
                          (EVar (0,"demote"))
@@ -1338,13 +1337,13 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 64)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 8)) [])))
-                     (EVar (273,"W")))
+                     (EVar (286,"W")))
                     (EApp
                      (EApp
                       (ETApp
                        (EVar (2,"-"))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
-                      (EVar (274,"j")))
+                      (EVar (287,"j")))
                      (ETApp
                       (ETApp
                        (EVar (0,"demote"))
@@ -1361,13 +1360,13 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 64)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 8)) [])))
-                    (EVar (273,"W")))
+                    (EVar (286,"W")))
                    (EApp
                     (EApp
                      (ETApp
                       (EVar (2,"-"))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
-                     (EVar (274,"j")))
+                     (EVar (287,"j")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1382,19 +1381,19 @@ Definition whole_prog := [ (NonRecursive
                     (ETyp (TCon (TC (TCNum 64)) [])))
                    (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                   (ETyp (TCon (TC (TCNum 8)) [])))
-                 (EVar (273,"W")))
+                 (EVar (286,"W")))
                 (EApp
                  (EApp
                   (ETApp
                    (EVar (2,"-"))
                    (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
-                  (EVar (274,"j")))
+                  (EVar (287,"j")))
                  (ETApp
                   (ETApp
                    (EVar (0,"demote"))
                    (ETyp (TCon (TC (TCNum 16)) [])))
                   (ETyp (TCon (TC (TCNum 8)) []))))))
-              [[(From (274,"j") (ETApp
+              [[(From (287,"j") (ETApp
                                  (ETApp
                                   (ETApp
                                    (EVar (49,"fromTo"))
@@ -1404,8 +1403,8 @@ Definition whole_prog := [ (NonRecursive
 , (NonRecursive
    (Decl (252,"SHA256Compress")
     (DExpr
-     (EAbs (275,"H")
-      (EAbs (276,"W")
+     (EAbs (288,"H")
+      (EAbs (289,"W")
        (EWhere
         (EList [ (EApp
                   (EApp
@@ -1421,7 +1420,7 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 65)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 0)) [])))
-                     (EVar (286,"as")))
+                     (EVar (299,"as")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1436,7 +1435,7 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 8)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 0)) [])))
-                    (EVar (275,"H")))
+                    (EVar (288,"H")))
                    (ETApp
                     (ETApp
                      (EVar (0,"demote"))
@@ -1456,7 +1455,7 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 65)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 0)) [])))
-                     (EVar (285,"bs")))
+                     (EVar (298,"bs")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1471,7 +1470,7 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 8)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 1)) [])))
-                    (EVar (275,"H")))
+                    (EVar (288,"H")))
                    (ETApp
                     (ETApp
                      (EVar (0,"demote"))
@@ -1491,7 +1490,7 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 65)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 0)) [])))
-                     (EVar (284,"cs")))
+                     (EVar (297,"cs")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1506,7 +1505,7 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 8)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 2)) [])))
-                    (EVar (275,"H")))
+                    (EVar (288,"H")))
                    (ETApp
                     (ETApp
                      (EVar (0,"demote"))
@@ -1526,7 +1525,7 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 65)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 0)) [])))
-                     (EVar (283,"ds")))
+                     (EVar (296,"ds")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1541,7 +1540,7 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 8)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 2)) [])))
-                    (EVar (275,"H")))
+                    (EVar (288,"H")))
                    (ETApp
                     (ETApp
                      (EVar (0,"demote"))
@@ -1561,7 +1560,7 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 65)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 0)) [])))
-                     (EVar (282,"es")))
+                     (EVar (295,"es")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1576,7 +1575,7 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 8)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 3)) [])))
-                    (EVar (275,"H")))
+                    (EVar (288,"H")))
                    (ETApp
                     (ETApp
                      (EVar (0,"demote"))
@@ -1596,7 +1595,7 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 65)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 0)) [])))
-                     (EVar (281,"fs")))
+                     (EVar (294,"fs")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1611,7 +1610,7 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 8)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 3)) [])))
-                    (EVar (275,"H")))
+                    (EVar (288,"H")))
                    (ETApp
                     (ETApp
                      (EVar (0,"demote"))
@@ -1631,7 +1630,7 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 65)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 0)) [])))
-                     (EVar (280,"gs")))
+                     (EVar (293,"gs")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1646,7 +1645,7 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 8)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 3)) [])))
-                    (EVar (275,"H")))
+                    (EVar (288,"H")))
                    (ETApp
                     (ETApp
                      (EVar (0,"demote"))
@@ -1666,7 +1665,7 @@ Definition whole_prog := [ (NonRecursive
                         (ETyp (TCon (TC (TCNum 65)) [])))
                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                       (ETyp (TCon (TC (TCNum 0)) [])))
-                     (EVar (279,"hs")))
+                     (EVar (292,"hs")))
                     (ETApp
                      (ETApp
                       (EVar (0,"demote"))
@@ -1681,7 +1680,7 @@ Definition whole_prog := [ (NonRecursive
                        (ETyp (TCon (TC (TCNum 8)) [])))
                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                      (ETyp (TCon (TC (TCNum 3)) [])))
-                    (EVar (275,"H")))
+                    (EVar (288,"H")))
                    (ETApp
                     (ETApp
                      (EVar (0,"demote"))
@@ -1689,7 +1688,7 @@ Definition whole_prog := [ (NonRecursive
                     (ETyp (TCon (TC (TCNum 3)) [])))))
                ])
         [(Recursive
-          [ (Decl (277,"T1")
+          [ (Decl (290,"T1")
              (DExpr
               (EComp
                (EApp
@@ -1712,27 +1711,27 @@ Definition whole_prog := [ (NonRecursive
                        (ETApp
                         (EVar (1,"+"))
                         (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-                       (EVar (287,"h")))
+                       (EVar (300,"h")))
                       (EApp
                        (EVar (245,"S1"))
-                       (EVar (288,"e")))))
+                       (EVar (301,"e")))))
                     (EApp
                      (EApp
                       (EApp
                        (EVar (242,"Ch"))
-                       (EVar (288,"e")))
-                      (EVar (289,"f")))
-                     (EVar (290,"g")))))
-                  (EVar (291,"k"))))
-                (EVar (292,"w")))
-               [ [(From (287,"h") (EVar (279,"hs")))]
-               , [(From (288,"e") (EVar (282,"es")))]
-               , [(From (289,"f") (EVar (281,"fs")))]
-               , [(From (290,"g") (EVar (280,"gs")))]
-               , [(From (291,"k") (EVar (248,"K")))]
-               , [(From (292,"w") (EVar (276,"W")))]
+                       (EVar (301,"e")))
+                      (EVar (302,"f")))
+                     (EVar (303,"g")))))
+                  (EVar (304,"k"))))
+                (EVar (305,"w")))
+               [ [(From (300,"h") (EVar (292,"hs")))]
+               , [(From (301,"e") (EVar (295,"es")))]
+               , [(From (302,"f") (EVar (294,"fs")))]
+               , [(From (303,"g") (EVar (293,"gs")))]
+               , [(From (304,"k") (EVar (248,"K")))]
+               , [(From (305,"w") (EVar (289,"W")))]
                ])))
-          , (Decl (278,"T2")
+          , (Decl (291,"T2")
              (DExpr
               (EComp
                (EApp
@@ -1742,19 +1741,19 @@ Definition whole_prog := [ (NonRecursive
                   (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                  (EApp
                   (EVar (244,"S0"))
-                  (EVar (293,"a"))))
+                  (EVar (306,"a"))))
                 (EApp
                  (EApp
                   (EApp
                    (EVar (243,"Maj"))
-                   (EVar (293,"a")))
-                  (EVar (294,"b")))
-                 (EVar (295,"c"))))
-               [ [(From (293,"a") (EVar (286,"as")))]
-               , [(From (294,"b") (EVar (285,"bs")))]
-               , [(From (295,"c") (EVar (284,"cs")))]
+                   (EVar (306,"a")))
+                  (EVar (307,"b")))
+                 (EVar (308,"c"))))
+               [ [(From (306,"a") (EVar (299,"as")))]
+               , [(From (307,"b") (EVar (298,"bs")))]
+               , [(From (308,"c") (EVar (297,"cs")))]
                ])))
-          , (Decl (286,"as")
+          , (Decl (299,"as")
              (DExpr
               (EApp
                (ETApp
@@ -1782,7 +1781,7 @@ Definition whole_prog := [ (NonRecursive
                               (ETyp (TCon (TC (TCNum 8)) [])))
                              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                             (ETyp (TCon (TC (TCNum 0)) [])))
-                           (EVar (275,"H")))
+                           (EVar (288,"H")))
                           (ETApp
                            (ETApp
                             (EVar (0,"demote"))
@@ -1794,12 +1793,12 @@ Definition whole_prog := [ (NonRecursive
                    (ETApp
                     (EVar (1,"+"))
                     (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-                   (EVar (298,"t1")))
-                  (EVar (299,"t2")))
-                 [ [(From (298,"t1") (EVar (277,"T1")))]
-                 , [(From (299,"t2") (EVar (278,"T2")))]
+                   (EVar (311,"t1")))
+                  (EVar (312,"t2")))
+                 [ [(From (311,"t1") (EVar (290,"T1")))]
+                 , [(From (312,"t2") (EVar (291,"T2")))]
                  ])))))
-          , (Decl (285,"bs")
+          , (Decl (298,"bs")
              (DExpr
               (EApp
                (ETApp
@@ -1827,14 +1826,14 @@ Definition whole_prog := [ (NonRecursive
                               (ETyp (TCon (TC (TCNum 8)) [])))
                              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                             (ETyp (TCon (TC (TCNum 1)) [])))
-                           (EVar (275,"H")))
+                           (EVar (288,"H")))
                           (ETApp
                            (ETApp
                             (EVar (0,"demote"))
                             (ETyp (TCon (TC (TCNum 1)) [])))
                            (ETyp (TCon (TC (TCNum 1)) []))))]))
-                (EVar (286,"as"))))))
-          , (Decl (284,"cs")
+                (EVar (299,"as"))))))
+          , (Decl (297,"cs")
              (DExpr
               (EApp
                (ETApp
@@ -1862,14 +1861,14 @@ Definition whole_prog := [ (NonRecursive
                               (ETyp (TCon (TC (TCNum 8)) [])))
                              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                             (ETyp (TCon (TC (TCNum 2)) [])))
-                           (EVar (275,"H")))
+                           (EVar (288,"H")))
                           (ETApp
                            (ETApp
                             (EVar (0,"demote"))
                             (ETyp (TCon (TC (TCNum 2)) [])))
                            (ETyp (TCon (TC (TCNum 2)) []))))]))
-                (EVar (285,"bs"))))))
-          , (Decl (283,"ds")
+                (EVar (298,"bs"))))))
+          , (Decl (296,"ds")
              (DExpr
               (EApp
                (ETApp
@@ -1897,14 +1896,14 @@ Definition whole_prog := [ (NonRecursive
                               (ETyp (TCon (TC (TCNum 8)) [])))
                              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                             (ETyp (TCon (TC (TCNum 2)) [])))
-                           (EVar (275,"H")))
+                           (EVar (288,"H")))
                           (ETApp
                            (ETApp
                             (EVar (0,"demote"))
                             (ETyp (TCon (TC (TCNum 3)) [])))
                            (ETyp (TCon (TC (TCNum 2)) []))))]))
-                (EVar (284,"cs"))))))
-          , (Decl (282,"es")
+                (EVar (297,"cs"))))))
+          , (Decl (295,"es")
              (DExpr
               (EApp
                (ETApp
@@ -1932,7 +1931,7 @@ Definition whole_prog := [ (NonRecursive
                               (ETyp (TCon (TC (TCNum 8)) [])))
                              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                             (ETyp (TCon (TC (TCNum 3)) [])))
-                           (EVar (275,"H")))
+                           (EVar (288,"H")))
                           (ETApp
                            (ETApp
                             (EVar (0,"demote"))
@@ -1944,12 +1943,12 @@ Definition whole_prog := [ (NonRecursive
                    (ETApp
                     (EVar (1,"+"))
                     (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
-                   (EVar (296,"d")))
-                  (EVar (297,"t1")))
-                 [ [(From (296,"d") (EVar (283,"ds")))]
-                 , [(From (297,"t1") (EVar (277,"T1")))]
+                   (EVar (309,"d")))
+                  (EVar (310,"t1")))
+                 [ [(From (309,"d") (EVar (296,"ds")))]
+                 , [(From (310,"t1") (EVar (290,"T1")))]
                  ])))))
-          , (Decl (281,"fs")
+          , (Decl (294,"fs")
              (DExpr
               (EApp
                (ETApp
@@ -1977,14 +1976,14 @@ Definition whole_prog := [ (NonRecursive
                               (ETyp (TCon (TC (TCNum 8)) [])))
                              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                             (ETyp (TCon (TC (TCNum 3)) [])))
-                           (EVar (275,"H")))
+                           (EVar (288,"H")))
                           (ETApp
                            (ETApp
                             (EVar (0,"demote"))
                             (ETyp (TCon (TC (TCNum 5)) [])))
                            (ETyp (TCon (TC (TCNum 3)) []))))]))
-                (EVar (282,"es"))))))
-          , (Decl (280,"gs")
+                (EVar (295,"es"))))))
+          , (Decl (293,"gs")
              (DExpr
               (EApp
                (ETApp
@@ -2012,14 +2011,14 @@ Definition whole_prog := [ (NonRecursive
                               (ETyp (TCon (TC (TCNum 8)) [])))
                              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                             (ETyp (TCon (TC (TCNum 3)) [])))
-                           (EVar (275,"H")))
+                           (EVar (288,"H")))
                           (ETApp
                            (ETApp
                             (EVar (0,"demote"))
                             (ETyp (TCon (TC (TCNum 6)) [])))
                            (ETyp (TCon (TC (TCNum 3)) []))))]))
-                (EVar (281,"fs"))))))
-          , (Decl (279,"hs")
+                (EVar (294,"fs"))))))
+          , (Decl (292,"hs")
              (DExpr
               (EApp
                (ETApp
@@ -2047,19 +2046,31 @@ Definition whole_prog := [ (NonRecursive
                               (ETyp (TCon (TC (TCNum 8)) [])))
                              (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
                             (ETyp (TCon (TC (TCNum 3)) [])))
-                           (EVar (275,"H")))
+                           (EVar (288,"H")))
                           (ETApp
                            (ETApp
                             (EVar (0,"demote"))
                             (ETyp (TCon (TC (TCNum 7)) [])))
                            (ETyp (TCon (TC (TCNum 3)) []))))]))
-                (EVar (280,"gs"))))))
+                (EVar (293,"gs"))))))
           ])]))))))
 , (NonRecursive
-   (Decl (253,"SHA256'")
+   (Decl (253,"SHA256Block")
     (DExpr
-     (ETAbs (794,"a")
-      (EAbs (301,"blocks")
+     (EAbs (313,"H")
+      (EAbs (314,"M")
+       (EApp
+        (EApp
+         (EVar (252,"SHA256Compress"))
+         (EVar (313,"H")))
+        (EApp
+         (EVar (251,"SHA256MessageSchedule"))
+         (EVar (314,"M")))))))))
+, (NonRecursive
+   (Decl (254,"SHA256'")
+    (DExpr
+     (ETAbs (799,"a")
+      (EAbs (316,"blocks")
        (EWhere
         (EApp
          (EApp
@@ -2067,17 +2078,17 @@ Definition whole_prog := [ (NonRecursive
            (ETApp
             (ETApp
              (EVar (42,"!"))
-             (ETyp (TCon (TF TCAdd) [TCon (TC (TCNum 1)) [],TVar (TVBound 794 KNum)])))
+             (ETyp (TCon (TF TCAdd) [TCon (TC (TCNum 1)) [],TVar (TVBound 799 KNum)])))
             (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []]])))
            (ETyp (TCon (TC (TCNum 0)) [])))
-          (EVar (302,"hash")))
+          (EVar (317,"hash")))
          (ETApp
           (ETApp
            (EVar (0,"demote"))
            (ETyp (TCon (TC (TCNum 0)) [])))
           (ETyp (TCon (TC (TCNum 0)) []))))
         [(Recursive
-          [(Decl (302,"hash")
+          [(Decl (317,"hash")
             (DExpr
              (EApp
               (EApp
@@ -2086,25 +2097,23 @@ Definition whole_prog := [ (NonRecursive
                  (ETApp
                   (EVar (34,"#"))
                   (ETyp (TCon (TC (TCNum 1)) [])))
-                 (ETyp (TVar (TVBound 794 KNum))))
+                 (ETyp (TVar (TVBound 799 KNum))))
                 (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []]])))
                (EList [(EVar (250,"H0"))]))
               (EComp
                (EApp
                 (EApp
-                 (EVar (252,"SHA256Compress"))
-                 (EVar (303,"h")))
-                (EApp
-                 (EVar (251,"SHA256MessageSchedule"))
-                 (EVar (304,"b"))))
-               [ [(From (303,"h") (EVar (302,"hash")))]
-               , [(From (304,"b") (EVar (301,"blocks")))]
+                 (EVar (253,"SHA256Block"))
+                 (EVar (318,"h")))
+                (EVar (319,"b")))
+               [ [(From (318,"h") (EVar (317,"hash")))]
+               , [(From (319,"b") (EVar (316,"blocks")))]
                ]))))])]))))))
 , (NonRecursive
-   (Decl (254,"SHA256")
+   (Decl (255,"SHA256")
     (DExpr
-     (ETAbs (819,"a")
-      (EAbs (306,"msg")
+     (ETAbs (823,"a")
+      (EAbs (321,"msg")
        (EApp
         (ETApp
          (ETApp
@@ -2115,8 +2124,8 @@ Definition whole_prog := [ (NonRecursive
          (ETyp (TCon (TC TCBit) [])))
         (EApp
          (ETApp
-          (EVar (253,"SHA256'"))
-          (ETyp (TCon (TF TCDiv) [TCon (TF TCAdd) [TCon (TC (TCNum 576)) [],TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 819 KNum)]],TCon (TC (TCNum 512)) []])))
+          (EVar (254,"SHA256'"))
+          (ETyp (TCon (TF TCDiv) [TCon (TF TCAdd) [TCon (TC (TCNum 576)) [],TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 823 KNum)]],TCon (TC (TCNum 512)) []])))
          (EComp
           (EApp
            (ETApp
@@ -2126,32 +2135,32 @@ Definition whole_prog := [ (NonRecursive
               (ETyp (TCon (TC (TCNum 16)) [])))
              (ETyp (TCon (TC (TCNum 32)) [])))
             (ETyp (TCon (TC TCBit) [])))
-           (EVar (307,"x")))
-          [[(From (307,"x") (EApp
+           (EVar (322,"x")))
+          [[(From (322,"x") (EApp
                              (ETApp
                               (ETApp
                                (ETApp
                                 (ETApp
                                  (EVar (249,"preprocess"))
-                                 (ETyp (TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 819 KNum)])))
-                                (ETyp (TCon (TF TCAdd) [TCon (TC (TCNum 65)) [],TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 819 KNum)]])))
-                               (ETyp (TCon (TF TCDiv) [TCon (TF TCAdd) [TCon (TC (TCNum 576)) [],TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 819 KNum)]],TCon (TC (TCNum 512)) []])))
-                              (ETyp (TCon (TF TCMod) [TCon (TF TCSub) [TCon (TC (TCNum 512)) [],TCon (TF TCMod) [TCon (TF TCAdd) [TCon (TC (TCNum 65)) [],TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 819 KNum)]],TCon (TC (TCNum 512)) []]],TCon (TC (TCNum 512)) []])))
+                                 (ETyp (TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 823 KNum)])))
+                                (ETyp (TCon (TF TCAdd) [TCon (TC (TCNum 65)) [],TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 823 KNum)]])))
+                               (ETyp (TCon (TF TCDiv) [TCon (TF TCAdd) [TCon (TC (TCNum 576)) [],TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 823 KNum)]],TCon (TC (TCNum 512)) []])))
+                              (ETyp (TCon (TF TCMod) [TCon (TF TCSub) [TCon (TC (TCNum 512)) [],TCon (TF TCMod) [TCon (TF TCAdd) [TCon (TC (TCNum 65)) [],TCon (TF TCMul) [TCon (TC (TCNum 8)) [],TVar (TVBound 823 KNum)]],TCon (TC (TCNum 512)) []]],TCon (TC (TCNum 512)) []])))
                              (EApp
                               (ETApp
                                (ETApp
                                 (ETApp
                                  (EVar (36,"join"))
-                                 (ETyp (TVar (TVBound 819 KNum))))
+                                 (ETyp (TVar (TVBound 823 KNum))))
                                 (ETyp (TCon (TC (TCNum 8)) [])))
                                (ETyp (TCon (TC TCBit) [])))
-                              (EVar (306,"msg")))))]]))))))))
+                              (EVar (321,"msg")))))]]))))))))
 , (NonRecursive
-   (Decl (256,"kats")
+   (Decl (257,"kats")
     (DExpr
      (EList [ (ETuple [ (EApp
                          (ETApp
-                          (EVar (254,"SHA256"))
+                          (EVar (255,"SHA256"))
                           (ETyp (TCon (TC (TCNum 56)) [])))
                          (EList [ (ETApp
                                    (ETApp
@@ -2442,7 +2451,7 @@ Definition whole_prog := [ (NonRecursive
                       ])
             , (ETuple [ (EApp
                          (ETApp
-                          (EVar (254,"SHA256"))
+                          (EVar (255,"SHA256"))
                           (ETyp (TCon (TC (TCNum 0)) [])))
                          (EList []))
                       , (ETApp
@@ -2453,7 +2462,7 @@ Definition whole_prog := [ (NonRecursive
                       ])
             , (ETuple [ (EApp
                          (ETApp
-                          (EVar (254,"SHA256"))
+                          (EVar (255,"SHA256"))
                           (ETyp (TCon (TC (TCNum 112)) [])))
                          (EList [ (ETApp
                                    (ETApp
@@ -3024,7 +3033,7 @@ Definition whole_prog := [ (NonRecursive
                       ])
             ]))))
 , (NonRecursive
-   (Decl (255,"katsPass")
+   (Decl (256,"katsPass")
     (DExpr
      (EApp
       (EApp
@@ -3044,17 +3053,1408 @@ Definition whole_prog := [ (NonRecursive
          (ETApp
           (EVar (17,"=="))
           (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 256)) [],TCon (TC TCBit) []])))
-         (EVar (309,"test")))
-        (EVar (310,"kat")))
-       [[ (From (308,"__p0") (EVar (256,"kats")))
-        , (MLet (Decl (309,"test")
+         (EVar (324,"test")))
+        (EVar (325,"kat")))
+       [[ (From (323,"__p0") (EVar (257,"kats")))
+        , (MLet (Decl (324,"test")
                  (DExpr
-                  (ESel (EVar (308,"__p0")) (TupleSel 0)))))
-        , (MLet (Decl (310,"kat")
+                  (ESel (EVar (323,"__p0")) (TupleSel 0)))))
+        , (MLet (Decl (325,"kat")
                  (DExpr
-                  (ESel (EVar (308,"__p0")) (TupleSel 1)))))
+                  (ESel (EVar (323,"__p0")) (TupleSel 1)))))
         ]])))))
-                         ].
+, (NonRecursive
+   (Decl (259,"SHA256Init")
+    (DExpr
+     (ERec [ ("h",(EVar (250,"H0")))
+           , ("block",(ETApp
+                       (EVar (29,"zero"))
+                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []]]))))
+           , ("n",(ETApp
+                   (ETApp
+                    (EVar (0,"demote"))
+                    (ETyp (TCon (TC (TCNum 0)) [])))
+                   (ETyp (TCon (TC (TCNum 16)) []))))
+           , ("sz",(ETApp
+                    (ETApp
+                     (EVar (0,"demote"))
+                     (ETyp (TCon (TC (TCNum 0)) [])))
+                    (ETyp (TCon (TC (TCNum 64)) []))))
+           ]))))
+, (NonRecursive
+   (Decl (262,"update")
+    (DExpr
+     (ETAbs (895,"a")
+      (ETAbs (896,"b")
+       (ETAbs (897,"c")
+        (EAbs (337,"a")
+         (EAbs (338,"i")
+          (EAbs (339,"x")
+           (EComp
+            (EIf (EApp
+                  (EApp
+                   (ETApp
+                    (EVar (17,"=="))
+                    (ETyp (TCon (TC TCSeq) [TVar (TVBound 897 KNum),TCon (TC TCBit) []])))
+                   (EVar (341,"j")))
+                  (EVar (338,"i")))
+             (EVar (339,"x"))
+             (EVar (340,"e")))
+            [ [(From (340,"e") (EVar (337,"a")))]
+            , [(From (341,"j") (ETApp
+                                (ETApp
+                                 (ETApp
+                                  (EVar (49,"fromTo"))
+                                  (ETyp (TCon (TC (TCNum 0)) [])))
+                                 (ETyp (TCon (TF TCSub) [TCon (TF TCExp) [TCon (TC (TCNum 2)) [],TVar (TVBound 897 KNum)],TCon (TC (TCNum 1)) []])))
+                                (ETyp (TVar (TVBound 897 KNum)))))]
+            ]))))))))))
+, (NonRecursive
+   (Decl (260,"SHA256Update1")
+    (DExpr
+     (EAbs (326,"s")
+      (EAbs (327,"b")
+       (EIf (EApp
+             (EApp
+              (ETApp
+               (EVar (17,"=="))
+               (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 16)) [],TCon (TC TCBit) []])))
+              (ESel (EVar (326,"s")) (RecordSel "n")))
+             (ETApp
+              (ETApp
+               (EVar (0,"demote"))
+               (ETyp (TCon (TC (TCNum 64)) [])))
+              (ETyp (TCon (TC (TCNum 16)) []))))
+        (ERec [ ("h",(EApp
+                      (EApp
+                       (EVar (253,"SHA256Block"))
+                       (ESel (EVar (326,"s")) (RecordSel "h")))
+                      (EApp
+                       (ETApp
+                        (ETApp
+                         (ETApp
+                          (EVar (37,"split"))
+                          (ETyp (TCon (TC (TCNum 16)) [])))
+                         (ETyp (TCon (TC (TCNum 32)) [])))
+                        (ETyp (TCon (TC TCBit) [])))
+                       (EApp
+                        (ETApp
+                         (ETApp
+                          (ETApp
+                           (EVar (36,"join"))
+                           (ETyp (TCon (TC (TCNum 64)) [])))
+                          (ETyp (TCon (TC (TCNum 8)) [])))
+                         (ETyp (TCon (TC TCBit) [])))
+                        (ESel (EVar (326,"s")) (RecordSel "block"))))))
+              , ("block",(EApp
+                          (EApp
+                           (ETApp
+                            (ETApp
+                             (ETApp
+                              (EVar (34,"#"))
+                              (ETyp (TCon (TC (TCNum 1)) [])))
+                             (ETyp (TCon (TC (TCNum 63)) [])))
+                            (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
+                           (EList [(EVar (327,"b"))]))
+                          (ETApp
+                           (EVar (29,"zero"))
+                           (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 63)) [],TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []]])))))
+              , ("n",(ETApp
+                      (ETApp
+                       (EVar (0,"demote"))
+                       (ETyp (TCon (TC (TCNum 1)) [])))
+                      (ETyp (TCon (TC (TCNum 16)) []))))
+              , ("sz",(EApp
+                       (EApp
+                        (ETApp
+                         (EVar (1,"+"))
+                         (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCBit) []])))
+                        (ESel (EVar (326,"s")) (RecordSel "sz")))
+                       (ETApp
+                        (ETApp
+                         (EVar (0,"demote"))
+                         (ETyp (TCon (TC (TCNum 8)) [])))
+                        (ETyp (TCon (TC (TCNum 64)) [])))))
+              ])
+        (ERec [ ("h",(ESel (EVar (326,"s")) (RecordSel "h")))
+              , ("block",(EApp
+                          (EApp
+                           (EApp
+                            (ETApp
+                             (ETApp
+                              (ETApp
+                               (EVar (262,"update"))
+                               (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
+                              (ETyp (TCon (TC (TCNum 64)) [])))
+                             (ETyp (TCon (TC (TCNum 16)) [])))
+                            (ESel (EVar (326,"s")) (RecordSel "block")))
+                           (ESel (EVar (326,"s")) (RecordSel "n")))
+                          (EVar (327,"b"))))
+              , ("n",(EApp
+                      (EApp
+                       (ETApp
+                        (EVar (1,"+"))
+                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 16)) [],TCon (TC TCBit) []])))
+                       (ESel (EVar (326,"s")) (RecordSel "n")))
+                      (ETApp
+                       (ETApp
+                        (EVar (0,"demote"))
+                        (ETyp (TCon (TC (TCNum 1)) [])))
+                       (ETyp (TCon (TC (TCNum 16)) [])))))
+              , ("sz",(EApp
+                       (EApp
+                        (ETApp
+                         (EVar (1,"+"))
+                         (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCBit) []])))
+                        (ESel (EVar (326,"s")) (RecordSel "sz")))
+                       (ETApp
+                        (ETApp
+                         (EVar (0,"demote"))
+                         (ETyp (TCon (TC (TCNum 8)) [])))
+                        (ETyp (TCon (TC (TCNum 64)) [])))))
+              ])))))))
+, (NonRecursive
+   (Decl (261,"SHA256Update")
+    (DExpr
+     (ETAbs (962,"n")
+      (EAbs (329,"sinit")
+       (EAbs (330,"bs")
+        (EWhere
+         (EApp
+          (EApp
+           (ETApp
+            (ETApp
+             (ETApp
+              (EVar (42,"!"))
+              (ETyp (TCon (TF TCAdd) [TCon (TC (TCNum 1)) [],TVar (TVBound 962 KNum)])))
+             (ETyp (TUser (258,"SHA256State") [] (TRec [ ("h",(TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []]]))
+                                                       , ("block",(TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []]]))
+                                                       , ("n",(TCon (TC TCSeq) [TCon (TC (TCNum 16)) [],TCon (TC TCBit) []]))
+                                                       , ("sz",(TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCBit) []]))
+                                                       ]))))
+            (ETyp (TCon (TC (TCNum 0)) [])))
+           (EVar (331,"ss")))
+          (ETApp
+           (ETApp
+            (EVar (0,"demote"))
+            (ETyp (TCon (TC (TCNum 0)) [])))
+           (ETyp (TCon (TC (TCNum 0)) []))))
+         [(Recursive
+           [(Decl (331,"ss")
+             (DExpr
+              (EApp
+               (EApp
+                (ETApp
+                 (ETApp
+                  (ETApp
+                   (EVar (34,"#"))
+                   (ETyp (TCon (TC (TCNum 1)) [])))
+                  (ETyp (TVar (TVBound 962 KNum))))
+                 (ETyp (TUser (258,"SHA256State") [] (TRec [ ("h",(TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []]]))
+                                                           , ("block",(TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []]]))
+                                                           , ("n",(TCon (TC TCSeq) [TCon (TC (TCNum 16)) [],TCon (TC TCBit) []]))
+                                                           , ("sz",(TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCBit) []]))
+                                                           ]))))
+                (EList [(EVar (329,"sinit"))]))
+               (EComp
+                (EApp
+                 (EApp
+                  (EVar (260,"SHA256Update1"))
+                  (EVar (332,"s")))
+                 (EVar (333,"b")))
+                [ [(From (332,"s") (EVar (331,"ss")))]
+                , [(From (333,"b") (EVar (330,"bs")))]
+                ]))))])])))))))
+, (NonRecursive
+   (Decl (263,"SHA256Final")
+    (DExpr
+     (EAbs (342,"s")
+      (EWhere
+       (EApp
+        (ETApp
+         (ETApp
+          (ETApp
+           (EVar (36,"join"))
+           (ETyp (TCon (TC (TCNum 8)) [])))
+          (ETyp (TCon (TC (TCNum 32)) [])))
+         (ETyp (TCon (TC TCBit) [])))
+        (EApp
+         (EApp
+          (EVar (253,"SHA256Block"))
+          (EVar (345,"h")))
+         (EVar (347,"b'"))))
+       [ (NonRecursive
+          (Decl (343,"s'")
+           (DExpr
+            (EApp
+             (EApp
+              (EVar (260,"SHA256Update1"))
+              (EVar (342,"s")))
+             (ETApp
+              (ETApp
+               (EVar (0,"demote"))
+               (ETyp (TCon (TC (TCNum 128)) [])))
+              (ETyp (TCon (TC (TCNum 8)) [])))))))
+       , (NonRecursive
+          (Decl (344,"__p1")
+           (DExpr
+            (EIf (EApp
+                  (EApp
+                   (ETApp
+                    (EVar (15,"<="))
+                    (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 16)) [],TCon (TC TCBit) []])))
+                   (ESel (EVar (343,"s'")) (RecordSel "n")))
+                  (ETApp
+                   (ETApp
+                    (EVar (0,"demote"))
+                    (ETyp (TCon (TC (TCNum 56)) [])))
+                   (ETyp (TCon (TC (TCNum 16)) []))))
+             (ETuple [ (ESel (EVar (343,"s'")) (RecordSel "h"))
+                     , (ESel (EVar (343,"s'")) (RecordSel "block"))
+                     ])
+             (ETuple [ (EApp
+                        (EApp
+                         (EVar (253,"SHA256Block"))
+                         (ESel (EVar (343,"s'")) (RecordSel "h")))
+                        (EApp
+                         (ETApp
+                          (ETApp
+                           (ETApp
+                            (EVar (37,"split"))
+                            (ETyp (TCon (TC (TCNum 16)) [])))
+                           (ETyp (TCon (TC (TCNum 32)) [])))
+                          (ETyp (TCon (TC TCBit) [])))
+                         (EApp
+                          (ETApp
+                           (ETApp
+                            (ETApp
+                             (EVar (36,"join"))
+                             (ETyp (TCon (TC (TCNum 64)) [])))
+                            (ETyp (TCon (TC (TCNum 8)) [])))
+                           (ETyp (TCon (TC TCBit) [])))
+                          (ESel (EVar (343,"s'")) (RecordSel "block")))))
+                     , (ETApp
+                        (EVar (29,"zero"))
+                        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []]])))
+                     ])))))
+       , (NonRecursive
+          (Decl (345,"h")
+           (DExpr
+            (ESel (EVar (344,"__p1")) (TupleSel 0)))))
+       , (NonRecursive
+          (Decl (346,"b")
+           (DExpr
+            (ESel (EVar (344,"__p1")) (TupleSel 1)))))
+       , (NonRecursive
+          (Decl (347,"b'")
+           (DExpr
+            (EApp
+             (ETApp
+              (ETApp
+               (ETApp
+                (EVar (37,"split"))
+                (ETyp (TCon (TC (TCNum 16)) [])))
+               (ETyp (TCon (TC (TCNum 32)) [])))
+              (ETyp (TCon (TC TCBit) [])))
+             (EApp
+              (EApp
+               (ETApp
+                (EVar (27,"||"))
+                (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 512)) [],TCon (TC TCBit) []])))
+               (EApp
+                (ETApp
+                 (ETApp
+                  (ETApp
+                   (EVar (36,"join"))
+                   (ETyp (TCon (TC (TCNum 64)) [])))
+                  (ETyp (TCon (TC (TCNum 8)) [])))
+                 (ETyp (TCon (TC TCBit) [])))
+                (EVar (346,"b"))))
+              (EApp
+               (EApp
+                (ETApp
+                 (ETApp
+                  (ETApp
+                   (EVar (34,"#"))
+                   (ETyp (TCon (TC (TCNum 448)) [])))
+                  (ETyp (TCon (TC (TCNum 64)) [])))
+                 (ETyp (TCon (TC TCBit) [])))
+                (ETApp
+                 (EVar (29,"zero"))
+                 (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 448)) [],TCon (TC TCBit) []]))))
+               (ESel (EVar (342,"s")) (RecordSel "sz"))))))))
+       ])))))
+, (NonRecursive
+   (Decl (264,"SHA256Imp")
+    (DExpr
+     (ETAbs (1047,"a")
+      (EAbs (349,"msg")
+       (EApp
+        (EVar (263,"SHA256Final"))
+        (EApp
+         (EApp
+          (ETApp
+           (EVar (261,"SHA256Update"))
+           (ETyp (TVar (TVBound 1047 KNum))))
+          (EVar (259,"SHA256Init")))
+         (EVar (349,"msg")))))))))
+, (NonRecursive
+   (Decl (266,"katsImp")
+    (DExpr
+     (EList [ (ETuple [ (EApp
+                         (ETApp
+                          (EVar (264,"SHA256Imp"))
+                          (ETyp (TCon (TC (TCNum 56)) [])))
+                         (EList [ (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 97)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 98)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 99)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 100)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 98)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 99)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 100)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 99)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 100)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 100)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 112)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 112)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 113)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                ]))
+                      , (ETApp
+                         (ETApp
+                          (EVar (0,"demote"))
+                          (ETyp (TCon (TC (TCNum 16533122207477069341668099752125637525043274373652441057433006174010909329089)) [])))
+                         (ETyp (TCon (TC (TCNum 256)) [])))
+                      ])
+            , (ETuple [ (EApp
+                         (ETApp
+                          (EVar (264,"SHA256Imp"))
+                          (ETyp (TCon (TC (TCNum 0)) [])))
+                         (EList []))
+                      , (ETApp
+                         (ETApp
+                          (EVar (0,"demote"))
+                          (ETyp (TCon (TC (TCNum 102987336249554097029535212322581322789799900648198034993379397001115665086549)) [])))
+                         (ETyp (TCon (TC (TCNum 256)) [])))
+                      ])
+            , (ETuple [ (EApp
+                         (ETApp
+                          (EVar (264,"SHA256Imp"))
+                          (ETyp (TCon (TC (TCNum 112)) [])))
+                         (EList [ (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 97)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 98)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 99)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 100)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 98)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 99)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 100)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 99)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 100)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 100)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 101)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 102)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 103)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 104)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 105)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 112)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 106)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 112)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 113)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 107)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 112)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 113)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 114)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 108)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 112)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 113)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 114)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 115)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 109)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 112)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 113)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 114)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 115)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 116)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 110)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 111)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 112)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 113)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 114)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 115)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 116)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                , (ETApp
+                                   (ETApp
+                                    (EVar (0,"demote"))
+                                    (ETyp (TCon (TC (TCNum 117)) [])))
+                                   (ETyp (TCon (TC (TCNum 8)) [])))
+                                ]))
+                      , (ETApp
+                         (ETApp
+                          (EVar (0,"demote"))
+                          (ETyp (TCon (TC (TCNum 93789699093071375310876825772826470999347754471583810071657638912869466565073)) [])))
+                         (ETyp (TCon (TC (TCNum 256)) [])))
+                      ])
+            ]))))
+, (NonRecursive
+   (Decl (265,"katsPassImp")
+    (DExpr
+     (EApp
+      (EApp
+       (ETApp
+        (EVar (17,"=="))
+        (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 3)) [],TCon (TC TCBit) []])))
+       (EApp
+        (ETApp
+         (EVar (12,"complement"))
+         (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 3)) [],TCon (TC TCBit) []])))
+        (ETApp
+         (EVar (29,"zero"))
+         (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 3)) [],TCon (TC TCBit) []])))))
+      (EComp
+       (EApp
+        (EApp
+         (ETApp
+          (EVar (17,"=="))
+          (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 256)) [],TCon (TC TCBit) []])))
+         (EVar (351,"test")))
+        (EVar (352,"kat")))
+       [[ (From (350,"__p2") (EVar (266,"katsImp")))
+        , (MLet (Decl (351,"test")
+                 (DExpr
+                  (ESel (EVar (350,"__p2")) (TupleSel 0)))))
+        , (MLet (Decl (352,"kat")
+                 (DExpr
+                  (ESel (EVar (350,"__p2")) (TupleSel 1)))))
+        ]])))))
+, (NonRecursive
+   (Decl (267,"imp_correct")
+    (DExpr
+     (ETAbs (1105,"")
+      (EAbs (353,"msg")
+       (EApp
+        (EApp
+         (ETApp
+          (EVar (17,"=="))
+          (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 256)) [],TCon (TC TCBit) []])))
+         (EApp
+          (ETApp
+           (EVar (255,"SHA256"))
+           (ETyp (TVar (TVBound 1105 KNum))))
+          (EVar (353,"msg"))))
+        (EApp
+         (ETApp
+          (EVar (264,"SHA256Imp"))
+          (ETyp (TVar (TVBound 1105 KNum))))
+         (EVar (353,"msg")))))))))
+, (NonRecursive
+   (Decl (268,"SHA256MessageSchedule'")
+    (DExpr
+     (EAbs (354,"M")
+      (EWhere
+       (EComp
+        (EApp
+         (EVar (355,"W"))
+         (EVar (356,"k")))
+        [[(From (356,"k") (ETApp
+                           (ETApp
+                            (ETApp
+                             (EVar (49,"fromTo"))
+                             (ETyp (TCon (TC (TCNum 0)) [])))
+                            (ETyp (TCon (TC (TCNum 63)) [])))
+                           (ETyp (TCon (TC (TCNum 8)) []))))]])
+       [(Recursive
+         [(Decl (355,"W")
+           (DExpr
+            (EAbs (357,"n")
+             (EIf (EApp
+                   (EApp
+                    (ETApp
+                     (EVar (13,"<"))
+                     (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
+                    (EVar (357,"n")))
+                   (ETApp
+                    (ETApp
+                     (EVar (0,"demote"))
+                     (ETyp (TCon (TC (TCNum 16)) [])))
+                    (ETyp (TCon (TC (TCNum 8)) []))))
+              (EApp
+               (EApp
+                (ETApp
+                 (ETApp
+                  (ETApp
+                   (EVar (40,"@"))
+                   (ETyp (TCon (TC (TCNum 16)) [])))
+                  (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
+                 (ETyp (TCon (TC (TCNum 8)) [])))
+                (EVar (354,"M")))
+               (EVar (357,"n")))
+              (EApp
+               (EApp
+                (ETApp
+                 (EVar (1,"+"))
+                 (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
+                (EApp
+                 (EApp
+                  (ETApp
+                   (EVar (1,"+"))
+                   (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
+                  (EApp
+                   (EApp
+                    (ETApp
+                     (EVar (1,"+"))
+                     (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []])))
+                    (EApp
+                     (EVar (247,"s1"))
+                     (EApp
+                      (EVar (355,"W"))
+                      (EApp
+                       (EApp
+                        (ETApp
+                         (EVar (2,"-"))
+                         (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
+                        (EVar (357,"n")))
+                       (ETApp
+                        (ETApp
+                         (EVar (0,"demote"))
+                         (ETyp (TCon (TC (TCNum 2)) [])))
+                        (ETyp (TCon (TC (TCNum 8)) [])))))))
+                   (EApp
+                    (EVar (355,"W"))
+                    (EApp
+                     (EApp
+                      (ETApp
+                       (EVar (2,"-"))
+                       (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
+                      (EVar (357,"n")))
+                     (ETApp
+                      (ETApp
+                       (EVar (0,"demote"))
+                       (ETyp (TCon (TC (TCNum 7)) [])))
+                      (ETyp (TCon (TC (TCNum 8)) [])))))))
+                 (EApp
+                  (EVar (246,"s0"))
+                  (EApp
+                   (EVar (355,"W"))
+                   (EApp
+                    (EApp
+                     (ETApp
+                      (EVar (2,"-"))
+                      (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
+                     (EVar (357,"n")))
+                    (ETApp
+                     (ETApp
+                      (EVar (0,"demote"))
+                      (ETyp (TCon (TC (TCNum 15)) [])))
+                     (ETyp (TCon (TC (TCNum 8)) []))))))))
+               (EApp
+                (EVar (355,"W"))
+                (EApp
+                 (EApp
+                  (ETApp
+                   (EVar (2,"-"))
+                   (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 8)) [],TCon (TC TCBit) []])))
+                  (EVar (357,"n")))
+                 (ETApp
+                  (ETApp
+                   (EVar (0,"demote"))
+                   (ETyp (TCon (TC (TCNum 16)) [])))
+                  (ETyp (TCon (TC (TCNum 8)) []))))))))))])])))))
+, (NonRecursive
+   (Decl (269,"schedules_equiv")
+    (DExpr
+     (EAbs (358,"n")
+      (EApp
+       (EApp
+        (ETApp
+         (EVar (17,"=="))
+         (ETyp (TCon (TC TCSeq) [TCon (TC (TCNum 64)) [],TCon (TC TCSeq) [TCon (TC (TCNum 32)) [],TCon (TC TCBit) []]])))
+        (EApp
+         (EVar (251,"SHA256MessageSchedule"))
+         (EVar (358,"n"))))
+       (EApp
+        (EVar (268,"SHA256MessageSchedule'"))
+        (EVar (358,"n"))))))))
+].
 
 Definition ge := bind_decl_groups whole_prog gempty.
 
@@ -3071,4 +4471,6 @@ Definition SHA256MessageSchedule : ident := (251,"SHA256MessageSchedule").
 Definition SHA256compress : ident := (252,"SHA256Compress").
 Definition SHA256' : ident := (253,"SHA256'").
 Definition SHA256 : ident := (254,"SHA256").
+Definition SHA256MessageSchedule' : ident := (268,"SHA256MessageSchedule'").
+
 

@@ -1,9 +1,9 @@
-Require Import Semantics.
-Require Import Eager.
-Require Import EagerEvalInd.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Eager.
+Require Import Cryptol.EagerEvalInd.
 Require Import List.
-Require Import AST.
-Require Import Lib.
+Require Import Cryptol.AST.
+Require Import Cryptol.Lib.
 
 (* The two different eval_type relations should be merged *)
 Lemma eager_to_strict_lazy_type :

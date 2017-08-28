@@ -1,4 +1,4 @@
-Require Import BuiltinSyntax.
+Require Import Cryptol.BuiltinSyntax.
 Require Import String.
 
 (* Sanity check to make sure all the prims are in the table above *)

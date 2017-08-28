@@ -3,20 +3,20 @@ Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Values.        
-Require Import Eager.
-Require Import Bitstream.
-Require Import Lib.
-Require Import EagerEvalInd.
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Values.        
+Require Import Cryptol.Eager.
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.Lib.
+Require Import Cryptol.EagerEvalInd.
 
 Definition global_extends (ge ge' : genv) : Prop :=
   forall id v,
@@ -150,40 +150,40 @@ Proof.
     inversion H0. inversion H9.
     f_equal; eauto.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H3. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H3. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H2. subst.
-    assert (tnum a = tnum a0) by eauto.
-    assert (tnum b = tnum b0) by eauto.
+    assert (tvnum a = tvnum a0) by eauto.
+    assert (tvnum b = tvnum b0) by eauto.
     congruence.
   * inversion H0.
     subst.
-    assert (tnum n = tnum n0) by eauto.
+    assert (tvnum n = tvnum n0) by eauto.
     congruence.
 Qed.
 
@@ -273,6 +273,7 @@ Proof.
     eapply Forall2_Forall2_eq; eauto.
     simpl. eapply H1.
   * inversion H3. subst.
+
     assert (targs = targs0) by (eapply Forall2_eager_eval_type_determ; eauto).
     subst targs0.
     assert (args = args0). {
@@ -305,8 +306,7 @@ Proof.
     f_equal. f_equal.
     assert (vs = vs0) by eauto. congruence.
     eauto.
-Qed.    
-
+Qed.
 
 
 Lemma eager_eval_type_swap_ge :
@@ -359,7 +359,8 @@ Proof.
     induction H1; intros. econstructor.
     inversion H0. subst.
     econstructor; eauto.
-  * econstructor; eauto.
+  * 
+    econstructor; eauto.
     clear H2.
     induction H; intros; econstructor; eauto.
     eapply eager_eval_type_swap_ge; eauto.
@@ -368,7 +369,6 @@ Proof.
     econstructor.
     inversion H1. subst.
     econstructor; eauto.
-    
   * econstructor; eauto.
   * intros. 
     eapply IHeager_eval_expr in H0; try eassumption.

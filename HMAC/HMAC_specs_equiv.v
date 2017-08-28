@@ -3,17 +3,17 @@ Import ListNotations.
 
 Require Import Bvector.
 Require Import Program. (* dependent destruction *)
-Require Import Coqlib.
+Require Import Cryptol.Coqlib.
 
-Require Import Lib.
-Require Import Utils.
-Require Import AST.
-Require Import Bitstream.
-Require Import Eager.
-Require Import GetEachN.
+Require Import Cryptol.Lib.
+Require Import Cryptol.Utils.
+Require Import Cryptol.AST.
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.Eager.
+Require Import Cryptol.GetEachN.
 
-Require Import HMAC_spec.
-Require Import HMAC_lib.
+Require Import HMAC.HMAC_spec.
+Require Import HMAC.HMAC_lib.
 
 Fixpoint to_bvector (w : nat) (e : ext_val) : option (Bvector w) :=
   match e,w with

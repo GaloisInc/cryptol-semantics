@@ -1,9 +1,9 @@
-Require Import AST.
+Require Import Cryptol.AST.
 Require Import List.
-Require Import Semantics.
+Require Import Cryptol.Semantics.
 Require Import String.
-Require Import Builtins.
-Require Import Eager.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.Eager.
 
 
 Definition eager_eval_type_ind_total
@@ -14,67 +14,67 @@ Definition eager_eval_type_ind_total
   (f0 : forall (E : tenv) (l : list (string * Typ)) (lv : list (string * Tval)),
       Forall2 (eager_eval_type ge E) (map snd l) (map snd lv) ->
       Pl E (map snd l) (map snd lv) ->
-      map fst l = map fst lv -> P E (TRec l) (trec lv))
+      map fst l = map fst lv -> P E (TRec l) (tvrec lv))
   (f1 : forall (E : tenv) (l : list Typ) (lv : list Tval) (n : nat),
       Forall2 (eager_eval_type ge E) l lv ->
       Pl E l lv ->
-      n = Datatypes.length l -> P E (TCon (TC (TCTuple n)) l) (ttup lv))
+      n = Datatypes.length l -> P E (TCon (TC (TCTuple n)) l) (tvtup lv))
   (f2 : forall (E : tenv) (l : list Typ) (len : Typ) (lenv : Tval) (elem : Typ) (elemv : Tval),
         l = len :: elem :: nil ->
         eager_eval_type ge E len lenv ->
-        P E len lenv -> eager_eval_type ge E elem elemv -> P E elem elemv -> P E (TCon (TC TCSeq) l) (tseq lenv elemv))
-  (f3 : forall (E : tenv) (n : BinNums.Z), P E (TCon (TC (TCNum n)) nil) (tnum n))
-  (f4 : forall E : tenv, P E (TCon (TC TCBit) nil) tbit) (f5 : forall E : tenv, P E (TCon (TC TCInf) nil) tinf)
+        P E len lenv -> eager_eval_type ge E elem elemv -> P E elem elemv -> P E (TCon (TC TCSeq) l) (tvseq lenv elemv))
+  (f3 : forall (E : tenv) (n : BinNums.Z), P E (TCon (TC (TCNum n)) nil) (tvnum n))
+  (f4 : forall E : tenv, P E (TCon (TC TCBit) nil) tvbit) (f5 : forall E : tenv, P E (TCon (TC TCInf) nil) tvinf)
   (f6 : forall (E : tenv) (a : Typ) (arg : Tval) (r : Typ) (res : Tval),
         eager_eval_type ge E a arg ->
-        P E a arg -> eager_eval_type ge E r res -> P E r res -> P E (TCon (TC TCFun) (a :: r :: nil)) (tfun arg res))
+        P E a arg -> eager_eval_type ge E r res -> P E r res -> P E (TCon (TC TCFun) (a :: r :: nil)) (tvfun arg res))
   (f7 : forall (E : tenv) (a : Typ) (r : list Typ) (arg res : Tval),
         eager_eval_type ge E a arg ->
         P E a arg ->
         eager_eval_type ge E (TCon (TC TCFun) r) res ->
-        P E (TCon (TC TCFun) r) res -> P E (TCon (TC TCFun) (a :: r)) (tfun arg res))
+        P E (TCon (TC TCFun) r) res -> P E (TCon (TC TCFun) (a :: r)) (tvfun arg res))
   (f8 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-        eager_eval_type ge E l (tnum a) ->
-        P E l (tnum a) ->
-        eager_eval_type ge E r (tnum b) ->
-        P E r (tnum b) -> n = BinInt.Z.add a b -> P E (TCon (TF TCAdd) (l :: r :: nil)) (tnum n))
+        eager_eval_type ge E l (tvnum a) ->
+        P E l (tvnum a) ->
+        eager_eval_type ge E r (tvnum b) ->
+        P E r (tvnum b) -> n = BinInt.Z.add a b -> P E (TCon (TF TCAdd) (l :: r :: nil)) (tvnum n))
   (f9 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-        eager_eval_type ge E l (tnum a) ->
-        P E l (tnum a) ->
-        eager_eval_type ge E r (tnum b) ->
-        P E r (tnum b) -> n = BinInt.Z.sub a b -> P E (TCon (TF TCSub) (l :: r :: nil)) (tnum n))
+        eager_eval_type ge E l (tvnum a) ->
+        P E l (tvnum a) ->
+        eager_eval_type ge E r (tvnum b) ->
+        P E r (tvnum b) -> n = BinInt.Z.sub a b -> P E (TCon (TF TCSub) (l :: r :: nil)) (tvnum n))
   (f10 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> n = BinInt.Z.mul a b -> P E (TCon (TF TCMul) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> n = BinInt.Z.mul a b -> P E (TCon (TF TCMul) (l :: r :: nil)) (tvnum n))
   (f11 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> b <> BinNums.Z0 -> n = BinInt.Z.div a b -> P E (TCon (TF TCDiv) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> b <> BinNums.Z0 -> n = BinInt.Z.div a b -> P E (TCon (TF TCDiv) (l :: r :: nil)) (tvnum n))
   (f12 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> b <> BinNums.Z0 -> n = BinInt.Z.modulo a b -> P E (TCon (TF TCMod) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> b <> BinNums.Z0 -> n = BinInt.Z.modulo a b -> P E (TCon (TF TCMod) (l :: r :: nil)) (tvnum n))
   (f13 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> n = BinInt.Z.pow a b -> P E (TCon (TF TCExp) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> n = BinInt.Z.pow a b -> P E (TCon (TF TCExp) (l :: r :: nil)) (tvnum n))
   (f14 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> n = BinInt.Z.min a b -> P E (TCon (TF TCMin) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> n = BinInt.Z.min a b -> P E (TCon (TF TCMin) (l :: r :: nil)) (tvnum n))
   (f15 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> n = BinInt.Z.max a b -> P E (TCon (TF TCMax) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> n = BinInt.Z.max a b -> P E (TCon (TF TCMax) (l :: r :: nil)) (tvnum n))
   (f16 : forall (E : tenv) (e : Typ) (n : BinNums.Z),
-      eager_eval_type ge E e (tnum n) -> P E e (tnum n) -> P E (TCon (TF TCWidth) (e :: nil)) (tnum (calc_width n)))
+      eager_eval_type ge E e (tvnum n) -> P E e (tvnum n) -> P E (TCon (TF TCWidth) (e :: nil)) (tvnum (calc_width n)))
   (HPlnil : forall TE, Pl TE nil nil)
   (HPlcons : forall TE t v ts vs,
       eager_eval_type ge TE t v ->
@@ -100,15 +100,15 @@ Definition eager_eval_type_ind_total
       | @eager_eval_tinf _ E => f5 E
       | @eager_eval_tfunction_type_base _ E a arg r res e0 e1 => f6 E a arg r res e0 (F E a arg e0) e1 (F E r res e1)
       | @eager_eval_tfunction_type_rec _ E a r arg res e0 e1 => f7 E a r arg res e0 (F E a arg e0) e1 (F E (TCon (TC TCFun) r) res e1)
-      | @eager_eval_type_add _ E l r a b n e0 e1 e2 => f8 E l r a b n e0 (F E l (tnum a) e0) e1 (F E r (tnum b) e1) e2
-      | @eager_eval_type_sub _ E l r a b n e0 e1 e2 => f9 E l r a b n e0 (F E l (tnum a) e0) e1 (F E r (tnum b) e1) e2
-      | @eager_eval_type_mul _ E l r a b n e0 e1 e2 => f10 E l r a b n e0 (F E l (tnum a) e0) e1 (F E r (tnum b) e1) e2
-      | @eager_eval_type_div _ E l r a b n e0 e1 n0 e2 => f11 E l r a b n e0 (F E l (tnum a) e0) e1 (F E r (tnum b) e1) n0 e2
-      | @eager_eval_type_mod _ E l r a b n e0 e1 n0 e2 => f12 E l r a b n e0 (F E l (tnum a) e0) e1 (F E r (tnum b) e1) n0 e2
-      | @eager_eval_type_exp _ E l r a b n e0 e1 e2 => f13 E l r a b n e0 (F E l (tnum a) e0) e1 (F E r (tnum b) e1) e2
-      | @eager_eval_type_min _ E l r a b n e0 e1 e2 => f14 E l r a b n e0 (F E l (tnum a) e0) e1 (F E r (tnum b) e1) e2
-      | @eager_eval_type_max _ E l r a b n e0 e1 e2 => f15 E l r a b n e0 (F E l (tnum a) e0) e1 (F E r (tnum b) e1) e2
-      | @eager_eval_type_width _ E e0 n e1 => f16 E e0 n e1 (F E e0 (tnum n) e1)
+      | @eager_eval_type_add _ E l r a b n e0 e1 e2 => f8 E l r a b n e0 (F E l (tvnum a) e0) e1 (F E r (tvnum b) e1) e2
+      | @eager_eval_type_sub _ E l r a b n e0 e1 e2 => f9 E l r a b n e0 (F E l (tvnum a) e0) e1 (F E r (tvnum b) e1) e2
+      | @eager_eval_type_mul _ E l r a b n e0 e1 e2 => f10 E l r a b n e0 (F E l (tvnum a) e0) e1 (F E r (tvnum b) e1) e2
+      | @eager_eval_type_div _ E l r a b n e0 e1 n0 e2 => f11 E l r a b n e0 (F E l (tvnum a) e0) e1 (F E r (tvnum b) e1) n0 e2
+      | @eager_eval_type_mod _ E l r a b n e0 e1 n0 e2 => f12 E l r a b n e0 (F E l (tvnum a) e0) e1 (F E r (tvnum b) e1) n0 e2
+      | @eager_eval_type_exp _ E l r a b n e0 e1 e2 => f13 E l r a b n e0 (F E l (tvnum a) e0) e1 (F E r (tvnum b) e1) e2
+      | @eager_eval_type_min _ E l r a b n e0 e1 e2 => f14 E l r a b n e0 (F E l (tvnum a) e0) e1 (F E r (tvnum b) e1) e2
+      | @eager_eval_type_max _ E l r a b n e0 e1 e2 => f15 E l r a b n e0 (F E l (tvnum a) e0) e1 (F E r (tvnum b) e1) e2
+      | @eager_eval_type_width _ E e0 n e1 => f16 E e0 n e1 (F E e0 (tvnum n) e1)
       end in
           F.
 
@@ -120,67 +120,67 @@ Definition eager_eval_type_ind_useful
   (f0 : forall (E : tenv) (l : list (string * Typ)) (lv : list (string * Tval)),
       Forall2 (eager_eval_type ge E) (map snd l) (map snd lv) ->
       Forall2 (P E) (map snd l) (map snd lv) ->
-      map fst l = map fst lv -> P E (TRec l) (trec lv))
+      map fst l = map fst lv -> P E (TRec l) (tvrec lv))
   (f1 : forall (E : tenv) (l : list Typ) (lv : list Tval) (n : nat),
       Forall2 (eager_eval_type ge E) l lv ->
       Forall2 (P E) l lv ->
-      n = Datatypes.length l -> P E (TCon (TC (TCTuple n)) l) (ttup lv))
+      n = Datatypes.length l -> P E (TCon (TC (TCTuple n)) l) (tvtup lv))
   (f2 : forall (E : tenv) (l : list Typ) (len : Typ) (lenv : Tval) (elem : Typ) (elemv : Tval),
         l = len :: elem :: nil ->
         eager_eval_type ge E len lenv ->
-        P E len lenv -> eager_eval_type ge E elem elemv -> P E elem elemv -> P E (TCon (TC TCSeq) l) (tseq lenv elemv))
-  (f3 : forall (E : tenv) (n : BinNums.Z), P E (TCon (TC (TCNum n)) nil) (tnum n))
-  (f4 : forall E : tenv, P E (TCon (TC TCBit) nil) tbit) (f5 : forall E : tenv, P E (TCon (TC TCInf) nil) tinf)
+        P E len lenv -> eager_eval_type ge E elem elemv -> P E elem elemv -> P E (TCon (TC TCSeq) l) (tvseq lenv elemv))
+  (f3 : forall (E : tenv) (n : BinNums.Z), P E (TCon (TC (TCNum n)) nil) (tvnum n))
+  (f4 : forall E : tenv, P E (TCon (TC TCBit) nil) tvbit) (f5 : forall E : tenv, P E (TCon (TC TCInf) nil) tvinf)
   (f6 : forall (E : tenv) (a : Typ) (arg : Tval) (r : Typ) (res : Tval),
         eager_eval_type ge E a arg ->
-        P E a arg -> eager_eval_type ge E r res -> P E r res -> P E (TCon (TC TCFun) (a :: r :: nil)) (tfun arg res))
+        P E a arg -> eager_eval_type ge E r res -> P E r res -> P E (TCon (TC TCFun) (a :: r :: nil)) (tvfun arg res))
   (f7 : forall (E : tenv) (a : Typ) (r : list Typ) (arg res : Tval),
         eager_eval_type ge E a arg ->
         P E a arg ->
         eager_eval_type ge E (TCon (TC TCFun) r) res ->
-        P E (TCon (TC TCFun) r) res -> P E (TCon (TC TCFun) (a :: r)) (tfun arg res))
+        P E (TCon (TC TCFun) r) res -> P E (TCon (TC TCFun) (a :: r)) (tvfun arg res))
   (f8 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-        eager_eval_type ge E l (tnum a) ->
-        P E l (tnum a) ->
-        eager_eval_type ge E r (tnum b) ->
-        P E r (tnum b) -> n = BinInt.Z.add a b -> P E (TCon (TF TCAdd) (l :: r :: nil)) (tnum n))
+        eager_eval_type ge E l (tvnum a) ->
+        P E l (tvnum a) ->
+        eager_eval_type ge E r (tvnum b) ->
+        P E r (tvnum b) -> n = BinInt.Z.add a b -> P E (TCon (TF TCAdd) (l :: r :: nil)) (tvnum n))
   (f9 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-        eager_eval_type ge E l (tnum a) ->
-        P E l (tnum a) ->
-        eager_eval_type ge E r (tnum b) ->
-        P E r (tnum b) -> n = BinInt.Z.sub a b -> P E (TCon (TF TCSub) (l :: r :: nil)) (tnum n))
+        eager_eval_type ge E l (tvnum a) ->
+        P E l (tvnum a) ->
+        eager_eval_type ge E r (tvnum b) ->
+        P E r (tvnum b) -> n = BinInt.Z.sub a b -> P E (TCon (TF TCSub) (l :: r :: nil)) (tvnum n))
   (f10 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> n = BinInt.Z.mul a b -> P E (TCon (TF TCMul) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> n = BinInt.Z.mul a b -> P E (TCon (TF TCMul) (l :: r :: nil)) (tvnum n))
   (f11 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> b <> BinNums.Z0 -> n = BinInt.Z.div a b -> P E (TCon (TF TCDiv) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> b <> BinNums.Z0 -> n = BinInt.Z.div a b -> P E (TCon (TF TCDiv) (l :: r :: nil)) (tvnum n))
   (f12 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> b <> BinNums.Z0 -> n = BinInt.Z.modulo a b -> P E (TCon (TF TCMod) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> b <> BinNums.Z0 -> n = BinInt.Z.modulo a b -> P E (TCon (TF TCMod) (l :: r :: nil)) (tvnum n))
   (f13 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> n = BinInt.Z.pow a b -> P E (TCon (TF TCExp) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> n = BinInt.Z.pow a b -> P E (TCon (TF TCExp) (l :: r :: nil)) (tvnum n))
   (f14 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> n = BinInt.Z.min a b -> P E (TCon (TF TCMin) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> n = BinInt.Z.min a b -> P E (TCon (TF TCMin) (l :: r :: nil)) (tvnum n))
   (f15 : forall (E : tenv) (l r : Typ) (a b n : BinNums.Z),
-         eager_eval_type ge E l (tnum a) ->
-         P E l (tnum a) ->
-         eager_eval_type ge E r (tnum b) ->
-         P E r (tnum b) -> n = BinInt.Z.max a b -> P E (TCon (TF TCMax) (l :: r :: nil)) (tnum n))
+         eager_eval_type ge E l (tvnum a) ->
+         P E l (tvnum a) ->
+         eager_eval_type ge E r (tvnum b) ->
+         P E r (tvnum b) -> n = BinInt.Z.max a b -> P E (TCon (TF TCMax) (l :: r :: nil)) (tvnum n))
   (f16 : forall (E : tenv) (e : Typ) (n : BinNums.Z),
-      eager_eval_type ge E e (tnum n) -> P E e (tnum n) -> P E (TCon (TF TCWidth) (e :: nil)) (tnum (calc_width n)))
+      eager_eval_type ge E e (tvnum n) -> P E e (tvnum n) -> P E (TCon (TF TCWidth) (e :: nil)) (tvnum (calc_width n)))
   (TE : tenv)
   (t : Typ)
   (v : Tval)

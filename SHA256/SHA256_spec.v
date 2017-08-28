@@ -5,8 +5,8 @@
 Require Recdef.
 (*Require Import VST.floyd.coqlib3.
 Require Import VST.floyd.sublist.*)
-Require Import Bitvectors.
-Require Import Coqlib.
+Require Import Cryptol.Bitvectors.
+Require Import Cryptol.Coqlib.
 Require Import Coq.Strings.String.
 Require Import Coq.Strings.Ascii.
 Require Import List.

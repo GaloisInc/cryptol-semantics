@@ -3,9 +3,9 @@ Require Import List.
 Import ListNotations.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
-Require Import Builtins.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
 
 (* An identifier is both a unique identifier and a name, but the name is meaningless *)
@@ -189,13 +189,13 @@ Defined.
 
 (* Type level values *)
 Inductive Tval :=
-| trec (l : list (string * Tval)) (* record *)
-| ttup (l : list Tval) (* tuple *)
-| tseq (len : Tval) (elem : Tval)
-| tfun (argt : Tval) (res : Tval)
-| tnum (z : Z)
-| tbit
-| tinf (* length of infinite streams *)
+| tvrec (l : list (string * Tval)) (* record *)
+| tvtup (l : list Tval) (* tuple *)
+| tvseq (len : Tval) (elem : Tval)
+| tvfun (argt : Tval) (res : Tval)
+| tvnum (z : Z)
+| tvbit
+| tvinf (* length of infinite streams *)
 .
 
 
@@ -262,7 +262,7 @@ with DeclGroup :=
      | NonRecursive (d : Declaration)
 with Selector :=
      | TupleSel (n : nat)
-     | ListSel (e : Expr)
+     | ListSel (n : nat)
      | RecordSel (s : string)
 with val :=
      | bit (b : bool) (* Can we ever get this now? *)

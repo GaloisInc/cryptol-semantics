@@ -3,34 +3,34 @@ Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Values.        
-Require Import Bitstream.
-Require Import Lib.
-Require Import GlobalExtends.
-Require Import GetEachN.
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Values.        
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.Lib.
+Require Import Cryptol.GlobalExtends.
+Require Import Cryptol.GetEachN.
 
-Require Import EvalTac.
-Require Import Eager.
+Require Import Cryptol.EvalTac.
+Require Import Cryptol.Eager.
 
 Import HaskellListNotations.
 Open Scope string.
 
-Require Import HMAC.
+Require Import HMAC.HMAC.
 
-Require Import HMAC_spec.
+Require Import HMAC.HMAC_spec.
 
-Require Import HMAC_lib.
+Require Import HMAC.HMAC_lib.
 
-Require Import Kinit_eval.
+Require Import HMAC.Kinit_eval.
 
 
 (* lemma for when the length of the key is the same as the length of the block *)

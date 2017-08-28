@@ -1,9 +1,9 @@
 (*Add LoadPath "~/Desktop/Galois/cryptol-semantics/src".*)
-Require Import AST.
+Require Import Cryptol.AST.
 Require Import String.
-Require Import Coqlib.
-Require Import Bitvectors.
-Require Import Utils. 
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
+Require Import Cryptol.Utils. 
 Require Import Omega. 
 
 Import HaskellListNotations. 

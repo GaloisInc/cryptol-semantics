@@ -1,19 +1,19 @@
-Require Import HMAC_specs_equiv.
-Require Import HMAC_spec.
-Require Import HMAC_verif.
-Require Import HMAC.
-Require Import HMAC_lib.
+Require Import HMAC.HMAC_specs_equiv.
+Require Import HMAC.HMAC_spec.
+Require Import HMAC.HMAC_verif.
+Require Import HMAC.HMAC.
+Require Import HMAC.HMAC_lib.
 
-Require Import GlobalExtends.
+Require Import Cryptol.GlobalExtends.
 
-Require Import Coqlib.
-Require Import Lib.
-Require Import Utils.
-Require Import AST.
-Require Import Bitstream.
-Require Import Eager.
-Require Import GetEachN.
-Require Import Semantics.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Lib.
+Require Import Cryptol.Utils.
+Require Import Cryptol.AST.
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.Eager.
+Require Import Cryptol.GetEachN.
+Require Import Cryptol.Semantics.
 
 Require Import Bvector.
 

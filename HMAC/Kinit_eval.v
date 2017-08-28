@@ -1,31 +1,29 @@
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Values.        
-Require Import Bitstream.
-Require Import GlobalExtends.
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Values.        
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.GlobalExtends.
 
-Require Import EvalTac.
-Require Import Eager.
-Require Import Lib.
+Require Import Cryptol.EvalTac.
+Require Import Cryptol.Eager.
+Require Import Cryptol.Lib.
 
 Import HaskellListNotations.
 
-Require Import HMAC.
+Require Import HMAC.HMAC.
 
-Require Import HMAC_spec.
-
-Require Import HMAC_lib.
-Require Import Prims.
+Require Import HMAC.HMAC_lib.
+Require Import Cryptol.Prims.
 
 Require Import List.
 Import ListNotations.
@@ -39,9 +37,9 @@ Lemma kinit_eval :
       forall h hf,
         good_hash h GE TE SE hf ->
         forall digest t1 t2 t3 kexpr,
-          eager_eval_type GE TE t1 (tnum (Z.of_nat keylen)) ->
-          eager_eval_type GE TE t2 (tnum (Z.of_nat keylen)) ->
-          eager_eval_type GE TE t3 (tnum digest) ->
+          eager_eval_type GE TE t1 (tvnum (Z.of_nat keylen)) ->
+          eager_eval_type GE TE t2 (tvnum (Z.of_nat keylen)) ->
+          eager_eval_type GE TE t3 (tvnum digest) ->
           eager_eval_expr GE TE SE kexpr (to_sval key) ->
           eager_eval_expr GE TE SE (apply (tapply (EVar kinit) (ETyp t1 :: ETyp t2 :: ETyp t3 ::  nil)) (h :: kexpr :: nil)) (to_sval key).
 Proof.
@@ -84,7 +82,8 @@ Proof.
   simpl.
 
   
-  use take_eval.
+  use take_eval; try omega.
+  
   use append_eval.
 
   instantiate (1 := l). simpl. lv.

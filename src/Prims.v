@@ -1,31 +1,359 @@
-Require Import List.
-Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Coqlib.
-Require Import Bitvectors.
+Require Import Cryptol.Coqlib.
+Require Import Cryptol.Bitvectors.
 
-Require Import AST.
-Require Import Semantics.
-Require Import Utils.
-Require Import Builtins.
-Require Import BuiltinSem.
-Require Import BuiltinSyntax.
-Require Import Values.        
-Require Import Bitstream.
-Require Import Lib.
-Require Import GlobalExtends.
-Require Import GetEachN.
+Require Import Cryptol.AST.
+Require Import Cryptol.Semantics.
+Require Import Cryptol.Utils.
+Require Import Cryptol.Builtins.
+Require Import Cryptol.BuiltinSem.
+Require Import Cryptol.BuiltinSyntax.
+Require Import Cryptol.Values.        
+Require Import Cryptol.Bitstream.
+Require Import Cryptol.Lib.
+Require Import Cryptol.GlobalExtends.
+Require Import Cryptol.GetEachN.
 
-Require Import EvalTac.
-Require Import Eager.
+Require Import Cryptol.EvalTac.
+Require Import Cryptol.Eager.
 
-Require Import ExtToBitvector.
+Require Import Cryptol.ExtToBitvector.
 
 Import HaskellListNotations.
 Require Import List.
+Import ListNotations.
+Require Import Cryptol.Builtins.
+Require Import Program.
 
+Fixpoint lt_ev (l r : ext_val) : ext_val :=
+  match l, r with
+  | eseq l, eseq r =>
+    match to_bitv l, to_bitv r with
+    | Some bv, Some bv' =>
+      if zlt (@unsigned (length l) bv) (@unsigned (length r) bv') then ebit true else ebit false
+    | _,_ => eseq nil
+    end
+  | _,_ => eseq nil
+  end.
+
+Lemma lt_eval :
+  forall id GE TE SE,
+    GE (id,"<") = Some (mb 1 2 Lt) ->
+    SE (id,"<") = None ->
+    forall ta tv a1 a2 v1 v2,
+      eager_eval_type GE TE ta tv ->
+      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
+      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
+      has_type (eseq v1) (tseq (length v1) tbit) ->
+      has_type (eseq v2) (tseq (length v2) tbit) ->
+      forall res,
+        res = to_sval (lt_ev (eseq v1) (eseq v2)) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"<")) (ETyp ta)) a1) a2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e; try lv; try congruence.
+  simpl. subst res.
+
+  (* TODO: rewrite lt_sem to not suck *)
+Admitted.
+  
+
+Fixpoint eq_ev (l r : ext_val) : ext_val :=
+  let fix list_eq_ev x y :=
+      match x,y with
+      | nil,nil => ebit true
+      | a :: aa, b :: bb =>
+        match eq_ev a b, list_eq_ev aa bb with
+        | ebit true, ebit true => ebit true
+        | _ , _ => ebit false
+        end
+      | _ , _ => ebit false
+      end in
+  let fix list_pair_eq_ev x y :=
+      match x,y with
+      | nil,nil => ebit true
+      | (_,a) :: aa, (_,b) :: bb =>
+        match eq_ev a b, list_pair_eq_ev aa bb with
+        | ebit true, ebit true => ebit true
+        | _ , _ => ebit false
+        end
+      | _ , _ => ebit false
+      end in
+  match l,r with
+  | ebit b, ebit b' => ebit (eqb b b')
+  | eseq l', eseq r' => list_eq_ev l' r'
+  | etup l', etup r' => list_eq_ev l' r'
+  | erec sl', erec sr' => list_pair_eq_ev sl' sr'
+  | _,_ => ebit false
+  end.
+
+(* TODO: update eq_sem so this is true *)
+Lemma eq_sem_equiv :
+  forall ev1 ev2,
+    eq_sem (to_sval ev1) (to_sval ev2) = Some (to_sval (eq_ev ev1 ev2)).
+Proof.
+Admitted.
+
+Lemma eq_eval :
+  forall id GE TE SE,
+    GE (id,"==") = Some (mb 1 2 Eq) ->
+    SE (id,"==") = None ->
+    forall ta tv a1 a2 v1 v2,
+      eager_eval_type GE TE ta tv ->
+      eager_eval_expr GE TE SE a1 (to_sval v1) ->
+      eager_eval_expr GE TE SE a2 (to_sval v2) ->
+      forall res,
+        res = to_sval (eq_ev v1 v2) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"==")) (ETyp ta)) a1) a2) res.
+Proof.
+  intros. e. e. e. ag.
+  e. e. e. e; try lv.
+  simpl. subst res.
+  eapply eq_sem_equiv; eauto.
+Qed.
+
+Definition fromTo_ev (lo hi width : Z) : ext_val :=
+  eseq (map eseq (map from_bitv (map (@repr (Z.to_nat width)) (zrange lo (hi + 1))))).
+
+
+Lemma strict_list_to_sval_map :
+  forall l,
+    map strict_list (map (map to_sval) l) = map to_sval (map eseq l).
+Proof.
+  induction l; intros.
+  simpl. auto.
+  simpl. f_equal. auto.
+Qed.
+
+Lemma same_bitv :
+  forall l {w} (bv : BitV w),
+    to_bitv l = Some bv ->
+    StrictToBitvector.to_bitv (map to_sval l) = Some bv.
+Proof.
+  induction l; intros.
+  unfold to_bitv in *.
+  destruct w. simpl in *. auto. congruence.
+  destruct w; simpl in H; try congruence.
+
+  destruct a; congruence.
+  
+  simpl. destruct a; simpl in *; try congruence.
+  destruct (to_bitv l) eqn:?; try congruence.
+  erewrite IHl; eauto.
+Qed.
+
+Lemma same_from_bitv :
+  forall {w} (l : BitV w),
+    StrictToBitvector.from_bitv l = map to_sval (from_bitv l).
+Proof.
+  intros. remember (from_bitv l) as x.
+  symmetry in Heqx.
+  rewrite <- tobit_frombit_equiv in Heqx.
+  rewrite <- StrictToBitvector.tobit_frombit_equiv.
+  eapply same_bitv; eauto.
+Qed.
+
+Lemma strict_from_bitv :
+  forall w (l : list (BitV w)),
+    map StrictToBitvector.from_bitv l = map (map to_sval) (map from_bitv l).
+Proof.
+  induction l; intros;
+    simpl; auto.
+  f_equal; eauto.
+  eapply same_from_bitv; eauto.
+Qed.
+
+Definition plus_ev (l r : ext_val) : ext_val :=
+  match l,r with
+  | eseq l', eseq r' =>
+    match @to_bitv (length l') l', @to_bitv (length l') r' with
+    | Some bv, Some bv' =>
+      eseq (from_bitv (add bv bv'))
+    | _,_ => eseq nil
+    end
+  | _,_ => eseq nil
+  end.
+
+Lemma to_bitv_succeeds :
+  forall l,
+    has_type (eseq l) (tseq (Datatypes.length l) tbit) ->
+    exists (bv : BitV (Datatypes.length l)),
+      to_bitv l = Some bv.
+Proof.
+  induction l; intros.
+  simpl. eauto.
+  simpl. edestruct IHl.
+  inversion H. inversion H2.
+  econstructor; eauto.
+  inversion H. subst. inversion H3.
+  subst.
+  inversion H4. subst.
+  rewrite H0. eauto.
+Qed.
+
+Lemma plus_eval :
+  forall id GE TE SE,
+    GE (id,"+") = Some (mb 1 2 Plus) ->
+    SE (id,"+") = None ->
+    forall ta tv a1 a2 v1 v2 len,
+      eager_eval_type GE TE ta tv ->
+      eager_eval_expr GE TE SE a1 (to_sval v1) ->
+      eager_eval_expr GE TE SE a2 (to_sval v2) ->
+      has_type v1 (tseq len tbit) ->
+      has_type v2 (tseq len tbit) ->
+      forall res,
+        res = to_sval (plus_ev v1 v2) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"+")) (ETyp ta)) a1) a2) res.
+Proof.
+  intros.
+
+  inversion H4. inversion H5. subst.
+  e. e. e. ag.
+  e. e. e. e; try lv.
+  simpl. unfold plus_sem.
+  repeat rewrite list_of_strictval_of_strictlist.
+  destruct (to_bitv l) eqn:?.
+  Focus 2.
+  edestruct (to_bitv_succeeds l); try congruence.
+  destruct (to_bitv l0) eqn:?.
+  Focus 2.
+  edestruct (to_bitv_succeeds l0); try congruence.
+  exfalso.
+  rewrite <- H11 in Heqo0. congruence.
+
+  (* dependent types are terrible *)
+Admitted.
+
+Definition minus_ev (l r : ext_val) : ext_val :=
+  match l,r with
+  | eseq l', eseq r' =>
+    match @to_bitv (length l') l', @to_bitv (length l') r' with
+    | Some bv, Some bv' =>
+      eseq (from_bitv (sub bv bv'))
+    | _,_ => eseq nil
+    end
+  | _,_ => eseq nil
+  end.
+
+Lemma minus_eval :
+  forall id GE TE SE,
+    GE (id,"-") = Some (mb 1 2 Minus) ->
+    SE (id,"-") = None ->
+    forall ta tv a1 a2 v1 v2 bv1 bv2,
+      eager_eval_type GE TE ta tv ->
+      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
+      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
+      @to_bitv (length v1) v1 = Some bv1 ->
+      @to_bitv (length v1) v2 = Some bv2 ->
+      forall res,
+        res = to_sval (eseq (from_bitv (sub bv1 bv2))) ->
+        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"-")) (ETyp ta)) a1) a2) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e; try lv.
+  simpl.
+
+  (* Proof should work once minus_sem is implemented *)
+(*  unfold minus_sem.
+  repeat rewrite list_of_strictval_of_strictlist.
+  repeat rewrite map_length.
+  repeat erewrite same_bitv by eassumption.
+  f_equal. subst.
+  simpl.
+  erewrite same_from_bitv; eauto.*)
+Admitted.
+
+Lemma fromTo_eval :
+  forall id GE TE SE,
+    GE (id,"fromTo") = Some (mb 3 0 fromTo) ->
+    SE (id,"fromTo") = None ->
+    forall ta1 ta2 ta3 lo hi width res,
+      eager_eval_type GE TE ta1 (tvnum lo) ->
+      eager_eval_type GE TE ta2 (tvnum hi) ->
+      eager_eval_type GE TE ta3 (tvnum width) ->
+      res = to_sval (fromTo_ev lo hi width) ->
+      eager_eval_expr GE TE SE (ETApp (ETApp (ETApp (EVar (id,"fromTo")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) res.
+Proof.
+  intros.
+  e. e. e. ag.
+  e. e. e. e.
+  
+  simpl.
+  subst res. unfold fromTo_sem.
+  unfold fromTo_ev.
+  f_equal.
+  simpl. f_equal.
+  rewrite <- strict_list_to_sval_map. f_equal.
+  rewrite strict_from_bitv; eauto.
+Qed.
+
+Fixpoint zero_ev (t : Tval) : ext_val :=
+  match t with
+  | tvrec lst => eseq nil
+  (*srec (combine (map fst lst) (map zero_sem (map snd lst)))*)
+  | tvtup l => eseq nil
+  (*stuple (map zero_sem l)*)
+  | tvseq (tvnum n) t' => eseq (repeat (zero_ev t') (Z.to_nat n))
+  | tvseq _ _ => eseq nil
+  | tvfun _ _ => eseq nil
+  | tvnum _ => eseq nil
+  | tvbit => (ebit false)
+  | tvinf => eseq nil
+  end.
+
+Lemma zero_eval :
+  forall id GE TE SE,
+    GE (id,"zero") = Some (mb 1 0 Zero) ->
+    SE (id,"zero") = None ->
+    forall ta n res,
+      eager_eval_type GE TE ta (tvseq (tvnum n) tvbit) ->
+      res = to_sval (zero_ev (tvseq (tvnum n) tvbit)) ->
+      eager_eval_expr GE TE SE (ETApp (EVar (id,"zero")) (ETyp ta)) res.
+Proof.
+  intros.
+  e. ag.
+  e. e.
+  subst res. simpl. f_equal. f_equal.
+  rewrite map_repeat.
+  reflexivity.
+Qed.
+
+Definition split_ev (n : nat) (l : ext_val) : ext_val :=
+  match l with
+  | eseq l =>
+    eseq (map eseq (get_each_n n l))
+  | _ => eseq nil
+  end.
+
+
+Lemma split_eval :
+  forall id GE TE SE,
+    GE (id,"split") = Some (mb 3 1 split) ->
+    SE (id,"split") = None ->
+    forall ta1 ta2 ta3 n tv1 tv3 exp v t len,
+      eager_eval_type GE TE ta1 tv1 ->
+      eager_eval_type GE TE ta2 (tvnum n) ->
+      eager_eval_type GE TE ta3 tv3 ->
+      eager_eval_expr GE TE SE exp (to_sval v) ->
+      has_type v (tseq len t) ->
+        forall res,
+          res = to_sval (split_ev (Z.to_nat n) v) ->
+          eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (id,"split")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) exp) res.
+Proof.
+  intros.
+  inversion H5. subst.
+  e. e. e. e. ag.
+  e. e. e. e. e. lv.
+  simpl.
+  rewrite list_of_strictval_of_strictlist.
+  f_equal. f_equal.
+  rewrite get_each_n_map_commutes.
+  eapply strict_list_to_sval_map.
+Qed.
 
 Definition splitAt_model (n : nat) (l : list ext_val) : list ext_val :=
   let f := firstn n l in
@@ -38,7 +366,7 @@ Definition take_model (n : nat) (l : list ext_val) : ext_val :=
 Lemma splitAt_sem_res :
   forall l n,
     0 <= n <= Z.of_nat (length l) ->
-    splitAt_sem (tnum n) (strict_list (map to_sval l)) =
+    splitAt_sem (tvnum n) (strict_list (map to_sval l)) =
     Some (stuple [strict_list (map to_sval (firstn (Z.to_nat n) l)), strict_list (map to_sval (list_drop (Z.to_nat n) l))]).
 Proof.
   induction l; intros.
@@ -78,16 +406,16 @@ Qed.
 
 
 Lemma splitAt_eval :
-  forall GE TE SE,
-    GE (35, "splitAt") = Some (mb 3 1 splitAt) ->
-    SE (35, "splitAt") = None ->
+  forall id GE TE SE,
+    GE (id, "splitAt") = Some (mb 3 1 splitAt) ->
+    SE (id, "splitAt") = None ->
     forall va ta1 ta2 ta3 l n tr2 tr3,
-      eager_eval_type GE TE ta1 (tnum n) ->
+      eager_eval_type GE TE ta1 (tvnum n) ->
       eager_eval_type GE TE ta2 tr2 ->
       eager_eval_type GE TE ta3 tr3 ->
       eager_eval_expr GE TE SE va (to_sval (eseq l)) ->
       0 <= n <= Z.of_nat (Datatypes.length l) ->
-      eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (35,"splitAt")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va)
+      eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (id,"splitAt")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va)
                       (stuple (map to_sval (splitAt_model (Z.to_nat n) l))).
 Proof.
   intros. 
@@ -98,53 +426,105 @@ Proof.
 Qed.
 
 
+
+
 Lemma take_eval :
-  forall GE TE SE,
-    GE (61, "take") =
+  forall tid sid fid bid eid p1id xid p2id p0id GE TE SE,
+    GE (tid, "take") =
     Some
-      (ETAbs (214, "front")
-             (ETAbs (215, "back")
-                    (ETAbs (216, "elem")
-                           (EAbs (212, "__p1")
-                                 (EWhere (EVar (214, "x"))
+      (ETAbs (fid, "front")
+             (ETAbs (bid, "back")
+                    (ETAbs (eid, "elem")
+                           (EAbs (p1id, "__p1")
+                                 (EWhere (EVar (xid, "x"))
                                          [NonRecursive
-                                            (Decl (213, "__p2")
+                                            (Decl (p2id, "__p2")
                                                   (DExpr
                                                      (EApp
                                                         (ETApp
-                                                           (ETApp (ETApp (EVar (35, "splitAt")) (ETyp (TVar (TVBound 214 KNum))))
-                                                                  (ETyp (TVar (TVBound 215 KNum)))) (ETyp (TVar (TVBound 216 KType))))
-                                                        (EVar (212, "__p1"))))),
-                                          NonRecursive (Decl (214, "x") (DExpr (ESel (EVar (213, "__p2")) (TupleSel 0)))),
-                                          NonRecursive (Decl (215, "__p0") (DExpr (ESel (EVar (213, "__p2")) (TupleSel 1))))]))))) ->
-    SE (61, "take") = None ->
-    GE (35, "splitAt") = Some (mb 3 1 splitAt) ->
-    SE (35, "splitAt") = None ->
+                                                           (ETApp (ETApp (EVar (sid, "splitAt")) (ETyp (TVar (TVBound fid KNum))))
+                                                                  (ETyp (TVar (TVBound bid KNum)))) (ETyp (TVar (TVBound eid KType))))
+                                                        (EVar (p1id, "__p1"))))),
+                                          NonRecursive (Decl (xid, "x") (DExpr (ESel (EVar (p2id, "__p2")) (TupleSel 0)))),
+                                          NonRecursive (Decl (p0id, "__p0") (DExpr (ESel (EVar (p2id, "__p2")) (TupleSel 1))))]))))) ->
+    SE (tid, "take") = None ->
+    GE (sid, "splitAt") = Some (mb 3 1 splitAt) ->
+    SE (sid, "splitAt") = None ->
+    xid <> p0id ->
+    p2id <> p0id ->
+    p1id <> p0id ->
+    p1id <> xid ->
+    p2id <> xid ->
+    p1id <> p2id ->
+    sid <> p0id ->
+    sid <> xid ->
+    sid <> p2id ->
+    sid <> p1id ->
+    fid <> eid ->
+    fid <> bid ->
+    bid <> eid ->
     forall va ta1 ta2 ta3 tr2 tr3 n l,
-      eager_eval_type GE TE ta1 (tnum n) ->
+      eager_eval_type GE TE ta1 (tvnum n) ->
       eager_eval_type GE TE ta2 tr2 ->
       eager_eval_type GE TE ta3 tr3 ->
       eager_eval_expr GE TE SE va (to_sval (eseq l)) ->
       0 <= n <= Z.of_nat (Datatypes.length l) ->
       forall res,
         res = (to_sval (take_model (Z.to_nat n) l)) ->
-      eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (61,"take")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va) res.
+      eager_eval_expr GE TE SE (EApp (ETApp (ETApp (ETApp (EVar (tid,"take")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va) res.
 Proof.
   intros. subst res.
 
   e. e. e. e. ag.
   e. e. e. e.
-  e. g. e. g.
+  e. g. simpl.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  simpl.
+  unfold extend.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  reflexivity.
+  e. g.
+  simpl.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  simpl. unfold extend.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  break_if; simpl in *; try congruence.
+  reflexivity.
+  
   eapply splitAt_eval; eauto; try et.
-  lv. unfold splitAt_model. simpl.
+  simpl. unfold extend.
+  repeat (break_if; simpl in *; try congruence).
+  simpl. unfold extend.
+  repeat (break_if; simpl in *; try congruence).
+  simpl. unfold extend.
+  econstructor.
+  repeat (break_if; simpl in *; try congruence).
+  simpl. unfold extend.
+  econstructor.
+  repeat (break_if; simpl in *; try congruence);
+  reflexivity.
+  simpl. unfold extend.
+  econstructor.
+  break_if; simpl in *; try congruence.
+  reflexivity.
+  simpl. unfold extend.
+  eapply eager_eval_local_var.
+  repeat (break_if; simpl in *; try congruence).
+
+  unfold splitAt_model. simpl.
   reflexivity.
 Qed.
 
 
 Lemma append_eval :
-  forall GE TE SE,
-    GE (34, "#") = Some (mb 3 2 Append) ->
-    SE (34, "#") = None ->
+  forall id GE TE SE,
+    GE (id, "#") = Some (mb 3 2 Append) ->
+    SE (id, "#") = None ->
     forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2 tr3 res,
       eager_eval_type GE TE ta1 tr1 ->
       eager_eval_type GE TE ta2 tr2 ->
@@ -152,7 +532,7 @@ Lemma append_eval :
       eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
       eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
       res = to_sval (eseq (l ++ l')) ->
-      eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (34,"#")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
+      eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (id,"#")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
 Proof.
   intros.
   subst res.
@@ -217,14 +597,15 @@ Proof.
   e. e. e. simpl. assumption.
 Qed.
 
+
 Lemma shiftr_eval :
   forall id GE TE SE,
     GE (id, ">>") = Some (mb 3 2 Shiftr) ->
     SE (id, ">>") = None ->
-    forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2 tr3 res len len' (bv : BitV len'),
+    forall va1 va2 l l' ta1 ta2 ta3 tr1 tr2  res len len' (bv : BitV len'),
       eager_eval_type GE TE ta1 tr1 ->
       eager_eval_type GE TE ta2 tr2 ->
-      eager_eval_type GE TE ta3 tr3 ->
+      eager_eval_type GE TE ta3 tvbit ->
       eager_eval_expr GE TE SE va1 (to_sval (eseq l)) ->
       eager_eval_expr GE TE SE va2 (to_sval (eseq l')) ->
       to_bitv l' = Some bv ->
@@ -234,12 +615,36 @@ Lemma shiftr_eval :
       eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (id,">>")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
 Proof.
   intros.
+  eapply same_bitv in H6.
   e. e. e. e. e. ag.
   e. e. e. e. e.
   e; try lv.
-  (* TODO: model Shiftr *)
-  
-Admitted.
+  simpl.
+  subst res.
+  unfold shiftr_sem.
+  simpl.
+  repeat rewrite list_of_strictval_of_strictlist.
+  assert (len' = length (map to_sval l')).
+  inversion H9. erewrite map_length; eauto.
+  subst len'.
+  rewrite H6.
+  f_equal.
+  unfold shiftr_ev. f_equal.
+  rewrite map_app.
+  f_equal.
+  rewrite map_repeat. simpl.
+  f_equal.
+  f_equal. erewrite map_length; eauto.
+  rewrite <- firstn_map.
+  f_equal.
+  assert (Z.to_nat (unsigned bv) <= length (map to_sval l) \/ Z.to_nat (unsigned bv) > length (map to_sval l))%nat by omega.
+  destruct H7.
+  rewrite min_l by omega. erewrite map_length; eauto.
+  erewrite min_r by omega. erewrite map_length; eauto.
+  erewrite map_length in *.
+
+  omega.
+Qed.
 
 Lemma rotr_eval :
   forall id GE TE SE,
@@ -258,11 +663,26 @@ Lemma rotr_eval :
       eager_eval_expr GE TE SE (EApp (EApp (ETApp (ETApp (ETApp (EVar (id,">>>")) (ETyp ta1)) (ETyp ta2)) (ETyp ta3)) va1) va2) res.
 Proof.
   intros.
+  eapply same_bitv in H6.
   e. e. e. e. e. ag.
   e. e. e. e. e. e.
   lv. lv.
-  (* TODO: model Rotr *)
-Admitted.
+  simpl. subst res.
+  unfold rotr_ev. unfold rotr_sem.
+  repeat rewrite list_of_strictval_of_strictlist.
+  assert (len' = length (map to_sval l')) by (erewrite map_length; inversion H9; eauto).
+  subst len'.
+  rewrite H6.
+  f_equal.
+  simpl. f_equal.
+  rewrite map_app. f_equal.
+  rewrite list_map_drop. f_equal.
+  f_equal. repeat erewrite map_length in *.
+  reflexivity.
+  
+  repeat erewrite map_length in *.
+  rewrite firstn_map. reflexivity.
+Qed.
 
 Lemma xor_sem_ev :
   forall l l' len,
@@ -308,6 +728,29 @@ Proof.
   eapply xor_sem_ev; eauto.
 Qed.
 
+Lemma and_sem_ev :
+  forall l,
+    has_type (eseq l) (tseq (length l) tbit) ->
+    forall l',
+      has_type (eseq l') (tseq (length l') tbit) ->
+      length l = length l' ->
+      and_sem (strict_list (map to_sval l)) (strict_list (map to_sval l')) =
+      Some (strict_list (map to_sval (and_ev l l'))).
+Proof.
+  induction l; intros.
+  destruct l'; simpl in *; try congruence.
+  destruct l'; simpl in *; try congruence.
+  assert (has_type (eseq l') (tseq (length l') tbit)). {
+    econstructor. inversion H0. subst. inversion H4. eauto.
+  }
+  inversion H. inversion H0.
+  inversion H8. inversion H5.
+  subst. inversion H11. inversion H15.
+  subst. simpl.
+  erewrite IHl; eauto.
+  econstructor; eauto.
+Qed.
+
 Lemma and_eval :
   forall id GE TE SE,
     GE (id, "&&") = Some (mb 1 2 And) ->
@@ -326,8 +769,34 @@ Proof.
   e. e. e. e; try lv.
   subst res.
   simpl.
-  (* TODO: model And *)
-Admitted. 
+  inversion H5. inversion H6.
+  subst.
+  eapply and_sem_ev; eauto.
+  congruence.
+Qed.
+
+Lemma or_sem_ev :
+  forall l,
+    has_type (eseq l) (tseq (length l) tbit) ->
+    forall l',
+      has_type (eseq l') (tseq (length l') tbit) ->
+      length l = length l' ->
+      or_sem (strict_list (map to_sval l)) (strict_list (map to_sval l')) =
+      Some (strict_list (map to_sval (or_ev l l'))).
+Proof.
+  induction l; intros.
+  destruct l'; simpl in *; try congruence.
+  destruct l'; simpl in *; try congruence.
+  assert (has_type (eseq l') (tseq (length l') tbit)). {
+    econstructor. inversion H0. subst. inversion H4. eauto.
+  }
+  inversion H. inversion H0.
+  inversion H8. inversion H5.
+  subst. inversion H11. inversion H15.
+  subst. simpl.
+  erewrite IHl; eauto.
+  econstructor; eauto.
+Qed.
 
 Lemma or_eval :
   forall id GE TE SE,
@@ -347,8 +816,25 @@ Proof.
   e. e. e. e; try lv.
   subst res.
   simpl.
-  (* TODO: model Or *)
-Admitted.
+  inversion H5. inversion H6.
+  subst.
+  eapply or_sem_ev; eauto.
+  congruence.
+Qed.
+
+Lemma compl_sem_ev :
+  forall l len,
+    has_type (eseq l) (tseq len tbit) ->
+    compl_sem (strict_list (map to_sval l)) = Some (to_sval (eseq (not_ev l))).
+Proof.
+  induction l; intros.
+  reflexivity.
+  inversion H. subst.
+  inversion H2. subst. inversion H3.
+  subst. simpl.
+  erewrite IHl; eauto.
+  econstructor; eauto.
+Qed.
 
 Lemma complement_eval :
   forall id GE TE SE,
@@ -364,9 +850,10 @@ Proof.
   intros. e. e. ag.
   e. e. e. lv.
   simpl.
-  (* TODO: model complement *)
-Admitted.
-
+  subst res.
+  eapply compl_sem_ev; eauto.
+Qed.
+  
 Lemma has_type_not :
   forall l len,
     has_type (eseq l) (tseq len tbit) ->
@@ -549,3 +1036,4 @@ Proof.
   eapply shiftr_ev_Forall; eauto.
   econstructor; eauto.
 Qed.
+
