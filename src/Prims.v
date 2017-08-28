@@ -168,9 +168,9 @@ Qed.
 
 Definition binop_ev (op : Z -> Z -> Z) (l r : ext_val) : ext_val :=
   match l,r with
-  | eseq l', eseq r' =>
+  | eseq l, eseq r => 
     let f x : option bool := match x with | ebit b => Some b | _ => None end in
-    match binop ext_val f ebit op (length l') l' r' with
+    match binop ext_val f ebit op (length l) l r with
     | Some res => eseq res
     | _ => eseq nil
     end
@@ -196,23 +196,65 @@ Proof.
   rewrite H0. eauto.
 Qed.
 
+
+Lemma to_bitlist_succeeds :
+  forall T f l,
+    Forall (fun x => f x <> None) l ->
+    exists x,
+      to_bitlist T f (length l) l = Some x.
+Proof.
+  induction l; intros.
+  simpl. eauto.
+  simpl. inversion H. subst.
+  destruct (f a) eqn:?; try congruence.
+  eapply IHl in H3. destruct H3.
+  rewrite H0. eauto.
+Qed.
+
+Lemma to_bitlist_sval :
+  forall l,
+    has_type (eseq l) (tseq (length l) tbit) ->
+    exists x,
+      to_bitlist strictval (fun x => match x with | sbit b => Some b | _ => None end) (length (map to_sval l)) (map to_sval l) = Some x.
+Proof.
+  induction l; intros.
+  simpl. eauto.
+  simpl.
+  inversion H.
+  subst.
+  inversion H2.
+  subst.
+  inversion H3. subst.
+  simpl.
+  edestruct IHl; eauto.
+  econstructor; eauto.
+  rewrite H0. eauto.
+Qed.
+
 Lemma plus_eval :
   forall id GE TE SE,
     GE (id,"+") = Some (mb 1 2 Plus) ->
     SE (id,"+") = None ->
     forall ta tv a1 a2 v1 v2 len,
       eager_eval_type GE TE ta tv ->
-      eager_eval_expr GE TE SE a1 (to_sval v1) ->
-      eager_eval_expr GE TE SE a2 (to_sval v2) ->
-      has_type v1 (tseq len tbit) ->
-      has_type v2 (tseq len tbit) ->
+      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
+      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
+      has_type (eseq v1) (tseq len tbit) ->
+      has_type (eseq v2) (tseq len tbit) ->
       forall res,
-        res = to_sval (plus_ev v1 v2) ->
+        res = to_sval (plus_ev (eseq v1) (eseq v2)) ->
         eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"+")) (ETyp ta)) a1) a2) res.
 Proof.
   intros.
+  assert (len = (length v1)) by (inversion H4; congruence).
+  assert (len = (length v2)) by (inversion H5; congruence).
+  rewrite H7 in H4.
+  rewrite H8 in H5.
+  eapply to_bitlist_sval in H4.
+  eapply to_bitlist_sval in H5.
+  destruct H4. destruct H5.
+  subst.
 
-  inversion H4. inversion H5. subst.
   e. e. e. ag.
   e. e. e. e; try lv.
 
@@ -221,7 +263,14 @@ Proof.
   unfold binop_sem.
   repeat rewrite list_of_strictval_of_strictlist.
   unfold plus_ev.
-  
+  unfold binop.
+  rewrite H4.
+  replace (length (map to_sval v1)) with (length (map to_sval v2)) by (repeat rewrite map_length; congruence).
+  rewrite H5.
+  unfold binop_ev.
+  f_equal.
+  unfold binop.
+
   (* admit for now, very provable though, probably want to use a general lemma about binop *)
   (* that will let us prove this for lots of things *)
 Admitted.
@@ -232,10 +281,12 @@ Lemma minus_eval :
   forall id GE TE SE,
     GE (id,"-") = Some (mb 1 2 Minus) ->
     SE (id,"-") = None ->
-    forall ta tv a1 a2 v1 v2,
+    forall ta tv a1 a2 v1 v2 len,
       eager_eval_type GE TE ta tv ->
       eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
       eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
+      has_type (eseq v1) (tseq len tbit) ->
+      has_type (eseq v2) (tseq len tbit) ->
       forall res,
         res = to_sval (minus_ev (eseq v1) (eseq v2)) ->
         eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"-")) (ETyp ta)) a1) a2) res.

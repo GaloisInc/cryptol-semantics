@@ -144,7 +144,6 @@ Fixpoint W_elt_ev (fuel : nat) (M : ext_val) {struct fuel} : ext_val :=
       | S (S (S (S (S (S (S (S fuel15))))))) =>
         match fuel15 with
         | S fuel16 =>
-          (* then (s1 (W@(idx-2)) (W@(idx-7))) + (s0 (W@(j-15)) (W@(j-16))) *)
           let W2 := W_elt_ev fuel2 M in
           let W7 := W_elt_ev fuel7 M in
           let W15 := W_elt_ev fuel15 M in
@@ -291,47 +290,35 @@ Proof.
     intuition; eassumption.
     intuition; eassumption.
     et.
-    
 
     use s1_eval.
-    instantiate (1 := eseq (extnum (Z.of_nat ((n-2)%nat)) 8)).
-    admit. (* lemma *)
-
-    eapply wf_env_extend_SE; try reflexivity; try eassumption.
-
-    all: try reflexivity.
-    
-    eapply IHk.
-    eapply wf_env_extend_SE; try reflexivity; try eassumption.
-    assumption.
-    unfold extend. simpl. assumption.
-    Focus 5.
-    eapply minus_eval.
-    intuition; eassumption.
-    intuition; eassumption.
-    et. lv.
-    use demote_eval.
-    instantiate (1 := extnum 2 8).
-    reflexivity.
-    unfold minus_ev. unfold binop_ev.
-
-    unfold extnum.
-    inversion HtypeN.
-
-    unfold Z.to_nat. unfold Pos.to_nat.
-    simpl.
-    rewrite H6.
-    subst.
-    
-    (* TODO: need lemma *)
     admit.
+    eapply wf_env_extend_SE; eauto.
+
+    all: try eapply s0_eval.
+    all: try eapply IHk.
+    all: try solve [    eapply wf_env_extend_SE; try reflexivity; try eassumption].
+    all: try eapply minus_eval.
+    all: try reflexivity.
+    all: try eapply demote_eval.
+    all: try solve [simpl; lv].
+    all: try et.
 
 
-
+    all: match goal with
+         | [ |- demote_sem (tvnum ?v) (tvnum ?w) = Some (to_sval (eseq _))] =>
+           instantiate (1 := extnum v w); reflexivity
+         | [ |- _ _ = Some _ ] => unfold extend; simpl; intuition; eassumption
+         | [ |- _ _ = None ] => unfold extend; simpl; intuition; assumption
+         | [ |- _ ] => idtac
+         end.
+    all: try assumption.
+    Focus 3. eassumption.
     
     
-      
-    idtac.      
+    
+
+    idtac.
 Admitted.
 
 
