@@ -5,9 +5,9 @@
 
 Set Implicit Arguments.
 
-Require Export Comp.
-Require Import Blist.
-Require Import Fold.
+Require Export otp.Comp.
+Require Import otp.Blist.
+Require Import otp.Fold.
 Require Import Permutation.
 Require Import Omega.
 

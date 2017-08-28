@@ -2,9 +2,9 @@
  * in the LICENSE file at the root of the source tree.		*)
 Set Implicit Arguments.
 
-Require Import Crypto.
-Require Import Bernoulli.
-Require Import NotationV1.
+Require Import otp.Crypto.
+Require Import otp.Bernoulli.
+Require Import otp.NotationV1.
 
 (* stuff that needs to go somewhere else *)
 

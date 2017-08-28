@@ -5,12 +5,12 @@
 
 Set Implicit Arguments.
 
-Require Import DistSem.
-Require Import Fold.
+Require Import otp.DistSem.
+Require Import otp.Fold.
 Require Import Permutation.
-Require Import SemEquiv.
-Require Import DetSem.
-Require Import NotationV1.
+Require Import otp.SemEquiv.
+Require Import otp.DetSem.
+Require Import otp.NotationV1.
 
  
 Local Open Scope rat_scope.

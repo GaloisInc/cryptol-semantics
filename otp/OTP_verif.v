@@ -3,25 +3,25 @@ Import ListNotations.
 Require Import String.
 
 (* Borrow from CompCert *)
-Require Import Cryptol.Coqlib.
-Require Import Cryptol.Bitvectors.
+Require Import Coqlib.
+Require Import Bitvectors.
 
-Require Import Cryptol.AST.
-Require Import Cryptol.Semantics.
-Require Import Cryptol.Utils.
-Require Import Cryptol.Builtins.
-Require Import Cryptol.BuiltinSem.
-Require Import Cryptol.Values.        
-Require Import Cryptol.Bitstream.
+Require Import AST.
+Require Import Semantics.
+Require Import Utils.
+Require Import Builtins.
+Require Import BuiltinSem.
+Require Import Values.        
+Require Import Bitstream.
 
-Require Import Cryptol.EvalTac.
-Require Import Cryptol.Eager.
+Require Import EvalTac.
+Require Import Eager.
  
 Import HaskellListNotations.
 Open Scope string.
-Require Import HMAC.HMAC_lib. 
+Require Import HMAC_lib. 
 
-Require Import otp.OTP. 
+Require Import OTP. 
 
 (* Change these to Options *)
 Fixpoint xor_ext (l1 l2 : list ext_val) : list ext_val :=

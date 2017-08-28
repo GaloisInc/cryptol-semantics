@@ -7,7 +7,7 @@ Set Implicit Arguments.
 Require Import Arith.
 Require Import Omega.
 Require Import List.
-Require Import StdNat.
+Require Import otp.StdNat.
 Require Import Lia.
 
 Inductive Rat :=

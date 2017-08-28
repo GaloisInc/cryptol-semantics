@@ -6,14 +6,14 @@
 
 Set Implicit Arguments.
 
-Require Export Comp.
-Require Export Rat.
-Require Import Fold.
+Require Export otp.Comp.
+Require Export otp.Rat.
+Require Import otp.Fold.
 Require Import List.
-Require Import Blist.
+Require Import otp.Blist.
 Require Import Omega.
-Require Import StdNat.
-Require Import NotationV1.
+Require Import otp.StdNat.
+Require Import otp.NotationV1.
  
  
 Local Open Scope list_scope.

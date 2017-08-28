@@ -5,12 +5,12 @@
 
 Set Implicit Arguments.
 
-Require Import StdNat.
+Require Import otp.StdNat.
 Require Export List.
 Require Export Bvector.
 Require Import Omega.
-Require Import EqDec.
-Require Import Fold.
+Require Import otp.EqDec.
+Require Import otp.Fold.
 Require Import Coq.NArith.Ndigits.
 Require Import ZArith.
 Local Open Scope list_scope.

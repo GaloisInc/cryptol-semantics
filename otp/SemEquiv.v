@@ -5,14 +5,14 @@
 
 Set Implicit Arguments.
 
-Require Import Comp.
-Require Import DetSem.
-Require Import DistSem.
-Require Import Rat.
+Require Import otp.Comp.
+Require Import otp.DetSem.
+Require Import otp.DistSem.
+Require Import otp.Rat.
 Require Import Arith.
-Require Import StdNat.
-Require Import Fold.
-Require Import Limit.
+Require Import otp.StdNat.
+Require Import otp.Fold.
+Require Import otp.Limit.
 Require Import Permutation.
 
 Local Open Scope rat_scope.

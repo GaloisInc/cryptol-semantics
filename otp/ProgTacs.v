@@ -6,15 +6,15 @@
 
 Set Implicit Arguments.
 
-Require Import Rat.
-Require Import Comp.
-Require Import DistRules.
-Require Import DistSem.
-Require Import StdNat.
-Require Import Fold.
-Require Import ProgramLogic.
-Require Import DistTacs.
-Require Import NotationV1.
+Require Import otp.Rat.
+Require Import otp.Comp.
+Require Import otp.DistRules.
+Require Import otp.DistSem.
+Require Import otp.StdNat.
+Require Import otp.Fold.
+Require Import otp.ProgramLogic.
+Require Import otp.DistTacs.
+Require Import otp.NotationV1.
 
 Local Open Scope rat_scope.
 Local Open Scope comp_scope.

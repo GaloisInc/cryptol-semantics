@@ -6,8 +6,8 @@
 
 Set Implicit Arguments.
 
-Require Import Rat.
-Require Import StdNat.
+Require Import otp.Rat.
+Require Import otp.StdNat.
 
 Class Group_op(A : Set) := groupOp : A -> A -> A.
 Infix "*" := groupOp : group_scope.

@@ -7,11 +7,11 @@
 Set Implicit Arguments.
 
 Require Import Arith.
-Require Import Fold.
+Require Import otp.Fold.
 Require Import List.
 
-Require Import StdNat.
-Require Import Rat.
+Require Import otp.StdNat.
+Require Import otp.Rat.
 
 Section Limit.
 

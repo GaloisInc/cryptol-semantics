@@ -4,9 +4,9 @@
 
 Set Implicit Arguments.
 
-Require Import Crypto.
-Require Import RndNat.
-Require Import NotationV1.
+Require Import otp.Crypto.
+Require Import otp.RndNat.
+Require Import otp.NotationV1.
 
 Definition Bernoulli(r : Rat) : Comp bool :=
   match r with
