@@ -11,7 +11,7 @@ Require Import Cryptol.Utils.
 Require Import Cryptol.Builtins.
 Require Import Cryptol.BuiltinSem.
 Require Import Cryptol.BuiltinSyntax.
-Require Import Cryptol.Values.        
+Require Import Cryptol.SimpleValues.        
 Require Import Cryptol.Bitstream.
 Require Import Cryptol.Lib.
 Require Import Cryptol.GlobalExtends.
@@ -171,15 +171,17 @@ Fixpoint W_ev (fuel : nat) (M : ext_val) : ext_val :=
     end
   end.
 
+
 Definition ext_to_nat (l : list ext_val) : option nat :=
-  match ExtToBitvector.to_bitv l with
-  | Some bv => Some (Z.to_nat (@unsigned (Datatypes.length l) bv))
+  match to_bitlist ext_val (fun x => match x with | ebit b => Some b |_ => None end) (length l) l with
+  | Some z => Some (Z.to_nat z)
   | _ => None
   end.
 
 Definition extnum (val width : Z) : list ext_val :=
-  ExtToBitvector.from_bitv (@repr (Z.to_nat width) val).
+  from_bitlist ext_val ebit (Z.to_nat width) val.
 
+(*
 Lemma tobit_frombit_id :
   forall {w} (bv : BitV w),
     ExtToBitvector.to_bitv (ExtToBitvector.from_bitv bv) = Some bv.
@@ -191,6 +193,7 @@ Lemma from_bitv_length :
     Datatypes.length (@from_bitv w bv) = w.
 Proof.
 Admitted.
+ *)
 
 (* Goal: get the proof in this file done *)
 (* in order to do this, you probably need to rework to_bitv and from_bitv *)
@@ -222,7 +225,9 @@ Proof.
   gen_global (1,"+").
   gen_global (2,"-").
   unfold ext_to_nat in *.
-  destruct (ExtToBitvector.to_bitv l) eqn:?; try congruence.
+  match goal with
+  | [ H : (match ?X with | Some _ => _ | None => _  end) = _ |- _ ] => destruct X eqn:?; try congruence
+  end.
   assert (Hcases : (n < 16 \/ n >= 16)%nat) by omega.
   destruct Hcases.
 
@@ -238,14 +243,19 @@ Proof.
     assumption.
     unfold extnum. simpl.
     repeat (econstructor; eauto).
-    unfold lt_ev. rewrite Heqo. simpl.
+    unfold lt_ev.
+    repeat rewrite Heqo.
+    unfold extnum. simpl.
+    replace (length l) with 8%nat by (inversion HtypeN; congruence).
+    simpl. inversion Hext_to_nat.
+    subst n. unfold two_power_nat. simpl.
     instantiate (1 := true).
-    destruct (zlt (unsigned b) 16); auto.
-    assert (Z.to_nat 16 <= Z.to_nat (unsigned b))%nat.
+    
+    destruct (zlt z 16); auto.
+    assert (Z.to_nat 16 <= Z.to_nat z)%nat.
     eapply Z2Nat.inj_le; try omega.
-    inversion Hext_to_nat.
-    rewrite H7 in H5. simpl in *. unfold Pos.to_nat in *.
-    simpl in *. omega.
+    simpl in H5. unfold Pos.to_nat in *.
+    simpl in H5. omega.
     simpl.
     subst res.
     (* TODO: at_eval *)
@@ -303,22 +313,21 @@ Proof.
     use demote_eval.
     instantiate (1 := extnum 2 8).
     reflexivity.
-    eassumption.
+    unfold minus_ev. unfold binop_ev.
+
     unfold extnum.
     inversion HtypeN.
 
     unfold Z.to_nat. unfold Pos.to_nat.
-    simpl. rewrite <- H6.
-    erewrite tobit_frombit_id.
-    reflexivity.
-
-    reflexivity.
-    all: try reflexivity.
-    Focus 2. intuition; eassumption.
-    Focus 2. assumption.
-    Focus 2.
-    admit. (* lemmas *)
+    simpl.
+    rewrite H6.
+    subst.
     
+    (* TODO: need lemma *)
+    admit.
+
+
+
     
     
       

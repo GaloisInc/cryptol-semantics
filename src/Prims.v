@@ -10,7 +10,7 @@ Require Import Cryptol.Utils.
 Require Import Cryptol.Builtins.
 Require Import Cryptol.BuiltinSem.
 Require Import Cryptol.BuiltinSyntax.
-Require Import Cryptol.Values.        
+Require Import Cryptol.SimpleValues.        
 Require Import Cryptol.Bitstream.
 Require Import Cryptol.Lib.
 Require Import Cryptol.GlobalExtends.
@@ -30,9 +30,9 @@ Require Import Program.
 Fixpoint lt_ev (l r : ext_val) : ext_val :=
   match l, r with
   | eseq l, eseq r =>
-    match to_bitv l, to_bitv r with
-    | Some bv, Some bv' =>
-      if zlt (@unsigned (length l) bv) (@unsigned (length r) bv') then ebit true else ebit false
+    let f x : option bool := match x with | ebit b => Some b | _ => None end in
+    match to_bitlist ext_val f (length l) l, to_bitlist ext_val f (length l) r with
+    | Some a, Some b => if zlt a b then (ebit true) else (ebit false)
     | _,_ => eseq nil
     end
   | _,_ => eseq nil
@@ -57,7 +57,7 @@ Proof.
   e. e. e. e; try lv; try congruence.
   simpl. subst res.
 
-  (* TODO: rewrite lt_sem to not suck *)
+  (* TODO: this proof *)
 Admitted.
   
 
@@ -166,16 +166,18 @@ Proof.
   eapply same_from_bitv; eauto.
 Qed.
 
-Definition plus_ev (l r : ext_val) : ext_val :=
+Definition binop_ev (op : Z -> Z -> Z) (l r : ext_val) : ext_val :=
   match l,r with
   | eseq l', eseq r' =>
-    match @to_bitv (length l') l', @to_bitv (length l') r' with
-    | Some bv, Some bv' =>
-      eseq (from_bitv (add bv bv'))
-    | _,_ => eseq nil
+    let f x : option bool := match x with | ebit b => Some b | _ => None end in
+    match binop ext_val f ebit op (length l') l' r' with
+    | Some res => eseq res
+    | _ => eseq nil
     end
   | _,_ => eseq nil
   end.
+
+Definition plus_ev := binop_ev Z.add.
 
 Lemma to_bitv_succeeds :
   forall l,
@@ -213,43 +215,29 @@ Proof.
   inversion H4. inversion H5. subst.
   e. e. e. ag.
   e. e. e. e; try lv.
-  simpl. unfold plus_sem.
-  repeat rewrite list_of_strictval_of_strictlist.
-  destruct (to_bitv l) eqn:?.
-  Focus 2.
-  edestruct (to_bitv_succeeds l); try congruence.
-  destruct (to_bitv l0) eqn:?.
-  Focus 2.
-  edestruct (to_bitv_succeeds l0); try congruence.
-  exfalso.
-  rewrite <- H11 in Heqo0. congruence.
 
-  (* dependent types are terrible *)
+  unfold strict_builtin_sem.
+  unfold plus_sem.
+  unfold binop_sem.
+  repeat rewrite list_of_strictval_of_strictlist.
+  unfold plus_ev.
+  
+  (* admit for now, very provable though, probably want to use a general lemma about binop *)
+  (* that will let us prove this for lots of things *)
 Admitted.
 
-Definition minus_ev (l r : ext_val) : ext_val :=
-  match l,r with
-  | eseq l', eseq r' =>
-    match @to_bitv (length l') l', @to_bitv (length l') r' with
-    | Some bv, Some bv' =>
-      eseq (from_bitv (sub bv bv'))
-    | _,_ => eseq nil
-    end
-  | _,_ => eseq nil
-  end.
+Definition minus_ev := binop_ev Z.sub.
 
 Lemma minus_eval :
   forall id GE TE SE,
     GE (id,"-") = Some (mb 1 2 Minus) ->
     SE (id,"-") = None ->
-    forall ta tv a1 a2 v1 v2 bv1 bv2,
+    forall ta tv a1 a2 v1 v2,
       eager_eval_type GE TE ta tv ->
       eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
       eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
-      @to_bitv (length v1) v1 = Some bv1 ->
-      @to_bitv (length v1) v2 = Some bv2 ->
       forall res,
-        res = to_sval (eseq (from_bitv (sub bv1 bv2))) ->
+        res = to_sval (minus_ev (eseq v1) (eseq v2)) ->
         eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"-")) (ETyp ta)) a1) a2) res.
 Proof.
   intros.
