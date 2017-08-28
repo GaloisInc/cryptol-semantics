@@ -23,21 +23,11 @@ Require Import HMAC_lib.
 
 Require Import OTP. 
 
-(* Change these to Options *)
-Fixpoint xor_ext (l1 l2 : list ext_val) : list ext_val :=
+
+Fixpoint xor_ext (l1 l2 : list ext_val) : option (list ext_val) := 
   match l1 with 
   | (ebit x :: xs) => match l2 with
-     | (ebit y :: ys) => (ebit (xorb x y)) :: xor_ext xs ys
-     | _ => []
-     end
-  | _ => []
-  end.
-
-
-Fixpoint xor1 (l1 l2 : list ext_val) : option (list ext_val) := 
-  match l1 with 
-  | (ebit x :: xs) => match l2 with
-       | (ebit y :: ys) => match (xor1 xs ys) with 
+       | (ebit y :: ys) => match (xor_ext xs ys) with 
              | Some bs => Some ((ebit (xorb x y)) :: bs)
              | _ => None
              end
@@ -51,7 +41,7 @@ Fixpoint xor1 (l1 l2 : list ext_val) : option (list ext_val) :=
 Definition xor_ext' (x y : ext_val) : ext_val :=
   match x with 
   | eseq l1 => match y with 
-    | eseq l2 => match xor1 l1 l2 with
+    | eseq l2 => match xor_ext l1 l2 with
        | Some bs => eseq bs
        | _ => ebit false
        end
@@ -63,20 +53,6 @@ Definition xor_ext' (x y : ext_val) : ext_val :=
 Definition otp_encrypt (key msg : ext_val) : ext_val :=
   xor_ext' key msg.
   
-Definition k1 : ext_val := eseq (ebit false::ebit true::ebit false::nil).
-Definition m1 : ext_val := eseq (ebit true::ebit true::ebit true::nil).
-(* Eval compute in (xor_ext' k1 m1).  *)
-(* Eval compute in (otp_encrypt k1 m1).  *)
-
-(* Definition otp_encrypt'  (k m: list val) : list val :=
-  match to_bitv k with
-  | None => []
-  | Some bvk => 
-      match to_bitv m with
-      | None => []
-      | Some bvm => from_bitv (otp_encrypt bvk bvm)  
-      end
-  end.  *)
 
 Lemma length_cons : forall {A : Type} n x (xs : list A), 
   Datatypes.length xs = n <-> 
@@ -89,14 +65,13 @@ Proof.
   - intros. inversion H. reflexivity.  
 Qed.
 
-  Lemma obvi : forall (b: bool),
-      (if b then true else false) = b. 
-    Proof. 
-      destruct b; auto. 
-    Qed.
+Lemma bool_destr : forall (b: bool),
+    (if b then true else false) = b. 
+  Proof. 
+    destruct b; auto. 
+  Qed.
 
   
-(* I think l needs to be existentially quantified *)
 Theorem otp_equiv : forall key msg,
   has_type key byte -> 
   has_type msg byte ->
@@ -167,6 +142,6 @@ Proof.
   reflexivity. 
   simpl. 
   unfold xorb.    
-  repeat rewrite obvi. 
+  repeat rewrite bool_destr. 
   reflexivity. 
 Qed.   
