@@ -1,0 +1,6 @@
+
+OTP_cryptol.v: the AST of a cryptol program implementing a one-time pad over 8 bytes
+
+OTP_verif.v: proof of equivalence between the cryptol AST from OTP_cryptol.v and a one-time pad implementation in Coq (Thm: "otp_equiv")
+
+OTP_FCF.v: proof that the Coq one-time pad is indistinguishable from random bits given that the key is drawn uniformly at random (Thm: "OTP_indist")
