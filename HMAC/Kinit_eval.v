@@ -78,6 +78,7 @@ Proof.
   e. lv. lv.
   simpl. unfold strictnum.
 
+  
   rewrite gt_not_refl; reflexivity.
   simpl.
 

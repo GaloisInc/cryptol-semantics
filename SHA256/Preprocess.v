@@ -11,7 +11,7 @@ Require Import Cryptol.Utils.
 Require Import Cryptol.Builtins.
 Require Import Cryptol.BuiltinSem.
 Require Import Cryptol.BuiltinSyntax.
-Require Import Cryptol.Values.        
+Require Import Cryptol.SimpleValues.        
 Require Import Cryptol.Bitstream.
 Require Import Cryptol.Lib.
 Require Import Cryptol.GlobalExtends.
@@ -31,31 +31,24 @@ Definition preprocess_spec (padding msglen : Z) (msg : ext_val) : ext_val :=
                (l ++
                   [ebit true] ++
                   repeat (ebit false) (Z.to_nat padding) ++
-                  @ExtToBitvector.from_bitv (Z.to_nat 64) (repr msglen))))
+                  from_bitlist ext_val ebit (Z.to_nat 64) msglen)))
   | _ => eseq nil
   end.
 
-Lemma from_bitv_ext_type :
-  forall y x (bv : BitV x),
-    Forall (fun x => has_type x tbit) (ExtToBitvector.from_bitv' x y bv).
+Lemma strict_ext_from_bitlist :
+  forall T1 T2 b1 b2 f width v,
+    (forall b, f (b1 b) = b2 b) ->
+    SimpleValues.from_bitlist T2 b2 width v = map f (SimpleValues.from_bitlist T1 b1 width v).
 Proof.
-  induction y; intros.
-  simpl.
-  econstructor.
-  simpl.
-  econstructor.
-  econstructor.
-  eauto.
+  induction width; intros; simpl; auto.
+  rewrite H. f_equal. eauto.
 Qed.
-
-Lemma strictval_from_bitv_ext :
-  forall y x (bv : BitV x),
-    strictval_from_bitv' x y bv = map to_sval (ExtToBitvector.from_bitv' x y bv).
+  
+Lemma from_bitlist_ext_type :
+  forall width v,
+    Forall (fun x => has_type x tbit) (from_bitlist ext_val ebit width v).
 Proof.
-  induction y; intros;
-    simpl. reflexivity.
-  f_equal.
-  eauto.
+  induction width; intros; repeat econstructor; eauto.
 Qed.
 
 Lemma preprocess_eval :
@@ -104,14 +97,10 @@ Proof.
   simpl. unfold strictnum.
   f_equal. f_equal.
 
-  instantiate (1 := ExtToBitvector.from_bitv (repr msglen)).
-  unfold strictval_from_bitv.
-  unfold ExtToBitvector.from_bitv.
-  instantiate (1 := Z.to_nat 64).
+  erewrite strict_ext_from_bitlist.
 
-  eapply strictval_from_bitv_ext.
-
-  reflexivity.
+  reflexivity. instantiate (1 := ebit). intros. reflexivity.
+  reflexivity. 
   reflexivity.
   reflexivity.
   econstructor.
@@ -123,10 +112,9 @@ Proof.
   eapply repeat_Forall. econstructor.
 
 
-  eapply from_bitv_ext_type; eauto.
+  eapply from_bitlist_ext_type; eauto.
 
   subst res.
-  unfold ExtToBitvector.from_bitv.
   reflexivity.
   
 Qed.

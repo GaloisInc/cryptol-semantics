@@ -12,7 +12,7 @@ Require Import Cryptol.Utils.
 Require Import Cryptol.Builtins.
 Require Import Cryptol.BuiltinSem.
 Require Import Cryptol.BuiltinSyntax.
-Require Import Cryptol.Values.        
+Require Import Cryptol.SimpleValues.        
 Require Import Cryptol.Bitstream.
 Require Import Cryptol.Lib.
 Require Import Cryptol.GetEachN.
@@ -164,8 +164,6 @@ Qed.
 
 
 
-
-
 Definition typenum (n : Z) : Expr := ETyp (TCon (TC (TCNum n)) []).
 
 
@@ -186,7 +184,7 @@ Proof.
   intros. eapply H0. eauto.
 Qed.
 
-
+(*
 Lemma strictval_from_bitv'_widen :
   forall a b n z,
     (a >= n)%nat ->
@@ -219,7 +217,7 @@ Proof.
   intros.
   erewrite strictval_from_bitv'_widen; eauto.
 Qed.
-
+*)
 
 Lemma testbit_unsigned_repr :
   forall w z idx,
@@ -246,58 +244,33 @@ Lemma xor_num :
   forall  l n z,
     has_type (eseq l) (tseq (Datatypes.length l) tbit) ->
     n = Datatypes.length l ->
-    xor_sem (strict_list (map to_sval l)) (strict_list (strictval_from_bitv (@repr n z))) = Some (to_sval (xor_const z (eseq l))).
+    xor_sem (strict_list (map to_sval l)) (strict_list (from_bitlist strictval sbit n z)) = Some (to_sval (xor_const z (eseq l))).
 Proof.
   induction l; intros.
   simpl in *.
-  unfold strictval_from_bitv. subst n.
-  simpl. reflexivity.
+  subst n. simpl. reflexivity.
 
   assert (has_type (eseq l) (tseq (Datatypes.length l) tbit)).
   {
     inversion H. econstructor; eauto. inversion H3. auto.
     
   }
-  inversion H. subst.
-  inversion H4. subst.
-  inversion H3. subst.
+  unfold xor_const.
+  rewrite length_cons.
+  unfold Z.of_nat.
+  rewrite Zpos_P_of_succ_nat.
+  simpl.
+  simpl in H0. subst n.
+  simpl. erewrite IHl; eauto.
+  inversion H. inversion H3. subst. inversion H6. subst.
+  simpl.
+  replace (Z.succ (Z.of_nat (Datatypes.length l)) - 1) with (Z.of_nat (Datatypes.length l)) by omega.
+  f_equal. f_equal.
   
-  unfold strictval_from_bitv in *.
-  unfold strictval_from_bitv'. fold strictval_from_bitv'.
-  repeat rewrite length_cons.
-  repeat rewrite map_cons.
-  unfold strict_list. fold strict_list.
-  unfold to_sval at 1.   unfold xor_sem. fold xor_sem.
-  unfold strictval_from_bitv'. fold strictval_from_bitv'.
-  unfold strict_list. fold strict_list.
-  
-  repeat rewrite strictval_from_bitv_norm by (eauto; try omega).
-  repeat match goal with
-         | [ |- context[(Z.of_nat (?X - 0))] ] => 
-           replace (X - 0)%nat with X by omega
-         end.
-  rewrite IHl; eauto.
+  destruct b; simpl; auto.
   f_equal.
-  unfold xor_const. rewrite length_cons.
-  unfold xor_const_list.
-  fold xor_const_list.
-  unfold to_sval.
-  unfold strict_list.
-  fold strict_list.
-  fold to_sval.
-  rewrite map_cons.
-  unfold strict_list.
-  fold strict_list.
-  repeat rewrite succ_nat_pred.
-  f_equal.
-  
-  unfold xorb.
-  unfold testbit.
-  rewrite testbit_unsigned_repr by (simpl; rewrite Zpos_P_of_succ_nat; omega).
-  destruct b; try reflexivity.
-  destruct (Z.testbit z (Z.of_nat (Datatypes.length l))); reflexivity.
+  destruct (Z.testbit z (Z.of_nat (Datatypes.length l))); auto.
 Qed.
-
 
 
 Lemma ext_val_list_of_strictval :
@@ -448,70 +421,43 @@ Proof.
 Qed.
 
 Lemma eq_is_refl :
-  forall {ws} (bv : BitV ws),
-    eq_sem (strict_list (strictval_from_bitv bv)) (strict_list (strictval_from_bitv bv)) = Some (sbit true).
+  forall width v,
+    eq_sem
+      (strict_list (SimpleValues.from_bitlist strictval sbit width v))
+      (strict_list (SimpleValues.from_bitlist strictval sbit width v))
+    = Some (sbit true).
 Proof.
-  unfold strictval_from_bitv.
-  induction ws; intros. simpl. reflexivity.
-  
-  destruct bv. replace ({| intval := intval; intrange := intrange |}) with (@repr (S ws) intval).
-      
-  simpl.
-  destruct (testbit (repr intval) (Z.of_nat ws));
-    erewrite strictval_from_bitv_norm by omega;
-    erewrite IHws; eauto.
-
-  eapply unsigned_eq. simpl.
-  rewrite Z_mod_modulus_eq by congruence.
-  unfold modulus.
-  eapply Zdiv.Zmod_small.
-  omega.
+  induction width; intros; simpl; auto.
+  rewrite IHwidth.
+  destruct (Z.testbit v (Z.of_nat width)) eqn:?; auto.
 Qed.
 
 Lemma lt_not_refl :
-  forall {ws} (bv : BitV ws),
-    lt_sem (strict_list (strictval_from_bitv bv)) (strict_list (strictval_from_bitv bv)) = Some (sbit false).
+  forall width v,
+    lt_sem
+      (strict_list (SimpleValues.from_bitlist strictval sbit width v))
+      (strict_list (SimpleValues.from_bitlist strictval sbit width v))
+    = Some (sbit false).
 Proof.
-  unfold strictval_from_bitv.
-  induction ws; intros. simpl. reflexivity.
-  
-  destruct bv. replace ({| intval := intval; intrange := intrange |}) with (@repr (S ws) intval).
-      
-  simpl.
-  destruct (testbit (repr intval) (Z.of_nat ws));
-    erewrite strictval_from_bitv_norm by omega;
-    erewrite IHws; eauto.
-
-  eapply unsigned_eq. simpl.
-  rewrite Z_mod_modulus_eq by congruence.
-  unfold modulus.
-  eapply Zdiv.Zmod_small.
-  omega.
-Qed.
+  induction width; intros; simpl; auto.
+  rewrite IHwidth.
+  destruct (Z.testbit v (Z.of_nat width)) eqn:?; auto.
+Qed.  
 
 Lemma gt_not_refl :
-  forall {ws} (bv : BitV ws),
-    gt_sem (strict_list (strictval_from_bitv bv)) (strict_list (strictval_from_bitv bv)) = Some (sbit false).
+  forall width v,
+    gt_sem
+      (strict_list (SimpleValues.from_bitlist strictval sbit width v))
+      (strict_list (SimpleValues.from_bitlist strictval sbit width v))
+    = Some (sbit false).
 Proof.
-  unfold strictval_from_bitv.
-  induction ws; simpl; auto; intros.
-  destruct bv. replace ({| intval := intval; intrange := intrange |}) with (@repr (S ws) intval).
-  simpl.
-  destruct (testbit (repr intval) (Z.of_nat ws));
-    erewrite strictval_from_bitv_norm by omega;
-
-
-  replace (strictval_from_bitv' ws ws (repr intval)) with (@strictval_from_bitv ws (repr intval)) by (unfold strictval_from_bitv; eauto);
-  erewrite lt_not_refl; eauto;
-    erewrite eq_is_refl; eauto.
-
+  intros.
+  unfold gt_sem.
   
-  eapply unsigned_eq. simpl.
-  rewrite Z_mod_modulus_eq by congruence.
-  unfold modulus.
-  eapply Zdiv.Zmod_small.
-  omega.
-Qed.  
+  erewrite lt_not_refl.
+  erewrite eq_is_refl.
+  reflexivity.
+Qed.
 
 Lemma has_type_cons :
   forall f l n t,

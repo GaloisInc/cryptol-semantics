@@ -192,6 +192,11 @@ Lemma from_bitv_length :
 Proof.
 Admitted.
 
+(* Goal: get the proof in this file done *)
+(* in order to do this, you probably need to rework to_bitv and from_bitv *)
+(* at least get the plus_ev and minus_ev semantics to use something else *)
+
+
 (* we can evaluate W @ n to an answer modeled by W_ev *)
 Lemma W_eval_inductive :
   forall k GE TE SE,

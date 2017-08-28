@@ -17,6 +17,7 @@ Require Import Cryptol.Semantics.
 Require Import Cryptol.GetEachN.
 Require Import Cryptol.Lib.
 
+Require Import Cryptol.SimpleValues.
 Require Import Cryptol.StrictToBitvector.
 
 Open Scope list_scope.
@@ -185,12 +186,12 @@ Fixpoint lt_sem (a b : strictval) : option strictval :=
   | _,_ => None
   end.
 
-Fixpoint gt_sem (a b : strictval) : option strictval :=
+Definition gt_sem (a b : strictval) : option strictval :=
   match lt_sem a b, eq_sem a b with
   | Some (sbit x), Some (sbit y) => Some (sbit (if x then false else if y then false else true))
   | _,_ => None
   end.
-  
+
 Fixpoint strictval_from_bitv' (ws n : nat) (bv : BitV ws) : list strictval :=
   match n with
   | O => nil
@@ -200,8 +201,7 @@ Fixpoint strictval_from_bitv' (ws n : nat) (bv : BitV ws) : list strictval :=
 Definition strictval_from_bitv {ws : nat} (bv : BitV ws) : list strictval := strictval_from_bitv' ws ws bv.
 
 Definition strictnum (value width : Z) : strictval :=
-  let bv := @repr (Z.to_nat width) value in
-  strict_list (strictval_from_bitv bv).
+  strict_list (from_bitlist strictval sbit (Z.to_nat width) value).
 
 Fixpoint demote_sem (tv twidth : Tval) : option strictval :=
   match tv,twidth with
@@ -256,17 +256,24 @@ Definition splitSem (t : Tval) (l : strictval) : option strictval :=
   | _,_ => None
   end.
 
+
 (* TODO: doesn't lift over structure yet *)
 (* Not needed unless we need to model a program which uses that *)
-Definition plus_sem (x y : strictval) : option strictval :=
+Definition binop_sem (op : Z -> Z -> Z) (x y : strictval) : option strictval :=
   match list_of_strictval x, list_of_strictval y with
   | Some lx, Some ly =>
-    match @to_bitv (length lx) lx, @to_bitv (length lx) ly with
-    | Some bvx, Some bvy => Some (strict_list (from_bitv (add bvx bvy)))
-    | _,_ => None
+    match binop strictval (fun x => match x with | sbit b => Some b | _ => None end) sbit op (length lx) lx ly with
+    | Some lres => Some (strict_list lres)
+    | _ => None
     end
   | _,_ => None
   end.
+
+Definition plus_sem (x y : strictval) : option strictval :=
+  binop_sem Z.add x y.
+
+Definition sub_sem (x y : strictval) : option strictval :=
+  binop_sem Z.sub x y.
 
 Fixpoint compl_sem (x : strictval) : option strictval :=
   match x with
@@ -363,6 +370,7 @@ Definition strict_builtin_sem (bi : builtin) (t : list Tval) (l : list strictval
   | true_builtin,nil,nil => Some (sbit true)
   | false_builtin,nil,nil => Some (sbit false)
   | Plus,(t :: nil),(x :: y :: nil) => plus_sem x y
+  | Minus,(t :: nil),(x :: y :: nil) => sub_sem x y
   | Shiftr,(t1 :: t2 :: t3 :: nil),(x :: y :: nil) => shiftr_sem t3 x y
   | Rotr,(t1 :: t2 :: t3 :: nil),(x :: y :: nil) => rotr_sem x y
   | And,(t :: nil),(x :: y :: nil) => and_sem x y
