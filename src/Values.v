@@ -8,12 +8,6 @@ Require Import Omega.
 
 Import HaskellListNotations. 
 
-(* STATUS. only things left to do:
-   OPTIONAL. 
-      - Cleaner corollary from theorem 
-  (using from_bitv instead of from_bitv')
-*)
-
 
 (* Now mutually defined with Expr in AST.v *)
 (* Inductive val := *)
@@ -349,6 +343,27 @@ Proof.
   intros. simpl. destruct n; try reflexivity. 
 Qed. 
 
+Lemma Pos_add_bit_n :
+  forall n a b,
+    Pos.testbit (a + b) n = xorb (Pos.testbit a n) (Pos.testbit b n).
+Proof.
+  intros.
+Admitted. 
+
+Lemma Z_pos_neg_testbit :
+  forall n a b,
+    Z.testbit (Z.pos a + Z.neg b) n =
+    xorb (Z.testbit (Z.pos a) n) (Z.testbit (Z.neg b) n). 
+Proof.
+Admitted. 
+
+Lemma Z_neg_neg_testbit :
+  forall n a b,
+    Z.testbit (Z.neg a + Z.neg b) n =
+    xorb (Z.testbit (Z.neg a) n) (Z.testbit (Z.neg b) n). 
+Proof.
+Admitted. 
+
 Lemma Z_add_bit_n :
   forall n a b,
     Z.testbit (a + b) n = xorb (Z.testbit a n) (Z.testbit b n).
@@ -367,14 +382,16 @@ Proof.
         replace (Z.pos (p0 + p1)) with ((Z.pos p0) + (Z.pos p1)) by reflexivity.       
         rewrite Z.odd_add. 
         reflexivity.   
-      * admit. 
-    + admit. 
+      * apply Pos_add_bit_n. 
+    + rewrite Z_pos_neg_testbit. reflexivity. 
     + simpl. 
       destruct (negb (N.testbit (Pos.pred_N p0) (N.pos p))); reflexivity. 
-    + admit. 
-    +admit. 
+    + replace (Z.neg p0 + Z.pos p1) with (Z.pos p1 + Z.neg p0) by omega. 
+      rewrite xorb_comm. 
+      rewrite Z_pos_neg_testbit. reflexivity. 
+    + rewrite Z_neg_neg_testbit. reflexivity. 
+      
   -  destruct a eqn:?, b eqn:?. 
-
     + simpl. reflexivity.
     + simpl. destruct (Pos.testbit p0 (N.pos p)); congruence.  
     + simpl. destruct (negb (N.testbit (Pos.pred_N p0) (N.pos p))); congruence.  
@@ -385,12 +402,14 @@ Proof.
         replace (Z.pos (p0 + p1)) with ((Z.pos p0) + (Z.pos p1)) by reflexivity.       
         reflexivity.        
       * reflexivity. 
-    + admit. 
+    + rewrite Z_pos_neg_testbit. reflexivity. 
     + simpl. 
       destruct (negb (N.testbit (Pos.pred_N p0) (N.pos p))); reflexivity. 
-    + admit. 
-    + admit. 
-
+    + replace (Z.neg p0 + Z.pos p1) with (Z.pos p1 + Z.neg p0) by omega.
+      rewrite xorb_comm.
+      rewrite Z_pos_neg_testbit. reflexivity. 
+    + rewrite Z_neg_neg_testbit. reflexivity. 
+Qed.
 
 (*      induction n using Z_nat_ind; intros.
   repeat rewrite Ztestbit_base.
@@ -407,7 +426,7 @@ Proof.
   
   (* This is a true property, which might take a bit of work to prove, but is necessary for the proof below *)
   
-Admitted.
+
 
 Lemma frombit_tobit : forall l ws (bv : BitV ws), 
   from_bitv bv = l -> to_bitv l = Some bv. 
