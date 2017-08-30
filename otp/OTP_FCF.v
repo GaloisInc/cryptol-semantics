@@ -23,19 +23,34 @@ Definition OTP {SP : nat} (msg : Bvector SP) : Comp (Bvector SP) :=
 Definition rand_indist {SP : nat} (x : Comp (Bvector SP)) {n : Bvector SP} :=
   D x n == D ({0,1}^SP) n. 
 
+Lemma distro_irr_eq' :
+  forall (A B : Set) (b : Comp B) (a : B -> Comp A) (y : A) (v : Rat),
+    well_formed_comp b ->
+    (forall x : B, In x (getSupport b) -> evalDist (a x) y == v) ->
+    forall x,
+      In x (getSupport b) ->
+      evalDist (x <-$ b; a x) y == evalDist (a x) y.
+Proof.
+  intros.
+  eapply distro_irr_eq in H.
+  Focus 2.
+  intros. eapply H0.
+  eauto. rewrite H. rewrite H0; eauto.
+  reflexivity.
+Qed.
+
 Lemma allow_assumption :
-  forall SP input f n,
-    @rand_indist SP (ret input) n ->
+  forall SP input (f : Bvector SP -> Bvector SP) n,
+    (forall x, @rand_indist SP (ret input) x) ->
     evalDist (ret (f input)) n == evalDist (x <-$ {0,1}^SP; ret (f x)) n.
 Proof.
   intros.
   unfold rand_indist in *.
   unfold D in *.
-  rewrite distro_irr_eq. reflexivity.
-  econstructor.
-  intros.
-  
-Admitted.
+  rewrite <- evalDist_left_ident_eq with (c2 := fun x => ret f x).
+  eapply evalDist_seq_eq. intros. apply H.
+  intros. reflexivity.
+Qed.
 
 Lemma OTP_encrypt_indist :
   forall SP (msg key : Bvector SP),
@@ -51,10 +66,8 @@ Proof.
   unfold D in *.
   symmetry.
   rewrite <- evalDist_right_ident.
-  specialize (H n).
-  apply allow_assumption with (f := BVxor SP msg) in H.
-  rewrite BVxor_comm in H.
-  rewrite H.
+  symmetry.
+  erewrite allow_assumption with (f := fun x => BVxor SP x msg).
 
   eapply evalDist_iso. 
   - intuition. 
@@ -76,8 +89,12 @@ Proof.
   - intros. 
     simpl. reflexivity. 
   - intros. 
-    rewrite BVxor_comm. 
-    reflexivity. 
+    rewrite BVxor_comm.
+    rewrite <- BVxor_assoc.
+    rewrite BVxor_same_id. 
+    rewrite BVxor_id_l. 
+    reflexivity.
+  - exact H.
 Qed.  
 
 (* Assuming the key is drawn uniformly at random (assumption added by OTP), 
