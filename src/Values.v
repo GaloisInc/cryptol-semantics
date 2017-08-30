@@ -343,6 +343,7 @@ Proof.
   intros. simpl. destruct n; try reflexivity. 
 Qed. 
 
+(* Presumably simpler than Z_add_bit_n *)
 Lemma Pos_add_bit_n :
   forall n a b,
     Pos.testbit (a + b) n = xorb (Pos.testbit a n) (Pos.testbit b n).
@@ -350,6 +351,7 @@ Proof.
   intros.
 Admitted. 
 
+(* The following two lemmas will probably have similar proofs *)
 Lemma Z_pos_neg_testbit :
   forall n a b,
     Z.testbit (Z.pos a + Z.neg b) n =
