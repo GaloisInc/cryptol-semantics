@@ -72,7 +72,7 @@ Lemma bool_destr : forall (b: bool),
   Qed.
 
   
-Theorem otp_equiv : forall key msg,
+Lemma otp_equiv' : forall key msg,
   has_type key byte -> 
   has_type msg byte ->
   exists l,  
@@ -144,4 +144,17 @@ Proof.
   unfold xorb.    
   repeat rewrite bool_destr. 
   reflexivity. 
-Qed.   
+Qed.
+
+Theorem otp_equiv : forall key msg,
+  has_type key byte -> 
+  has_type msg byte ->
+  eager_eval_expr ge tempty sempty
+                  (EApp (EApp (EVar encrypt) (EValue key)) (EValue msg)) (to_sval (otp_encrypt key msg)).
+Proof.
+  intros.
+  edestruct otp_equiv'. exact H. exact H0.
+  destruct H1.
+  subst x.
+  assumption.
+Qed.  

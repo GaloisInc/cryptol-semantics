@@ -14,6 +14,7 @@ Require Import Cryptol.Bitstream.
 Require Import Cryptol.Eager.
 Require Import Cryptol.GetEachN.
 Require Import Cryptol.Semantics.
+Require Import Cryptol.BvectorExt.
 
 Require Import Bvector.
 
