@@ -14,7 +14,7 @@ Require Import otp.OTP_cryptol.
 (* cryptol version is otp_encrypt *)
 (* FCF version is OTP_encrypt *)
 
-Lemma same_otp :
+Lemma same_otp' :
   forall key msg bvkey bvmsg,
     has_type key byte -> 
     has_type msg byte ->
@@ -36,6 +36,30 @@ Proof.
   simpl in H1. inversion H1. subst.
   clear H1 H2.
   simpl. reflexivity.
+Qed.
+
+Lemma same_otp :
+  forall key msg bvkey bvmsg,
+    has_type key byte -> 
+    has_type msg byte ->
+    to_bvector 8%nat key = Some bvkey ->
+    to_bvector 8%nat msg = Some bvmsg ->
+    to_bvector 8%nat (otp_encrypt key msg) = Some (OTP_encrypt bvkey bvmsg).
+Proof.
+  intros.
+  inversion H. inversion H0. subst.
+  do 9 (destruct l; try solve [simpl in *; omega]).
+  do 9 (destruct l0; try solve [simpl in *; omega]).
+  clear H. clear H0.
+  repeat match goal with
+         | [ H : Forall _ _ |- _ ] => inversion H; clear H
+         | [ H : has_type ?X tbit |- _ ] => inversion H; subst X; clear H
+         end;
+    subst.
+  simpl in H2. inversion H2. subst.
+  simpl in H1. inversion H1. subst.
+  clear H1 H2.
+  reflexivity.
 Qed.
 
 Lemma to_bvector_succeeds' :
@@ -87,31 +111,35 @@ Qed.
 
   
 Theorem cryptol_OTP_secure :
-  forall key msg res bvkey,
+  forall key msg bvkey,
+    (* inputs have correct type *)
     has_type key byte -> 
     has_type msg byte ->
-    res = otp_encrypt key msg ->
     to_bvector 8 key = Some bvkey ->
     (forall n, @rand_indist 8 (ret bvkey) n) ->
     eager_eval_expr ge tempty sempty
-                    (EApp (EApp (EVar encrypt) (EValue key)) (EValue msg)) (to_sval res) /\
-    exists bv, to_bvector 8 res = Some bv /\
+                    (EApp (EApp (EVar encrypt) (EValue key)) (EValue msg)) (to_sval (otp_encrypt key msg)) /\
+    exists bv, to_bvector 8 (otp_encrypt key msg) = Some bv /\
                forall n, @rand_indist 8 (ret bv) n.
 Proof.
   intros.
   remember H as Hkey. remember H0 as Hmsg.
   clear HeqHkey. clear HeqHmsg.
   eapply otp_equiv in H0; try exact H.
-  subst res. split. assumption.
-  assert (has_type (otp_encrypt key msg) byte). {
+  split. assumption.
+  
+  assert (Htype : has_type (otp_encrypt key msg) byte). {
 
     unfold otp_encrypt.
     eapply has_type_xor_ext'; eauto.
     
   }
-  eapply to_bvector_succeeds' in H1.
-  destruct H1.
-  exists x. split; auto.
+  assert (exists bvmsg, to_bvector 8 msg = Some bvmsg).
+  eapply to_bvector_succeeds'; eauto.
+  destruct H3 as [bvmsg].
+  
+  eapply same_otp in H3; try exact H1; eauto.
+  eexists. rewrite H3. split; auto.
   intros.
-  (* Just a little needed here *)
-Admitted.
+  eapply OTP_encrypt_indist; eauto.
+Qed.

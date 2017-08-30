@@ -23,6 +23,63 @@ Definition OTP {SP : nat} (msg : Bvector SP) : Comp (Bvector SP) :=
 Definition rand_indist {SP : nat} (x : Comp (Bvector SP)) {n : Bvector SP} :=
   D x n == D ({0,1}^SP) n. 
 
+Lemma allow_assumption :
+  forall SP input f n,
+    @rand_indist SP (ret input) n ->
+    evalDist (ret (f input)) n == evalDist (x <-$ {0,1}^SP; ret (f x)) n.
+Proof.
+  intros.
+  unfold rand_indist in *.
+  unfold D in *.
+  rewrite distro_irr_eq. reflexivity.
+  econstructor.
+  intros.
+  
+Admitted.
+
+Lemma OTP_encrypt_indist :
+  forall SP (msg key : Bvector SP),
+  (forall n,
+      @rand_indist SP (ret key) n) ->
+  forall n,
+      @rand_indist SP (ret (OTP_encrypt key msg)) n. 
+Proof. 
+  intros.
+  unfold rand_indist.
+  unfold OTP_encrypt.
+  unfold rand_indist in *.
+  unfold D in *.
+  symmetry.
+  rewrite <- evalDist_right_ident.
+  specialize (H n).
+  apply allow_assumption with (f := BVxor SP msg) in H.
+  rewrite BVxor_comm in H.
+  rewrite H.
+
+  eapply evalDist_iso. 
+  - intuition. 
+  - instantiate (1:= BVxor SP msg). 
+    instantiate (1:= BVxor SP msg). 
+    intros. 
+    rewrite <- BVxor_assoc. 
+    rewrite BVxor_same_id. 
+    rewrite BVxor_id_l. 
+    reflexivity. 
+  - intros. 
+    rewrite <- BVxor_assoc. 
+    rewrite BVxor_same_id. 
+    rewrite BVxor_id_l. 
+    reflexivity. 
+  - intros. 
+    simpl. 
+    apply in_getAllBvectors. 
+  - intros. 
+    simpl. reflexivity. 
+  - intros. 
+    rewrite BVxor_comm. 
+    reflexivity. 
+Qed.  
+
 (* Assuming the key is drawn uniformly at random (assumption added by OTP), 
  OTP_encrypt is indistinguishable from random bits *)
 Theorem OTP_indist : forall SP (msg n : Bvector SP),
