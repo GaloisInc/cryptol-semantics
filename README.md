@@ -19,9 +19,12 @@ Simply stated, Cryptol shows the correctness of cryptography. By presenting a fo
 
 - **src:** contains the main development
 - **HMAC:** contains files related to verification of equivalence between cryptol HMAC and the HMAC spec from FCF
+- **SHA256:** contains files related to verification of equivalence between cryptol SHA256 and FCF SHA256 spec (unfinished)
+- **OTP:** contains files related to the verification of a cryptol implmentation of One Time Pad (good first example)
 - **verif:** contains various interesting other proofs
 - **examples:** example cryptol and microcryptol files to target
 - **script:** A script to generate makefiles, called by [configure](configure)
+
 
 ## Build Instructions
 WARNING: This project is its infancy, and under active development.
@@ -47,5 +50,5 @@ NOTE: `make` will only build the coq files in the `src` directory. In order to b
 1. Use cryptol to load your favorite cryptol program: `cryptol <filename>`
 1. In the interactive prompt type `:extract-coq` to print out an AST of every current top level declaration
 1. Copy the output and paste it as the right hand side of a variable declaration in Coq
-1. Use the `eval_expr` or `eager_eval_expr` relation to construct arguments that your terms evaluate to what you want
+1. Use the `eager_eval_expr` relation to construct arguments that your terms evaluate to what you want
 
