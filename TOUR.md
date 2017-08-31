@@ -119,6 +119,13 @@ Some useful lemmas.
 
 Mainly contains typing relation for `ext_val`.
 
+### src/GlobalExtends.v
+
+Contains lemmas about expressions evaluating to the same value under
+different environments. In order to prove those facts, it was
+necessary to know that eager evaluation is deterministic, which is
+proven here as well.
+
 ### HMAC/
 
 Folder containing the HMAC cryptol to FCF verification effort

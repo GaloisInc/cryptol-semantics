@@ -11,9 +11,6 @@ Require Import otp.OTP_verif.
 Require Import otp.OTP_cryptol.
 Require Import otp.OTP_lib.
 
-(* cryptol version is otp_encrypt *)
-(* FCF version is OTP_encrypt *)
-
   
 Theorem cryptol_OTP_secure :
   forall key msg bvkey,
@@ -21,11 +18,11 @@ Theorem cryptol_OTP_secure :
     has_type key byte -> 
     has_type msg byte ->
     to_bvector 8 key = Some bvkey ->
-    (forall n, @rand_indist 8 (ret bvkey) n) ->
+    rand_indist (ret bvkey) ->
     eager_eval_expr ge tempty sempty
                     (EApp (EApp (EVar encrypt) (EValue key)) (EValue msg)) (to_sval (otp_encrypt key msg)) /\
     exists bv, to_bvector 8 (otp_encrypt key msg) = Some bv /\
-               forall n, @rand_indist 8 (ret bv) n.
+               rand_indist (ret bv).
 Proof.
   intros.
   remember H as Hkey. remember H0 as Hmsg.

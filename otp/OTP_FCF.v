@@ -3,40 +3,18 @@ Set Implicit Arguments.
 (* Import the core FCF definitions and theory. *)
 Require Import otp.FCF.
 
-(* Standard textbook OTP,
- but utilizes random selection from a distribution*)
-Definition OTPEnc {SP : nat} (m : Bvector SP) : Comp (Bvector SP) := 
-  k <-$ {0,1}^SP; 
-  ret (BVxor SP k m).
-
 (* Matches our OTP definition in OTP_verif.v *)
 Definition OTP_encrypt {SP : nat} (key msg : Bvector SP) : Bvector SP :=
   BVxor SP key msg.  
 
-
 (* Indistinguishability security property *)
-Definition rand_indist {SP : nat} (x : Comp (Bvector SP)) {n : Bvector SP} :=
-  evalDist x n == evalDist ({0,1}^SP) n. 
-
-Lemma distro_irr_eq' :
-  forall (A B : Set) (b : Comp B) (a : B -> Comp A) (y : A) (v : Rat),
-    well_formed_comp b ->
-    (forall x : B, In x (getSupport b) -> evalDist (a x) y == v) ->
-    forall x,
-      In x (getSupport b) ->
-      evalDist (x <-$ b; a x) y == evalDist (a x) y.
-Proof.
-  intros.
-  eapply distro_irr_eq in H.
-  Focus 2.
-  intros. eapply H0.
-  eauto. rewrite H. rewrite H0; eauto.
-  reflexivity.
-Qed.
+Definition rand_indist {SP : nat} (x : Comp (Bvector SP)) :=
+  forall (n : Bvector SP),
+    evalDist x n == evalDist ({0,1}^SP) n. 
 
 Lemma allow_assumption :
   forall SP input (f : Bvector SP -> Bvector SP) n,
-    (forall x, @rand_indist SP (ret input) x) ->
+    rand_indist (ret input) ->
     evalDist (ret (f input)) n == evalDist (x <-$ {0,1}^SP; ret (f x)) n.
 Proof.
   intros.
@@ -48,13 +26,12 @@ Qed.
 
 Lemma OTP_encrypt_indist :
   forall SP (msg key : Bvector SP),
-  (forall n,
-      @rand_indist SP (ret key) n) ->
-  forall n,
-      @rand_indist SP (ret (OTP_encrypt key msg)) n. 
+    rand_indist (ret key) ->
+    rand_indist (ret (OTP_encrypt key msg)). 
 Proof. 
   intros.
   unfold rand_indist.
+  intros.
   unfold OTP_encrypt.
   unfold rand_indist in *.
   symmetry.
@@ -97,11 +74,12 @@ Definition OTP {SP : nat} (msg : Bvector SP) : Comp (Bvector SP) :=
 
 (* Assuming the key is drawn uniformly at random (assumption added by OTP), 
  OTP_encrypt is indistinguishable from random bits *)
-Theorem OTP_indist : forall SP (msg n : Bvector SP),
-    @rand_indist SP (OTP msg) n. 
+Theorem OTP_indist : forall SP (msg : Bvector SP),
+    rand_indist (OTP msg). 
 Proof. 
   intros. 
   unfold rand_indist.
+  intros.
   unfold OTP.
   unfold OTP_encrypt.
 
@@ -131,28 +109,3 @@ Proof.
     reflexivity. 
 Qed. 
 
-(* 
-evalDist_iso:
-  forall (rel : Rat -> Rat -> Prop) (A B C D : Set)
-    (f : C -> D) (f_inv : D -> C) (d : Comp D) 
-    (c : Comp C) (f1 : D -> Comp B) (f2 : C -> Comp A)
-    (a : A) (b : B),
-  RatRel rel ->
-  (forall x : D, In x (getSupport d) -> f (f_inv x) = x) ->
-  (forall x : C, In x (getSupport c) -> f_inv (f x) = x) ->
-  (forall x : D,
-   In x (getSupport d) -> In (f_inv x) (getSupport c)) ->
-  (forall x : C,
-   In x (getSupport c) -> evalDist d (f x) == evalDist c x) ->
-  (forall x : C,
-   In x (getSupport c) ->
-   rel (evalDist (f1 (f x)) b) (evalDist (f2 x) a)) ->
-  rel (evalDist (x <-$ d; f1 x) b)
-    (evalDist (x <-$ c; f2 x) a)
-*)
-
- 
-(*   evalDist_right_ident:
-       forall (A : Set) (eqd : EqDec A) (c : Comp A) (a : A),
-       evalDist (x <-$ c; ret x) a == evalDist c a  
-*)

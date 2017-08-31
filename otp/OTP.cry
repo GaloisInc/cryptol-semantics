@@ -1,0 +1,3 @@
+encrypt : [8] -> [8] -> [8]
+encrypt key msg = key ^ msg
+       
