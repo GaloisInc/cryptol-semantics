@@ -4,7 +4,7 @@ Set Implicit Arguments.
 Require Import otp.FCF.
 
 (* Matches our OTP definition in OTP_verif.v *)
-Definition OTP_encrypt {SP : nat} (key msg : Bvector SP) : Bvector SP :=
+Definition OTP_encrypt_FCF {SP : nat} (key msg : Bvector SP) : Bvector SP :=
   BVxor SP key msg.  
 
 (* Indistinguishability security property *)
@@ -27,12 +27,12 @@ Qed.
 Lemma OTP_encrypt_indist :
   forall SP (msg key : Bvector SP),
     rand_indist (ret key) ->
-    rand_indist (ret (OTP_encrypt key msg)). 
+    rand_indist (ret (OTP_encrypt_FCF key msg)). 
 Proof. 
   intros.
   unfold rand_indist.
   intros.
-  unfold OTP_encrypt.
+  unfold OTP_encrypt_FCF.
   unfold rand_indist in *.
   symmetry.
   rewrite <- evalDist_right_ident.
@@ -70,7 +70,7 @@ Qed.
 
 Definition OTP {SP : nat} (msg : Bvector SP) : Comp (Bvector SP) :=
   key <-$ {0,1}^SP;
-  ret (OTP_encrypt key msg). 
+  ret (OTP_encrypt_FCF key msg). 
 
 (* Assuming the key is drawn uniformly at random (assumption added by OTP), 
  OTP_encrypt is indistinguishable from random bits *)
@@ -81,7 +81,7 @@ Proof.
   unfold rand_indist.
   intros.
   unfold OTP.
-  unfold OTP_encrypt.
+  unfold OTP_encrypt_FCF.
 
   symmetry.    
   rewrite <- evalDist_right_ident. 

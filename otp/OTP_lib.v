@@ -16,7 +16,7 @@ Lemma same_otp' :
     has_type msg byte ->
     to_bvector 8%nat key = Some bvkey ->
     to_bvector 8%nat msg = Some bvmsg ->
-    otp_encrypt key msg = eseq (bv_to_extval' (OTP_encrypt bvkey bvmsg)).
+    otp_encrypt key msg = eseq (bv_to_extval' (OTP_encrypt_FCF bvkey bvmsg)).
 Proof.
   intros.
   inversion H. inversion H0. subst.
@@ -40,7 +40,7 @@ Lemma same_otp :
     has_type msg byte ->
     to_bvector 8%nat key = Some bvkey ->
     to_bvector 8%nat msg = Some bvmsg ->
-    to_bvector 8%nat (otp_encrypt key msg) = Some (OTP_encrypt bvkey bvmsg).
+    to_bvector 8%nat (otp_encrypt key msg) = Some (OTP_encrypt_FCF bvkey bvmsg).
 Proof.
   intros.
   inversion H. inversion H0. subst.
