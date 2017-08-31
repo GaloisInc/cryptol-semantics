@@ -119,5 +119,23 @@ Some useful lemmas.
 
 Mainly contains typing relation for `ext_val`.
 
+### HMAC/
+
+Folder containing the HMAC cryptol to FCF verification effort
+
+### SHA256/
+
+Folder containing the SHA256 cryptol to FCF verification effort (unfinished).
+
+### otp/
+
+Folder containing the one time pad cryptol to FCF verification
+effort. Good, readable example to start understanding.
+
+### verif/
+
+Folder containing various small unit test-like proofs, many deprecated
+and commented out.
+
 
 Authored by Eric Mullen, August 2017.
