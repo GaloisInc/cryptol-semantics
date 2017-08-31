@@ -3,8 +3,6 @@ Set Implicit Arguments.
 (* Import the core FCF definitions and theory. *)
 Require Import otp.FCF.
 
-Definition D := evalDist. 
-
 (* Standard textbook OTP,
  but utilizes random selection from a distribution*)
 Definition OTPEnc {SP : nat} (m : Bvector SP) : Comp (Bvector SP) := 
@@ -14,14 +12,11 @@ Definition OTPEnc {SP : nat} (m : Bvector SP) : Comp (Bvector SP) :=
 (* Matches our OTP definition in OTP_verif.v *)
 Definition OTP_encrypt {SP : nat} (key msg : Bvector SP) : Bvector SP :=
   BVxor SP key msg.  
-                                                      
-Definition OTP {SP : nat} (msg : Bvector SP) : Comp (Bvector SP) :=
-  key <-$ {0,1}^SP;
-  ret (OTP_encrypt key msg). 
- 
+
+
 (* Indistinguishability security property *)
 Definition rand_indist {SP : nat} (x : Comp (Bvector SP)) {n : Bvector SP} :=
-  D x n == D ({0,1}^SP) n. 
+  evalDist x n == evalDist ({0,1}^SP) n. 
 
 Lemma distro_irr_eq' :
   forall (A B : Set) (b : Comp B) (a : B -> Comp A) (y : A) (v : Rat),
@@ -46,7 +41,6 @@ Lemma allow_assumption :
 Proof.
   intros.
   unfold rand_indist in *.
-  unfold D in *.
   rewrite <- evalDist_left_ident_eq with (c2 := fun x => ret f x).
   eapply evalDist_seq_eq. intros. apply H.
   intros. reflexivity.
@@ -63,7 +57,6 @@ Proof.
   unfold rand_indist.
   unfold OTP_encrypt.
   unfold rand_indist in *.
-  unfold D in *.
   symmetry.
   rewrite <- evalDist_right_ident.
   symmetry.
@@ -96,6 +89,11 @@ Proof.
     reflexivity.
   - exact H.
 Qed.  
+
+
+Definition OTP {SP : nat} (msg : Bvector SP) : Comp (Bvector SP) :=
+  key <-$ {0,1}^SP;
+  ret (OTP_encrypt key msg). 
 
 (* Assuming the key is drawn uniformly at random (assumption added by OTP), 
  OTP_encrypt is indistinguishable from random bits *)
