@@ -72,7 +72,52 @@ relation.
 
 Custom induction schemes for `eager_eval_expr` and `eager_eval_type`.
 
+### src/Utils.v
 
+List parsing notation for Cryptol program ASTs. Also one helper
+function.
+
+### src/GetEachN.v
+
+Coq model of Cryptol `split` semantics, and associated lemmas.
+
+### src/EagerToLazy.v
+
+Attempt at a proof showing that all terms that evaluate eagerly also
+evaluate lazily.
+
+### src/Builtins.v, src/BuiltinSyntax.v
+
+Here are the definition and arity of cryptol builtins (also called primitives).
+
+### src/Prims.v
+
+Here are evaluation facts and Coq models for some builtins.
+
+### src/SimpleValues.v
+
+Conversion between lists of bits and numbers. Parameterized to be
+useful with all value types. Intent is to replace all uses of length
+indexed bitvectors with these lists, to aid in proofs.
+
+### src/Bitvectors.v
+
+Port of Compcert's Integers.v. Hopefully deprecated soon. Currently
+used for some arithmetic operations.
+
+### src/Values.v, src/ExtToBitvector.v, src/StrictToBitvector.v
+
+Conversion between lazy/external/strict values and bitvectors. Also
+contains mostly completed roundtrip proof. Hopefully deprecated soon,
+as the length index on the type is very annoying to work with.
+
+### src/Lib.v
+
+Some useful lemmas.
+
+### src/Bitstream.v
+
+Mainly contains typing relation for `ext_val`.
 
 
 Authored by Eric Mullen, August 2017.
