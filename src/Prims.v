@@ -97,23 +97,23 @@ Fixpoint eq_ev (l r : ext_val) : ext_val :=
 (* Proof. *)
 (* Admitted. *)
 
-Lemma eq_eval :
-  forall id GE TE SE,
-    GE (id,"==") = Some (mb 1 2 Eq) ->
-    SE (id,"==") = None ->
-    forall ta tv a1 a2 v1 v2,
-      eager_eval_type GE TE ta tv ->
-      eager_eval_expr GE TE SE a1 (to_sval v1) ->
-      eager_eval_expr GE TE SE a2 (to_sval v2) ->
-      forall res,
-        res = to_sval (eq_ev v1 v2) ->
-        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"==")) (ETyp ta)) a1) a2) res.
-Proof.
-  intros. e. e. e. ag.
-  e. e. e. e; try lv.
-  simpl. subst res.
-  eapply eq_sem_equiv; eauto.
-Qed.
+(* Lemma eq_eval : *)
+(*   forall id GE TE SE, *)
+(*     GE (id,"==") = Some (mb 1 2 Eq) -> *)
+(*     SE (id,"==") = None -> *)
+(*     forall ta tv a1 a2 v1 v2, *)
+(*       eager_eval_type GE TE ta tv -> *)
+(*       eager_eval_expr GE TE SE a1 (to_sval v1) -> *)
+(*       eager_eval_expr GE TE SE a2 (to_sval v2) -> *)
+(*       forall res, *)
+(*         res = to_sval (eq_ev v1 v2) -> *)
+(*         eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"==")) (ETyp ta)) a1) a2) res. *)
+(* Proof. *)
+(*   intros. e. e. e. ag. *)
+(*   e. e. e. e; try lv. *)
+(*   simpl. subst res. *)
+(*   eapply eq_sem_equiv; eauto. *)
+(* Qed. *)
 
 Definition fromTo_ev (lo hi width : Z) : ext_val :=
   eseq (map eseq (map from_bitv (map (@repr (Z.to_nat width)) (zrange lo (hi + 1))))).
@@ -277,17 +277,17 @@ Qed.
 (* Admitted.   *)
   
   
-Lemma plus_ev_succeeds :
-  forall l l',
-    has_type (eseq l) (tseq (length l) tbit) ->
-    has_type (eseq l') (tseq (length l) tbit) ->
-    exists l0,
-      plus_ev (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit).
-Proof.
-  unfold plus_ev.
-  intros.
-  eapply binop_ev_succeeds; eauto.
-Qed.
+(* Lemma plus_ev_succeeds : *)
+(*   forall l l', *)
+(*     has_type (eseq l) (tseq (length l) tbit) -> *)
+(*     has_type (eseq l') (tseq (length l) tbit) -> *)
+(*     exists l0, *)
+(*       plus_ev (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit). *)
+(* Proof. *)
+(*   unfold plus_ev. *)
+(*   intros. *)
+(*   eapply binop_ev_succeeds; eauto. *)
+(* Qed. *)
 
 (* Lemma plus_eval : *)
 (*   forall id GE TE SE, *)
@@ -336,16 +336,16 @@ Qed.
 
 Definition minus_ev := binop_ev Z.sub.
 
-Lemma minus_ev_succeeds :
-  forall l l',
-    has_type (eseq l) (tseq (length l) tbit) ->
-    has_type (eseq l') (tseq (length l) tbit) ->
-    exists l0,
-      minus_ev (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit).
-Proof.
-  intros.
-  eapply binop_ev_succeeds; eauto.
-Qed.
+(* Lemma minus_ev_succeeds : *)
+(*   forall l l', *)
+(*     has_type (eseq l) (tseq (length l) tbit) -> *)
+(*     has_type (eseq l') (tseq (length l) tbit) -> *)
+(*     exists l0, *)
+(*       minus_ev (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit). *)
+(* Proof. *)
+(*   intros. *)
+(*   eapply binop_ev_succeeds; eauto. *)
+(* Qed. *)
 
 (* Lemma minus_eval : *)
 (*   forall id GE TE SE, *)
