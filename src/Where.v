@@ -96,64 +96,64 @@ Fixpoint rec_model (fuel : nat) (e : ext_val) : ext_val :=
 
 
 
-Lemma eval_W_id :
-  forall n GE TE SE,
-    GE (244,"W") = Some W_expr ->
-    SE (244,"W") = None ->
-    GE (17,"==") = Some (mb 1 2 Eq) ->
-    SE (17,"==") = None ->
-    GE (1,"+") = Some (mb 1 2 Plus) ->
-    SE (1,"+") = None ->
-    GE (2,"-") = Some (mb 1 2 Minus) ->
-    SE (2,"-") = None ->
-    GE (0,"demote") = Some (mb 2 0 Demote) ->
-    SE (0,"demote") = None ->
-    forall l bv,
-      has_type (eseq l) (tseq 8 tbit) ->
-      @to_bitv (Datatypes.length l) l = Some bv ->
-      n = Z.to_nat (unsigned bv) ->
-      forall argexp res,
-        eager_eval_expr GE TE SE argexp (to_sval (eseq l)) ->
-        res = to_sval (rec_model n (eseq l)) ->
-        eager_eval_expr GE TE SE (EApp (EVar (244,"W")) argexp) res.
-Proof.
-  induction n; intros.
+(* Lemma eval_W_id : *)
+(*   forall n GE TE SE, *)
+(*     GE (244,"W") = Some W_expr -> *)
+(*     SE (244,"W") = None -> *)
+(*     GE (17,"==") = Some (mb 1 2 Eq) -> *)
+(*     SE (17,"==") = None -> *)
+(*     GE (1,"+") = Some (mb 1 2 Plus) -> *)
+(*     SE (1,"+") = None -> *)
+(*     GE (2,"-") = Some (mb 1 2 Minus) -> *)
+(*     SE (2,"-") = None -> *)
+(*     GE (0,"demote") = Some (mb 2 0 Demote) -> *)
+(*     SE (0,"demote") = None -> *)
+(*     forall l bv, *)
+(*       has_type (eseq l) (tseq 8 tbit) -> *)
+(*       @to_bitv (Datatypes.length l) l = Some bv -> *)
+(*       n = Z.to_nat (unsigned bv) -> *)
+(*       forall argexp res, *)
+(*         eager_eval_expr GE TE SE argexp (to_sval (eseq l)) -> *)
+(*         res = to_sval (rec_model n (eseq l)) -> *)
+(*         eager_eval_expr GE TE SE (EApp (EVar (244,"W")) argexp) res. *)
+(* Proof. *)
+(*   induction n; intros. *)
 
-  * e. ag. e. e. 
-    use eq_eval.
-    instantiate (1 := eseq l).
-    lv.
-    instantiate (1 := eseq (repeat (ebit false) 8)).
-    simpl.
-    use demote_eval.
-    instantiate (1 := true).
-    admit. (* We have enough information *)
+(*   * e. ag. e. e.  *)
+(*     use eq_eval. *)
+(*     instantiate (1 := eseq l). *)
+(*     lv. *)
+(*     instantiate (1 := eseq (repeat (ebit false) 8)). *)
+(*     simpl. *)
+(*     use demote_eval. *)
+(*     instantiate (1 := true). *)
+(*     admit. (* We have enough information *) *)
 
-    simpl. subst res. unfold rec_model.
-    lv.
-  *
-    assert (Hlen : Datatypes.length l = 8%nat). {
-      inversion H9; eauto.
-    } 
+(*     simpl. subst res. unfold rec_model. *)
+(*     lv. *)
+(*   * *)
+(*     assert (Hlen : Datatypes.length l = 8%nat). { *)
+(*       inversion H9; eauto. *)
+(*     }  *)
     
-    e. ag. e. e.
-    use eq_eval.
+(*     e. ag. e. e. *)
+(*     use eq_eval. *)
     
-    instantiate (1 := eseq l).
-    lv.
-    instantiate (1 := eseq (repeat (ebit false) 8)).
-    simpl.
-    use demote_eval.
-    instantiate (1 := false).
-    admit. (* We have enough information *)
-    simpl.
-    eapply plus_eval.
-    intuition; eassumption.
-    unfold extend; simpl; intuition; eassumption.
-    et.
-    use demote_eval.
-    simpl.
-Admitted.
+(*     instantiate (1 := eseq l). *)
+(*     lv. *)
+(*     instantiate (1 := eseq (repeat (ebit false) 8)). *)
+(*     simpl. *)
+(*     use demote_eval. *)
+(*     instantiate (1 := false). *)
+(*     admit. (* We have enough information *) *)
+(*     simpl. *)
+(*     eapply plus_eval. *)
+(*     intuition; eassumption. *)
+(*     unfold extend; simpl; intuition; eassumption. *)
+(*     et. *)
+(*     use demote_eval. *)
+(*     simpl. *)
+(* Admitted. *)
 (*    instantiate (1 := (extnum 1 8)).
     reflexivity.
 
@@ -203,84 +203,84 @@ Admitted.
     (* It would be much easier with simple types and options *)
 
 
-Lemma eval_rec_id :
-  forall n GE TE SE,
-    GE (244,"W") = Some W_expr ->
-    SE (244,"W") = None ->
-    GE (17,"==") = Some (mb 1 2 Eq) ->
-    SE (17,"==") = None ->
-    GE (1,"+") = Some (mb 1 2 Plus) ->
-    SE (1,"+") = None ->
-    GE (2,"-") = Some (mb 1 2 Minus) ->
-    SE (2,"-") = None ->
-    GE (0,"demote") = Some (mb 2 0 Demote) ->
-    SE (0,"demote") = None ->
-    forall l bv,
-      has_type (eseq l) (tseq 8 tbit) ->
-      @to_bitv (Datatypes.length l) l = Some bv ->
-      n = Z.to_nat (unsigned bv) ->
-      forall argexp res,
-        eager_eval_expr GE TE SE argexp (to_sval (eseq l)) ->
-        res = to_sval (rec_model n (eseq l)) ->
-        eager_eval_expr GE TE SE (EApp rec_id argexp) res.
-Proof.
-  induction n; intros.
+(* Lemma eval_rec_id : *)
+(*   forall n GE TE SE, *)
+(*     GE (244,"W") = Some W_expr -> *)
+(*     SE (244,"W") = None -> *)
+(*     GE (17,"==") = Some (mb 1 2 Eq) -> *)
+(*     SE (17,"==") = None -> *)
+(*     GE (1,"+") = Some (mb 1 2 Plus) -> *)
+(*     SE (1,"+") = None -> *)
+(*     GE (2,"-") = Some (mb 1 2 Minus) -> *)
+(*     SE (2,"-") = None -> *)
+(*     GE (0,"demote") = Some (mb 2 0 Demote) -> *)
+(*     SE (0,"demote") = None -> *)
+(*     forall l bv, *)
+(*       has_type (eseq l) (tseq 8 tbit) -> *)
+(*       @to_bitv (Datatypes.length l) l = Some bv -> *)
+(*       n = Z.to_nat (unsigned bv) -> *)
+(*       forall argexp res, *)
+(*         eager_eval_expr GE TE SE argexp (to_sval (eseq l)) -> *)
+(*         res = to_sval (rec_model n (eseq l)) -> *)
+(*         eager_eval_expr GE TE SE (EApp rec_id argexp) res. *)
+(* Proof. *)
+(*   induction n; intros. *)
 
-  * e. e. e. e. g. e. lv.
-    e.
-    use eq_eval.
-    instantiate (1 := eseq l).
-    lv.
-    instantiate (1 := eseq (repeat (ebit false) 8)).
-    simpl.
-    use demote_eval.
-    instantiate (1 := true).
-    admit. (* We have enough information *)
+(*   * e. e. e. e. g. e. lv. *)
+(*     e. *)
+(*     use eq_eval. *)
+(*     instantiate (1 := eseq l). *)
+(*     lv. *)
+(*     instantiate (1 := eseq (repeat (ebit false) 8)). *)
+(*     simpl. *)
+(*     use demote_eval. *)
+(*     instantiate (1 := true). *)
+(*     admit. (* We have enough information *) *)
 
-    simpl. subst res. unfold rec_model.
-    lv.
-  *
-    assert (Hlen : Datatypes.length l = 8%nat). {
-      inversion H9; eauto.
-    } 
+(*     simpl. subst res. unfold rec_model. *)
+(*     lv. *)
+(*   * *)
+(*     assert (Hlen : Datatypes.length l = 8%nat). { *)
+(*       inversion H9; eauto. *)
+(*     }  *)
     
-    e. e. e. e. g. e. lv.
-    e.
-    use eq_eval.
+(*     e. e. e. e. g. e. lv. *)
+(*     e. *)
+(*     use eq_eval. *)
     
-    instantiate (1 := eseq l).
-    lv.
-    instantiate (1 := eseq (repeat (ebit false) 8)).
-    simpl.
-    use demote_eval.
-    instantiate (1 := false).
-    admit. (* We have enough information *)
-    simpl.
-    eapply plus_eval.
-    intuition; eassumption.
-    unfold extend; simpl; intuition; eassumption.
-    et.
-    use demote_eval.
-    simpl.
+(*     instantiate (1 := eseq l). *)
+(*     lv. *)
+(*     instantiate (1 := eseq (repeat (ebit false) 8)). *)
+(*     simpl. *)
+(*     use demote_eval. *)
+(*     instantiate (1 := false). *)
+(*     admit. (* We have enough information *) *)
+(*     simpl. *)
+(*     eapply plus_eval. *)
+(*     intuition; eassumption. *)
+(*     unfold extend; simpl; intuition; eassumption. *)
+(*     et. *)
+(*     use demote_eval. *)
+(*     simpl. *)
 
-(*    instantiate (1 := (extnum 1 8)).
-    reflexivity.
+(* (*    instantiate (1 := (extnum 1 8)). *)
+(*     reflexivity. *)
 
-    e. g. e.
-    eapply minus_eval.
-    intuition; eassumption.
-    unfold extend; simpl; intuition; eassumption.
-    et.
-    instantiate (1 := l). lv.
-    instantiate (1 := extnum 1 8).
-    use demote_eval. rewrite H10. reflexivity.
-    instantiate (1 := @repr (Datatypes.length l) 1).
-    rewrite Hlen. reflexivity.
-    reflexivity.
+(*     e. g. e. *)
+(*     eapply minus_eval. *)
+(*     intuition; eassumption. *)
+(*     unfold extend; simpl; intuition; eassumption. *)
+(*     et. *)
+(*     instantiate (1 := l). lv. *)
+(*     instantiate (1 := extnum 1 8). *)
+(*     use demote_eval. rewrite H10. reflexivity. *)
+(*     instantiate (1 := @repr (Datatypes.length l) 1). *)
+(*     rewrite Hlen. reflexivity. *)
+(*     reflexivity. *)
     
-  *)  
+(*   *)   *)
 
-Admitted.    
+(* Admitted.     *)
   
 
 
