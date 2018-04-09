@@ -38,27 +38,27 @@ Fixpoint lt_ev (l r : ext_val) : ext_val :=
   | _,_ => eseq nil
   end.
 
-Lemma lt_eval :
-  forall id GE TE SE,
-    GE (id,"<") = Some (mb 1 2 Lt) ->
-    SE (id,"<") = None ->
-    forall ta tv a1 a2 v1 v2,
-      eager_eval_type GE TE ta tv ->
-      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
-      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
-      has_type (eseq v1) (tseq (length v1) tbit) ->
-      has_type (eseq v2) (tseq (length v2) tbit) ->
-      forall res,
-        res = to_sval (lt_ev (eseq v1) (eseq v2)) ->
-        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"<")) (ETyp ta)) a1) a2) res.
-Proof.
-  intros.
-  e. e. e. ag.
-  e. e. e. e; try lv; try congruence.
-  simpl. subst res.
+(* Lemma lt_eval : *)
+(*   forall id GE TE SE, *)
+(*     GE (id,"<") = Some (mb 1 2 Lt) -> *)
+(*     SE (id,"<") = None -> *)
+(*     forall ta tv a1 a2 v1 v2, *)
+(*       eager_eval_type GE TE ta tv -> *)
+(*       eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) -> *)
+(*       eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) -> *)
+(*       has_type (eseq v1) (tseq (length v1) tbit) -> *)
+(*       has_type (eseq v2) (tseq (length v2) tbit) -> *)
+(*       forall res, *)
+(*         res = to_sval (lt_ev (eseq v1) (eseq v2)) -> *)
+(*         eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"<")) (ETyp ta)) a1) a2) res. *)
+(* Proof. *)
+(*   intros. *)
+(*   e. e. e. ag. *)
+(*   e. e. e. e; try lv; try congruence. *)
+(*   simpl. subst res. *)
 
-  (* TODO: this proof *)
-Admitted.
+(*   (* TODO: this proof *) *)
+(* Admitted. *)
   
 
 Fixpoint eq_ev (l r : ext_val) : ext_val :=
@@ -91,11 +91,11 @@ Fixpoint eq_ev (l r : ext_val) : ext_val :=
   end.
 
 (* TODO: update eq_sem so this is true *)
-Lemma eq_sem_equiv :
-  forall ev1 ev2,
-    eq_sem (to_sval ev1) (to_sval ev2) = Some (to_sval (eq_ev ev1 ev2)).
-Proof.
-Admitted.
+(* Lemma eq_sem_equiv : *)
+(*   forall ev1 ev2, *)
+(*     eq_sem (to_sval ev1) (to_sval ev2) = Some (to_sval (eq_ev ev1 ev2)). *)
+(* Proof. *)
+(* Admitted. *)
 
 Lemma eq_eval :
   forall id GE TE SE,
@@ -242,39 +242,39 @@ Proof.
   intros. subst. econstructor; eauto.
 Qed.
 
-Lemma binop_ev_succeeds :
-  forall l l',
-    has_type (eseq l) (tseq (length l) tbit) ->
-    has_type (eseq l') (tseq (length l) tbit) ->
-    forall op,
-    exists l0,
-      binop_ev op (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit).
-Proof.
-  induction l; intros.
-  simpl in *. inversion H0. subst.
-  destruct l'; simpl in *; try congruence.
-  eauto.
-  inversion H. inversion H0.
-  subst.
-  destruct l'; simpl in *; try congruence.
-  inversion H3. inversion H6. subst.
-  unfold binop. simpl.
-  inversion H4. subst. simpl.
-  inversion H10. subst.
-  edestruct to_bitlist_succeeds.
-  Focus 2. erewrite H1.
-  edestruct to_bitlist_succeeds.
-  Focus 2.
-  inversion H5.
-  erewrite H2.
-  eexists; split. reflexivity.
-  simpl.
-  eapply has_type_seq.
-  econstructor. econstructor.
-  admit. (* it's true *)
-  simpl. f_equal.
-  admit. (* also true *)
-Admitted.  
+(* Lemma binop_ev_succeeds : *)
+(*   forall l l', *)
+(*     has_type (eseq l) (tseq (length l) tbit) -> *)
+(*     has_type (eseq l') (tseq (length l) tbit) -> *)
+(*     forall op, *)
+(*     exists l0, *)
+(*       binop_ev op (eseq l) (eseq l') = eseq l0 /\ has_type (eseq l0) (tseq (length l) tbit). *)
+(* Proof. *)
+(*   induction l; intros. *)
+(*   simpl in *. inversion H0. subst. *)
+(*   destruct l'; simpl in *; try congruence. *)
+(*   eauto. *)
+(*   inversion H. inversion H0. *)
+(*   subst. *)
+(*   destruct l'; simpl in *; try congruence. *)
+(*   inversion H3. inversion H6. subst. *)
+(*   unfold binop. simpl. *)
+(*   inversion H4. subst. simpl. *)
+(*   inversion H10. subst. *)
+(*   edestruct to_bitlist_succeeds. *)
+(*   Focus 2. erewrite H1. *)
+(*   edestruct to_bitlist_succeeds. *)
+(*   Focus 2. *)
+(*   inversion H5. *)
+(*   erewrite H2. *)
+(*   eexists; split. reflexivity. *)
+(*   simpl. *)
+(*   eapply has_type_seq. *)
+(*   econstructor. econstructor. *)
+(*   admit. (* it's true *) *)
+(*   simpl. f_equal. *)
+(*   admit. (* also true *) *)
+(* Admitted.   *)
   
   
 Lemma plus_ev_succeeds :
@@ -289,49 +289,49 @@ Proof.
   eapply binop_ev_succeeds; eauto.
 Qed.
 
-Lemma plus_eval :
-  forall id GE TE SE,
-    GE (id,"+") = Some (mb 1 2 Plus) ->
-    SE (id,"+") = None ->
-    forall ta tv a1 a2 v1 v2 len,
-      eager_eval_type GE TE ta tv ->
-      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
-      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
-      has_type (eseq v1) (tseq len tbit) ->
-      has_type (eseq v2) (tseq len tbit) ->
-      forall res,
-        res = to_sval (plus_ev (eseq v1) (eseq v2)) ->
-        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"+")) (ETyp ta)) a1) a2) res.
-Proof.
-  intros.
-  assert (len = (length v1)) by (inversion H4; congruence).
-  assert (len = (length v2)) by (inversion H5; congruence).
-  rewrite H7 in H4.
-  rewrite H8 in H5.
-  eapply to_bitlist_sval in H4.
-  eapply to_bitlist_sval in H5.
-  destruct H4. destruct H5.
-  subst.
+(* Lemma plus_eval : *)
+(*   forall id GE TE SE, *)
+(*     GE (id,"+") = Some (mb 1 2 Plus) -> *)
+(*     SE (id,"+") = None -> *)
+(*     forall ta tv a1 a2 v1 v2 len, *)
+(*       eager_eval_type GE TE ta tv -> *)
+(*       eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) -> *)
+(*       eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) -> *)
+(*       has_type (eseq v1) (tseq len tbit) -> *)
+(*       has_type (eseq v2) (tseq len tbit) -> *)
+(*       forall res, *)
+(*         res = to_sval (plus_ev (eseq v1) (eseq v2)) -> *)
+(*         eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"+")) (ETyp ta)) a1) a2) res. *)
+(* Proof. *)
+(*   intros. *)
+(*   assert (len = (length v1)) by (inversion H4; congruence). *)
+(*   assert (len = (length v2)) by (inversion H5; congruence). *)
+(*   rewrite H7 in H4. *)
+(*   rewrite H8 in H5. *)
+(*   eapply to_bitlist_sval in H4. *)
+(*   eapply to_bitlist_sval in H5. *)
+(*   destruct H4. destruct H5. *)
+(*   subst. *)
 
-  e. e. e. ag.
-  e. e. e. e; try lv.
+(*   e. e. e. ag. *)
+(*   e. e. e. e; try lv. *)
 
-  unfold strict_builtin_sem.
-  unfold plus_sem.
-  unfold binop_sem.
-  repeat rewrite list_of_strictval_of_strictlist.
-  unfold plus_ev.
-  unfold binop.
-  rewrite H4.
-  replace (length (map to_sval v1)) with (length (map to_sval v2)) by (repeat rewrite map_length; congruence).
-  rewrite H5.
-  unfold binop_ev.
-  f_equal.
-  unfold binop.
+(*   unfold strict_builtin_sem. *)
+(*   unfold plus_sem. *)
+(*   unfold binop_sem. *)
+(*   repeat rewrite list_of_strictval_of_strictlist. *)
+(*   unfold plus_ev. *)
+(*   unfold binop. *)
+(*   rewrite H4. *)
+(*   replace (length (map to_sval v1)) with (length (map to_sval v2)) by (repeat rewrite map_length; congruence). *)
+(*   rewrite H5. *)
+(*   unfold binop_ev. *)
+(*   f_equal. *)
+(*   unfold binop. *)
 
-  (* admit for now, very provable though, probably want to use a general lemma about binop *)
-  (* that will let us prove this for lots of things *)
-Admitted.
+(*   (* admit for now, very provable though, probably want to use a general lemma about binop *) *)
+(*   (* that will let us prove this for lots of things *) *)
+(* Admitted. *)
 
 
 Definition minus_ev := binop_ev Z.sub.
@@ -347,34 +347,34 @@ Proof.
   eapply binop_ev_succeeds; eauto.
 Qed.
 
-Lemma minus_eval :
-  forall id GE TE SE,
-    GE (id,"-") = Some (mb 1 2 Minus) ->
-    SE (id,"-") = None ->
-    forall ta tv a1 a2 v1 v2 len,
-      eager_eval_type GE TE ta tv ->
-      eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) ->
-      eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) ->
-      has_type (eseq v1) (tseq len tbit) ->
-      has_type (eseq v2) (tseq len tbit) ->
-      forall res,
-        res = to_sval (minus_ev (eseq v1) (eseq v2)) ->
-        eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"-")) (ETyp ta)) a1) a2) res.
-Proof.
-  intros.
-  e. e. e. ag.
-  e. e. e. e; try lv.
-  simpl.
+(* Lemma minus_eval : *)
+(*   forall id GE TE SE, *)
+(*     GE (id,"-") = Some (mb 1 2 Minus) -> *)
+(*     SE (id,"-") = None -> *)
+(*     forall ta tv a1 a2 v1 v2 len, *)
+(*       eager_eval_type GE TE ta tv -> *)
+(*       eager_eval_expr GE TE SE a1 (to_sval (eseq v1)) -> *)
+(*       eager_eval_expr GE TE SE a2 (to_sval (eseq v2)) -> *)
+(*       has_type (eseq v1) (tseq len tbit) -> *)
+(*       has_type (eseq v2) (tseq len tbit) -> *)
+(*       forall res, *)
+(*         res = to_sval (minus_ev (eseq v1) (eseq v2)) -> *)
+(*         eager_eval_expr GE TE SE (EApp (EApp (ETApp (EVar (id,"-")) (ETyp ta)) a1) a2) res. *)
+(* Proof. *)
+(*   intros. *)
+(*   e. e. e. ag. *)
+(*   e. e. e. e; try lv. *)
+(*   simpl. *)
 
-  (* Proof should work once minus_sem is implemented *)
-(*  unfold minus_sem.
-  repeat rewrite list_of_strictval_of_strictlist.
-  repeat rewrite map_length.
-  repeat erewrite same_bitv by eassumption.
-  f_equal. subst.
-  simpl.
-  erewrite same_from_bitv; eauto.*)
-Admitted.
+(*   (* Proof should work once minus_sem is implemented *) *)
+(* (*  unfold minus_sem. *)
+(*   repeat rewrite list_of_strictval_of_strictlist. *)
+(*   repeat rewrite map_length. *)
+(*   repeat erewrite same_bitv by eassumption. *)
+(*   f_equal. subst. *)
+(*   simpl. *)
+(*   erewrite same_from_bitv; eauto.*) *)
+(* Admitted. *)
 
 Lemma fromTo_eval :
   forall id GE TE SE,
