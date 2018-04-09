@@ -9,7 +9,7 @@ source script/coqproject.sh
 make Makefile.coq 2> /dev/null
 mv Makefile.coq Makefile.coq.src
 
-DIRS=(src HMAC verif)# SHA256 otp)
+DIRS=(src HMAC verif)
 source script/coqproject.sh
 
 make Makefile.coq 2> /dev/null 
